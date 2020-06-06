@@ -39,9 +39,9 @@ uv_align_axis_mapping_dict = {'U': 0, 'V': 1}
 # PIES
 
 eevee_preset_items = [('NONE', 'None', ''),
-                      ('LOW', 'Low', ''),
-                      ('HIGH', 'High', ''),
-                      ('ULTRA', 'Ultra', '')]
+                      ('LOW', 'Low', 'Use Scene Lights, Ambient Occlusion and Screen Space Reflections'),
+                      ('HIGH', 'High', 'Use Bloom and Screen Space Refractions'),
+                      ('ULTRA', 'Ultra', 'Use Scene World and Volumetrics.\nCreate Principled Volume node if necessary')]
 
 render_engine_items = [('BLENDER_EEVEE', 'Eevee', ''),
                        ('CYCLES', 'Cycles', '')]
