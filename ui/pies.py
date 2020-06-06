@@ -740,7 +740,7 @@ class PieShading(Menu):
         self.draw_center_column(context, view, column)
 
         b = box.box()
-        column = b.column()
+        column = b.column(align=True)
         self.draw_right_column(context, view, column)
 
         if view.shading.type == "MATERIAL":
@@ -952,7 +952,7 @@ class PieShading(Menu):
             studio_worlds = [w for w in context.preferences.studio_lights if os.path.basename(os.path.dirname(w.path)) == "world"]
 
             if any([bpy.data.lights, studio_worlds]):
-                row = col.row()
+                row = col.row(align=True)
                 if bpy.data.lights:
                     row.prop(view.shading, "use_scene_lights")
 
@@ -964,8 +964,15 @@ class PieShading(Menu):
                             row = col.row()
                             row.template_icon_view(view.shading, "studio_light", scale=4, scale_popup=4)
 
-                            col.prop(view.shading, "studiolight_rotate_z", text="Rotation")
-                            col.prop(view.shading, "studiolight_background_alpha")
+                            r = col.row(align=True)
+                            r.prop(view.shading, "studiolight_rotate_z", text="Rotation")
+                            if view.shading.studiolight_background_alpha:
+                                r.prop(view.shading, "studiolight_background_blur")
+
+                            r = col.row(align=True)
+                            r.prop(view.shading, "studiolight_intensity")
+                            r.prop(view.shading, "studiolight_background_alpha")
+
 
             # world background node props
 
@@ -1076,6 +1083,21 @@ class PieShading(Menu):
             row = col.row(align=True)
             row.prop(context.scene.eevee, "volumetric_start")
             row.prop(context.scene.eevee, "volumetric_end")
+
+            row = col.split(factor=0.4, align=True)
+            row.prop(context.scene.eevee, "volumetric_tile_size", text='')
+            row.prop(context.scene.eevee, "volumetric_samples")
+
+            if context.scene.eevee.use_volumetric_shadows:
+                row = col.split(factor=0.4, align=True)
+            else:
+                row = col.row(align=True)
+
+            row.prop(context.scene.eevee, "use_volumetric_shadows", text='Shadows')
+            if context.scene.eevee.use_volumetric_shadows:
+                row.prop(context.scene.eevee, "volumetric_shadow_samples", text='Samples')
+
+
 
     def get_text_icon(self, context, shading):
         if context.space_data.shading.type == shading:
