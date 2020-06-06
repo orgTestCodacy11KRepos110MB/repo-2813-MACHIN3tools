@@ -743,9 +743,14 @@ class PieShading(Menu):
         column = b.column(align=True)
         self.draw_right_column(context, view, column)
 
-        if view.shading.type == "MATERIAL":
+        if view.shading.type == "MATERIAL" or (view.shading.type == 'RENDERED' and context.scene.render.engine == 'BLENDER_EEVEE'):
             b = box.box()
             self.draw_eevee(context, view, b)
+
+        elif view.shading.type == 'RENDERED' and context.scene.render.engine == 'CYCLES':
+            b = box.box()
+            self.draw_cycles(context, view, b)
+
 
         # 7 - TOP - LEFT
         pie.separator()
@@ -905,78 +910,119 @@ class PieShading(Menu):
             row.prop(active, "show_in_front", text="In Front")
             row.prop(active, "color", text="")
 
-    def draw_right_column(self, context, view, col):
+    def draw_right_column(self, context, view, layout):
+        '''
+        draw right column
+        '''
+
+        # SOLID
+
         if view.shading.type == "SOLID":
 
             # light type
-            row = col.row(align=True)
+            row = layout.row(align=True)
             # row.scale_y = 1.5
             row.prop(view.shading, "light", expand=True)
 
             # studio / matcap selection
             if view.shading.light in ["STUDIO", "MATCAP"]:
-                row = col.row()
+                row = layout.row()
                 row.template_icon_view(view.shading, "studio_light", show_labels=True, scale=4, scale_popup=3)
 
             # studio rotation, same as world rotation in lookdev
             if view.shading.light == "STUDIO":
-                col.prop(view.shading, "studiolight_rotate_z", text="Rotation")
+                layout.prop(view.shading, "studiolight_rotate_z", text="Rotation")
 
             # switch matcap
             if view.shading.light == "MATCAP":
-                row = col.row()
+                row = layout.row()
                 row.operator("machin3.matcap_switch", text="(X) Matcap Switch")
                 row.operator('view3d.toggle_matcap_flip', text="Matcap Flip", icon='ARROW_LEFTRIGHT')
 
             # color type
-            row = col.row(align=True)
+            row = layout.row(align=True)
             row.prop(view.shading, "color_type", expand=True)
 
             # single color
             if view.shading.color_type == 'SINGLE':
-                col.prop(view.shading, "single_color", text="")
+                layout.prop(view.shading, "single_color", text="")
 
             elif view.shading.color_type == 'MATERIAL':
-                col.operator("machin3.colorize_materials", text='Colorize Materials', icon='MATERIAL')
+                layout.operator("machin3.colorize_materials", text='Colorize Materials', icon='MATERIAL')
 
             elif view.shading.color_type == 'OBJECT':
-                r = col.split(factor=0.12, align=True)
+                r = layout.split(factor=0.12, align=True)
                 r.label(text="from")
                 r.operator("machin3.colorize_objects_from_active", text='Active', icon='OBJECT_DATA')
                 r.operator("machin3.colorize_objects_from_materials", text='Material', icon='MATERIAL')
                 r.operator("machin3.colorize_objects_from_collections", text='Collection', icon='OUTLINER_OB_GROUP_INSTANCE')
 
-        elif view.shading.type == "MATERIAL":
+
+        # WIREFRAME
+
+        elif view.shading.type == "WIREFRAME":
+            row = layout.row()
+            # # TODO: make the whoe scene toggle an op called by pressing X
+            row.prop(view.shading, "show_xray_wireframe", text="")
+            row.prop(view.shading, "xray_alpha_wireframe", text="X-Ray")
+
+            # wireframe color type
+            row = layout.row(align=True)
+            row.prop(view.shading, "wireframe_color_type", expand=True)
+
+
+        # LOOKDEV and RENDERED
+
+        elif view.shading.type in ['MATERIAL', 'RENDERED']:
+
+            if view.shading.type == 'RENDERED':
+                row = layout.split(factor=0.3, align=True)
+                row.scale_y = 1.2
+                row.label(text='Engine')
+                row.prop(context.scene.M3, 'render_engine', expand=True)
+                layout.separator()
+
 
             # use scene lights and world
             studio_worlds = [w for w in context.preferences.studio_lights if os.path.basename(os.path.dirname(w.path)) == "world"]
 
             if any([bpy.data.lights, studio_worlds]):
-                row = col.row(align=True)
+                row = layout.row(align=True)
+
                 if bpy.data.lights:
-                    row.prop(view.shading, "use_scene_lights")
+                    if view.shading.type == 'MATERIAL':
+                        row.prop(view.shading, "use_scene_lights")
+
+                    elif view.shading.type == 'RENDERED':
+                        row.prop(view.shading, "use_scene_lights_render")
 
                 if studio_worlds:
-                    row.prop(view.shading, "use_scene_world")
+                    if view.shading.type == 'MATERIAL':
+                        row.prop(view.shading, "use_scene_world")
+                    elif view.shading.type == 'RENDERED':
+                        row.prop(view.shading, "use_scene_world_render")
+
 
                     # world hdri selection and manipulation
-                    if not view.shading.use_scene_world:
-                            row = col.row()
-                            row.template_icon_view(view.shading, "studio_light", scale=4, scale_popup=4)
+                    if (view.shading.type == 'MATERIAL' and not view.shading.use_scene_world) or (view.shading.type == 'RENDERED' and not view.shading.use_scene_world_render):
+                        row = layout.row(align=True)
+                        row.template_icon_view(view.shading, "studio_light", scale=4, scale_popup=4)
 
-                            r = col.row(align=True)
+                        if (view.shading.type == 'MATERIAL' or (view.shading.type == 'RENDERED' and context.scene.render.engine == 'BLENDER_EEVEE')) and view.shading.studiolight_background_alpha:
+                            r = layout.split(factor=0.5, align=True)
                             r.prop(view.shading, "studiolight_rotate_z", text="Rotation")
-                            if view.shading.studiolight_background_alpha:
-                                r.prop(view.shading, "studiolight_background_blur")
+                            r.prop(view.shading, "studiolight_background_blur")
+                        else:
+                            layout.prop(view.shading, "studiolight_rotate_z", text="Rotation")
 
-                            r = col.row(align=True)
-                            r.prop(view.shading, "studiolight_intensity")
-                            r.prop(view.shading, "studiolight_background_alpha")
+                        r = layout.split(factor=0.5, align=True)
+                        r.prop(view.shading, "studiolight_intensity")
+                        r.prop(view.shading, "studiolight_background_alpha")
 
 
             # world background node props
 
-            if view.shading.use_scene_world or not studio_worlds:
+            if not studio_worlds or (view.shading.type == 'MATERIAL' and view.shading.use_scene_world) or (view.shading.type == 'RENDERED' and view.shading.use_scene_world_render):
                 world = context.scene.world
                 if world:
                     if world.use_nodes:
@@ -995,40 +1041,21 @@ class PieShading(Menu):
                                         strength = node.inputs['Strength']
 
                                         if color.links:
-                                            col.prop(strength, "default_value", text="Background Strength")
+                                            layout.prop(strength, "default_value", text="Background Strength")
                                         else:
-                                            row = col.split(factor=0.7)
+                                            row = layout.split(factor=0.7, align=True)
                                             row.prop(strength, "default_value", text="Background Strength")
                                             row.prop(color, "default_value", text="")
 
-                                        col.separator()
+            if view.shading.type == 'RENDERED':
+                layout.prop(context.scene.render, 'film_transparent')
 
-
-        elif view.shading.type == "RENDERED":
-            col.prop(context.scene.render, "engine")
-
-            if context.scene.render.engine == "CYCLES":
-                col.label(text='TODO: render setting presets')
-                col.label(text='TODO: pack images op?')
-
-            if context.scene.render.engine == "BLENDER_EEVEE":
-                self.draw_eevee(context, view, col)
-
-
-        elif view.shading.type == "WIREFRAME":
-            row = col.row()
-            # # TODO: make the whoe scene toggle an op called by pressing X
-            row.prop(view.shading, "show_xray_wireframe", text="")
-            row.prop(view.shading, "xray_alpha_wireframe", text="X-Ray")
-
-            # wireframe color type
-            row = col.row(align=True)
-            row.prop(view.shading, "wireframe_color_type", expand=True)
 
     def draw_eevee(self, context, view, layout):
         column = layout.column()
 
         row = column.row(align=True)
+        row.label(text='Eevee Settings')
         row.prop(context.scene.M3, "eevee_preset", expand=True)
 
         # SSR
@@ -1097,7 +1124,20 @@ class PieShading(Menu):
             if context.scene.eevee.use_volumetric_shadows:
                 row.prop(context.scene.eevee, "volumetric_shadow_samples", text='Samples')
 
+    def draw_cycles(self, context, view, layout):
+        column = layout.column(align=True)
 
+        row = column.split(factor=0.5, align=True)
+        row.label(text='Cycles Settings')
+        row.prop(context.scene.M3, 'cycles_device', expand=True)
+
+        row = column.split(factor=0.5, align=True)
+        row.prop(context.scene.cycles, 'use_adaptive_sampling', text='Adaptive')
+        row.prop(context.scene.cycles, 'seed')
+
+        row = column.split(factor=0.5, align=True)
+        row.prop(context.scene.cycles, 'preview_samples', text='Viewport')
+        row.prop(context.scene.cycles, 'samples', text='Render')
 
     def get_text_icon(self, context, shading):
         if context.space_data.shading.type == shading:
