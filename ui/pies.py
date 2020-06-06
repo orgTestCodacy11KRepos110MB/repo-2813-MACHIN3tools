@@ -683,8 +683,7 @@ class PieSave(Menu):
 
         r = row.row(align=True)
         r.operator("wm.call_menu", text="", icon_value=get_icon('external_data')).name = "TOPBAR_MT_file_external_data"
-        # r.operator_context = 'INVOKE_AREA'
-        r.operator("outliner.orphans_purge", text="Purge")
+        r.operator("machin3.purge_orphans", text="Purge")
 
         # append world and materials
 

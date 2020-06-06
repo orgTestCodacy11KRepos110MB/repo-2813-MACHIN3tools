@@ -407,3 +407,20 @@ class LoadNext(bpy.types.Operator):
         previousidx = index + 1
 
         return currentpath, blendfiles, previousidx
+
+
+class Purge(bpy.types.Operator):
+    bl_idname = "machin3.purge_orphans"
+    bl_label = "MACHIN3: Purge Orphans"
+    bl_description = "Purge Orphans\nALT: Purge Orphans 5 times"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def invoke(self, context, event):
+        if event.alt:
+            for i in range(5):
+                bpy.ops.outliner.orphans_purge()
+
+        else:
+            bpy.ops.outliner.orphans_purge()
+
+        return {'FINISHED'}
