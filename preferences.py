@@ -579,10 +579,14 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         return drawn
 
     def draw_keymap_items(self, kc, name, keylist, layout):
-        drawn = False
+        drawn = []
 
-        for idx, item in enumerate(keylist):
+        # index keeping track of SUCCESSFULL kmi iterations
+        idx = 0
+
+        for item in keylist:
             keymap = item.get("keymap")
+            isdrawn = False
 
             if keymap:
                 km = kc.keymaps.get(keymap)
@@ -607,7 +611,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
                 # draw keymap item
 
                 if kmi:
-                    # multi kmi tools, will only have a single box, created for the first kmi
+                    # multi kmi tools, will share a single box, created for the first kmi
                     if idx == 0:
                         box = layout.box()
 
@@ -628,5 +632,15 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
                     # layout.context_pointer_set("keymap", km)
                     rna_keymap_ui.draw_kmi(["ADDON", "USER", "DEFAULT"], kc, km, kmi, row, 0)
 
-                    drawn = True
+                    # draw info, if available
+                    infos = item.get("info", [])
+                    for text in infos:
+                        row = box.split(factor=0.15)
+                        row.separator()
+                        row.label(text=text, icon="INFO")
+
+                    isdrawn = True
+                    idx += 1
+
+            drawn.append(isdrawn)
         return drawn
