@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import StringProperty, IntProperty, BoolProperty, CollectionProperty, PointerProperty, EnumProperty, FloatProperty
 import bmesh
+from . utils.world import get_world_output
 from . items import eevee_preset_items, align_mode_items
 
 
@@ -178,7 +179,22 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             eevee.use_volumetric_lights = True
 
             shading.use_scene_lights = True
-            shading.use_scene_world = True
+
+            world = context.scene.world
+            if world:
+                shading.use_scene_world = True
+
+                output = get_world_output(world)
+                links = output.inputs[1].links
+
+                if not links:
+                    tree = world.node_tree
+
+                    volume = tree.nodes.new('ShaderNodeVolumePrincipled')
+                    tree.links.new(volume.outputs[0], output.inputs[1])
+
+                    volume.inputs[2].default_value = 0.1
+                    volume.location = (-200, 200)
 
     def update_eevee_gtao_factor(self, context):
         context.scene.eevee.gtao_factor = self.eevee_gtao_factor
