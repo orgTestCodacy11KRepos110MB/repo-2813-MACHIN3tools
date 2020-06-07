@@ -7,7 +7,6 @@ from .. utils.system import makedir
 
 
 # TODO: do the prefs part based on a dictionary?
-
 # TODO: deactivate shift y/z wire toggle
 
 
@@ -15,10 +14,9 @@ class Customize(bpy.types.Operator):
     bl_idname = "machin3.customize"
     bl_label = "MACHIN3: Customize"
     bl_description = "Customize various Blender preferences, settings and keymaps."
-    # bl_options = {'INTERNAL'}
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'INTERNAL'}
 
-    def execute(self, context):
+    def invoke(self, context, event):
         scriptspath = bpy.utils.user_resource('SCRIPTS')
         datafilespath = bpy.utils.user_resource('DATAFILES')
 
@@ -39,13 +37,15 @@ class Customize(bpy.types.Operator):
         if get_prefs().custom_overlays:
             self.overlays(context)
 
-        # WORKSPACES
-        if get_prefs().custom_workspaces:
-            self.workspaces(context)
-
         # STARTUP SCENE
         if get_prefs().custom_startup:
             self.startup(context)
+
+        # WORKSPACES
+        # if get_prefs().custom_workspaces:
+        if event.alt:
+            self.workspaces(context)
+
 
         return {'FINISHED'}
 
@@ -546,28 +546,39 @@ class Customize(bpy.types.Operator):
 
         ws = context.workspace
 
-        shading = False
         for screen in ws.screens:
-            if not shading:
-                for area in screen.areas:
-                    if area.type == "VIEW_3D":
-                        shading = area.spaces[0].shading
+            for area in screen.areas:
+                if area.type == "VIEW_3D":
+                    shading = area.spaces[0].shading
 
-        if shading:
-            shading.type = "SOLID"
-            shading.light = "MATCAP"
-            shading.studio_light = "matcap_base.exr"
-            shading.color_type = "SINGLE"
-            shading.single_color = (0.2270, 0.2270, 0.2423)  # hex 838387
+                    shading.type = "SOLID"
+                    shading.light = "MATCAP"
+                    shading.studio_light = "matcap_base.exr"
+                    shading.color_type = "SINGLE"
+                    shading.single_color = (0.2270, 0.2270, 0.2423)  # hex 838387
 
-            shading.studiolight_background_alpha = 1
-            shading.studiolight_background_blur = 1
+                    shading.studiolight_background_alpha = 1
+                    shading.studiolight_background_blur = 1
 
-            shading.cavity_ridge_factor = 0
-            shading.cavity_valley_factor = 2
+                    shading.cavity_ridge_factor = 0
+                    shading.cavity_valley_factor = 2
 
-        # enabled eevee ssao and ssr, disable volumetric lighting, which is enabled by default for some reason
-        context.scene.M3.eevee_preset = 'LOW'
+                    # mimic LOW eevee preset
+                    shading.use_scene_lights = True
+                    shading.use_scene_lights_render = True
+                    shading.use_scene_world_render = False
+
+                    # enabled eevee ssao and ssr, disable volumetric lighting, which is enabled by default for some reason
+                    eevee = context.scene.eevee
+
+                    eevee.use_ssr = True
+                    eevee.use_gtao = True
+                    eevee.use_volumetric_lights = False
+
+                    context.scene.render.engine = 'CYCLES'
+                    context.scene.cycles.device = 'GPU'
+
+                    return
 
     def theme(self, scriptspath, resourcespath):
         print("\n» Installing and Enabling M3 theme")
@@ -612,6 +623,7 @@ class Customize(bpy.types.Operator):
 
                             space.show_region_toolbar = False
 
+                            return
 
     def workspaces(self, context):
         print("\n» Modifying Workspaces")
@@ -622,7 +634,6 @@ class Customize(bpy.types.Operator):
 
         # name the basic 3d workspace
         bpy.data.workspaces[-1].name = "General"
-
 
         # remove the dope sheet editor
         screens = [screen for screen in context.workspace.screens if screen.name == 'Layout']
@@ -645,16 +656,18 @@ class Customize(bpy.types.Operator):
                     bpy.ops.screen.area_join(override, cursor=(area.x, area.y + area.height))
                     # print(ret)
 
-                """ TODO: for some reason the workspaces won't end up in the correct order, but rather sorted alphabetically
-                names = ['General.alt', 'Uvs', 'UVs.alt', 'Material', 'World', 'Scripting']
+                # TODO: whatever I try, I can't get them sorted properly, not even with the reorder op
+                # ####: also, running this will turn the prefs into a 3d view for some reason
+
+                names = ['General.alt', 'UVs', 'UVs.alt', 'Material', 'World', 'Scripting']
 
                 for idx, name in enumerate(names):
                     bpy.ops.workspace.duplicate(override)
 
                 for name, ws in zip(names, bpy.data.workspaces[1:]):
-                    print("renaming", ws.name, "to", name)
                     ws.name = name
-                """
+
+                return
 
 
 class RestoreKeymaps(bpy.types.Operator):

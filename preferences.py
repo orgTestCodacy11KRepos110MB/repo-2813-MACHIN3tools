@@ -187,7 +187,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     custom_startup: BoolProperty(name="Startup Scene", default=True)
     custom_workspaces: BoolProperty(name="Workspaces", default=False)
     custom_theme: BoolProperty(name="Theme", default=True)
-    custom_matcaps: BoolProperty(name="Matcaps and Default Shading", default=True)
+    custom_matcaps: BoolProperty(name="Shading", default=True)
     custom_overlays: BoolProperty(name="Overlays", default=True)
     custom_preferences_interface: BoolProperty(name="Preferences: Interface", default=True)
     custom_preferences_viewport: BoolProperty(name="Preferences: Viewport", default=True)
@@ -412,7 +412,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             row = column.row()
             row.prop(self, "custom_startup")
-            row.prop(self, "custom_workspaces")
+            # row.prop(self, "custom_workspaces")
             row.prop(self, "custom_theme")
             row.prop(self, "custom_matcaps")
             row.prop(self, "custom_overlays")
