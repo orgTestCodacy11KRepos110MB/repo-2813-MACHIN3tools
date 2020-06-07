@@ -9,6 +9,7 @@ axis_z = False
 class ToggleGrid(bpy.types.Operator):
     bl_idname = "machin3.toggle_grid"
     bl_label = "Toggle Grid"
+    bl_description = "Toggle Grid, distinguish between the grid in regular views and orthographic side views"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -55,6 +56,13 @@ class ToggleWireframe(bpy.types.Operator):
     bl_label = "Toggle Wireframe"
     bl_options = {'REGISTER'}
 
+    @classmethod
+    def description(cls, context, properties):
+        if context.mode == 'OBJECT':
+            return "Toggle Wireframe display for the selected objects\nNothing Selected: Toggle Wireframe Overlay, affecting all objects"
+        elif context.mode == 'EDIT_MESH':
+            return "Toggle X-Ray, resembling how edit mode wireframes worked in Blender 2.79"
+
     def execute(self, context):
         overlay = context.space_data.overlay
 
@@ -78,6 +86,7 @@ class ToggleWireframe(bpy.types.Operator):
 class ToggleOutline(bpy.types.Operator):
     bl_idname = "machin3.toggle_outline"
     bl_label = "Toggle Outline"
+    bl_description = "Toggle Object Outlines"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -91,6 +100,7 @@ class ToggleOutline(bpy.types.Operator):
 class ToggleCavity(bpy.types.Operator):
     bl_idname = "machin3.toggle_cavity"
     bl_label = "Toggle Cavity"
+    bl_description = "Toggle Cavity (Screen Space Ambient Occlusion)"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -104,6 +114,7 @@ class ToggleCavity(bpy.types.Operator):
 class ToggleCurvature(bpy.types.Operator):
     bl_idname = "machin3.toggle_curvature"
     bl_label = "Toggle Curvature"
+    bl_description = "Toggle Curvature (Edge Highlighting)"
     bl_options = {'REGISTER'}
 
     def execute(self, context):

@@ -112,6 +112,7 @@ class SaveIncremental(bpy.types.Operator):
 class LoadMostRecent(bpy.types.Operator):
     bl_idname = "machin3.load_most_recent"
     bl_label = "Load Most Recent"
+    bl_description = "Load most recently used .blend file"
     bl_options = {"REGISTER"}
 
     def execute(self, context):

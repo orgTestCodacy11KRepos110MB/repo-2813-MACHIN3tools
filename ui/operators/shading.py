@@ -6,11 +6,25 @@ rendered_show_overlays = False
 wire_show_overlays = False
 
 
+def get_description(context, shadetype):
+    shading = context.space_data.shading
+    overlay = context.space_data.overlay
+
+    if shading.type == shadetype:
+        return '%s Overlays for %s Shading' % ('Disable' if overlay.show_overlays else 'Enable', shadetype.capitalize())
+
+    else:
+        return 'Switch to %s shading' % (shadetype.capitalize())
+
+
 class ShadeSolid(bpy.types.Operator):
     bl_idname = "machin3.shade_solid"
     bl_label = "Shade Solid"
-    bl_description = "Switch to SOLID shading\nIn SOLID shading mode: Toggle Overlays"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return get_description(context, 'SOLID')
 
     def execute(self, context):
         global solid_show_overlays
@@ -34,8 +48,11 @@ class ShadeSolid(bpy.types.Operator):
 class ShadeMaterial(bpy.types.Operator):
     bl_idname = "machin3.shade_material"
     bl_label = "Shade Material"
-    bl_description = "Switch to MATERIAL shading\nIn MATERIAL shading mode: Toggle Overlays"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return get_description(context, 'MATERIAL')
 
     def execute(self, context):
         global material_show_overlays
@@ -59,8 +76,11 @@ class ShadeMaterial(bpy.types.Operator):
 class ShadeRendered(bpy.types.Operator):
     bl_idname = "machin3.shade_rendered"
     bl_label = "Shade Rendered"
-    bl_description = "Switch to RENDERED shading\nIn RENDERED shading mode: Toggle Overlays"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return get_description(context, 'RENDERED')
 
     def execute(self, context):
         global rendered_show_overlays
@@ -84,8 +104,11 @@ class ShadeRendered(bpy.types.Operator):
 class ShadeWire(bpy.types.Operator):
     bl_idname = "machin3.shade_wire"
     bl_label = "Shade Wire"
-    bl_description = "Switch to WIRE shading\nIn WIRE shading mode: Toggle Overlays"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return get_description(context, 'WIREFRAME')
 
     def execute(self, context):
         global wire_show_overlays

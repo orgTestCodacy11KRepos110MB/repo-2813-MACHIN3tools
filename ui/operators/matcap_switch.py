@@ -5,6 +5,7 @@ from ... utils.registration import get_prefs
 class MatcapSwitch(bpy.types.Operator):
     bl_idname = "machin3.matcap_switch"
     bl_label = "Matcap Switch"
+    bl_description = "Quickly Switch between two Matcaps"
     bl_options = {'REGISTER'}
 
     @classmethod

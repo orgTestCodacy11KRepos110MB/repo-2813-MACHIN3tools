@@ -139,6 +139,8 @@ class M3SceneProperties(bpy.types.PropertyGroup):
         eevee = context.scene.eevee
         shading = context.space_data.shading
 
+        # TODO: scene lights and world for EEVEE rendering (not just lookdev)
+
         if self.eevee_preset == 'NONE':
             eevee.use_ssr = False
             eevee.use_gtao = False
