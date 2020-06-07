@@ -76,6 +76,9 @@ class SwitchWorkspace(bpy.types.Operator):
                             space.shading.curvature_valley_factor = shading['curvature_valley_factor']
                             space.shading.show_object_outline = shading['show_object_outline']
 
+                            space.shading.show_xray = shading['show_xray']
+                            space.shading.xray_alpha = shading['xray_alpha']
+
                             space.shading.show_backface_culling = shading['show_backface_culling']
 
                             space.overlay.show_overlays = overlay['show_overlays']
@@ -126,6 +129,9 @@ class SwitchWorkspace(bpy.types.Operator):
             s['curvature_ridge_factor'] = shading.curvature_ridge_factor
             s['curvature_valley_factor'] = shading.curvature_valley_factor
             s['show_object_outline'] = shading.show_object_outline
+
+            s['show_xray'] = shading.show_xray
+            s['xray_alpha'] = shading.xray_alpha
 
             s['show_backface_culling'] = shading.show_backface_culling
 
