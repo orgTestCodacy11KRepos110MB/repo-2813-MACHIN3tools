@@ -3,7 +3,7 @@ import bpy
 solid_show_overlays = True
 material_show_overlays = False
 rendered_show_overlays = False
-wire_show_overlays = False
+wire_show_overlays = True
 
 
 def get_description(context, shadetype):

@@ -150,6 +150,10 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             shading.use_scene_lights = False
             shading.use_scene_world = False
 
+            if context.scene.render.engine == 'BLENDER_EEVEE':
+                shading.use_scene_lights_render = False
+                shading.use_scene_world_render = False
+
         elif self.eevee_preset == 'LOW':
             eevee.use_ssr = True
             eevee.use_ssr_halfres = True
@@ -160,6 +164,10 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
             shading.use_scene_lights = True
             shading.use_scene_world = False
+
+            if context.scene.render.engine == 'BLENDER_EEVEE':
+                shading.use_scene_lights_render = True
+                shading.use_scene_world_render = False
 
         elif self.eevee_preset == 'HIGH':
             eevee.use_ssr = True
@@ -172,6 +180,10 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             shading.use_scene_lights = True
             shading.use_scene_world = False
 
+            if context.scene.render.engine == 'BLENDER_EEVEE':
+                shading.use_scene_lights_render = True
+                shading.use_scene_world_render = False
+
         elif self.eevee_preset == 'ULTRA':
             eevee.use_ssr = True
             eevee.use_ssr_halfres = False
@@ -182,9 +194,15 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
             shading.use_scene_lights = True
 
+            if context.scene.render.engine == 'BLENDER_EEVEE':
+                shading.use_scene_lights_render = True
+
             world = context.scene.world
             if world:
                 shading.use_scene_world = True
+
+                if context.scene.render.engine == 'BLENDER_EEVEE':
+                    shading.use_scene_world_render = True
 
                 output = get_world_output(world)
                 links = output.inputs[1].links

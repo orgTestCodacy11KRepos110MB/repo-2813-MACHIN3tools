@@ -720,9 +720,10 @@ class PieShading(Menu):
         layout = self.layout
 
         view = context.space_data
+        active = context.active_object
+
         overlay = view.overlay
         shading = view.shading
-
 
         pie = layout.menu_pie()
 
@@ -740,27 +741,38 @@ class PieShading(Menu):
         # 8 - TOP
         box = pie.split()
 
-        b = box.box()
-        self.draw_left_column(context, view, b)
+        if (active and active.select_get()) or context.mode == 'EDIT_MESH':
+            b = box.box()
+            self.draw_object_box(active, view, b)
 
-        column = box.column()
-        b = column.box()
-        self.draw_center_column_top(context, view, b)
 
-        if context.active_object:
+        if overlay.show_overlays and shading.type == 'SOLID':
+            column = box.column()
             b = column.box()
-            self.draw_center_column_bottom(context, b)
+            self.draw_overlay_box(context, view, b)
+
+            b = column.box()
+            self.draw_solid_box(context, view, b)
+
+        elif overlay.show_overlays:
+            b = box.box()
+            self.draw_overlay_box(context, view, b)
+
+        elif shading.type == 'SOLID':
+            b = box.box()
+            self.draw_solid_box(context, view, b)
+
 
         b = box.box()
-        self.draw_right_column(context, view, b)
+        self.draw_shade_box(context, view, b)
 
         if view.shading.type == "MATERIAL" or (view.shading.type == 'RENDERED' and context.scene.render.engine == 'BLENDER_EEVEE'):
             b = box.box()
-            self.draw_eevee(context, view, b)
+            self.draw_eevee_box(context, view, b)
 
         elif view.shading.type == 'RENDERED' and context.scene.render.engine == 'CYCLES':
             b = box.box()
-            self.draw_cycles(context, view, b)
+            self.draw_cycles_box(context, view, b)
 
         # 7 - TOP - LEFT
         pie.separator()
@@ -776,12 +788,44 @@ class PieShading(Menu):
         text, icon = self.get_text_icon(context, "RENDERED")
         pie.operator("machin3.shade_rendered", text=text, icon=icon, depress=shading.type == 'RENDERED' and overlay.show_overlays)
 
-    def draw_left_column(self, context, view, layout):
+    def draw_overlay_box(self, context, view, layout):
         overlay = context.space_data.overlay
-        shading = context.space_data.shading
         perspective_type = view.region_3d.view_perspective
 
         column = layout.column(align=True)
+
+        row = column.split(factor=0.5, align=True)
+        row.prop(view.overlay, "show_cursor", text="3D Cursor")
+        r = row.row(align=True)
+        r.prop(view.overlay, "show_object_origins", text="Origins")
+
+        rr = r.row(align=True)
+        rr.active = view.overlay.show_object_origins
+        rr.prop(view.overlay, "show_object_origins_all", text="All")
+
+        if view.shading.type == 'SOLID' and view.overlay.show_overlays:
+            row = column.split(factor=0.5, align=True)
+            row.prop(view.shading, "show_backface_culling")
+            row.prop(view.overlay, "show_relationship_lines")
+
+        elif view.shading.type == 'SOLID':
+            row = column.row(align=True)
+            row.prop(view.shading, "show_backface_culling")
+
+        elif view.overlay.show_overlays:
+            row = column.row(align=True)
+            row.prop(view.overlay, "show_relationship_lines")
+
+        if view.overlay.show_overlays:
+            if context.mode == 'EDIT_MESH':
+                row = column.split(factor=0.5, align=True)
+                row.prop(view.overlay, "show_face_orientation")
+                row.prop(view.overlay, "show_extra_indices")
+            else:
+                row = column.row(align=True)
+                row.prop(view.overlay, "show_face_orientation")
+
+        column.separator()
 
         row = column.split(factor=0.4, align=True)
         row.operator("machin3.toggle_grid", text="Grid", icon="GRID", depress=overlay.show_ortho_grid if perspective_type == 'ORTHO' and view.region_3d.is_orthographic_side_view else overlay.show_floor)
@@ -801,6 +845,21 @@ class PieShading(Menu):
         elif context.mode == "EDIT_MESH":
             r.active = view.shading.show_xray
             r.prop(view.shading, "xray_alpha", text="X-Ray")
+
+        # object axes
+        hasobjectaxes = True if bpy.app.driver_namespace.get('draw_object_axes') else False
+
+        row = column.split(factor=0.4, align=True)
+        row.operator("machin3.toggle_object_axes", text="(E) Object Axes", depress=hasobjectaxes)
+        r = row.row(align=True)
+        r.active = hasobjectaxes
+        r.prop(context.scene.M3, "object_axes_size", text="")
+        r.prop(context.scene.M3, "object_axes_alpha", text="")
+
+    def draw_solid_box(self, context, view, layout):
+        shading = context.space_data.shading
+
+        column = layout.column(align=True)
 
         row = column.split(factor=0.4, align=True)
         row.operator("machin3.toggle_outline", text="(Q) Outline", depress=shading.show_object_outline)
@@ -826,121 +885,91 @@ class PieShading(Menu):
         r.prop(view.shading, "curvature_ridge_factor", text="")
         r.prop(view.shading, "curvature_valley_factor", text="")
 
-        # object axes
-        hasobjectaxes = True if bpy.app.driver_namespace.get('draw_object_axes') else False
+    def draw_object_box(self, active, view, layout):
+        overlay = view.overlay
+        shading = view.shading
 
-        row = column.split(factor=0.4, align=True)
-        row.operator("machin3.toggle_object_axes", text="(E) Object Axes", depress=hasobjectaxes)
-        r = row.row(align=True)
-        r.active = hasobjectaxes
-        r.prop(context.scene.M3, "object_axes_size", text="")
-        r.prop(context.scene.M3, "object_axes_alpha", text="")
+        column = layout.column(align=True)
 
-        active = context.active_object
+        row = column.row()
+        row = column.split(factor=0.6)
+        row.prop(active, "name", text="")
+        row.prop(active, "display_type", text="")
 
-        if active and context.mode == 'EDIT_MESH':
-            column.separator()
-
-            row = column.split(factor=0.25, align=True)
-            row.label(text='Normals')
-            row.prop(view.overlay, "show_vertex_normals", text="", icon='NORMALS_VERTEX')
-            row.prop(view.overlay, "show_split_normals", text="", icon='NORMALS_VERTEX_FACE')
-            row.prop(view.overlay, "show_face_normals", text="", icon='NORMALS_FACE')
-
+        if overlay.show_overlays and shading.type == 'SOLID':
+            row = column.split(factor=0.6)
             r = row.row(align=True)
-            r.active = any([view.overlay.show_vertex_normals, view.overlay.show_face_normals, view.overlay.show_split_normals])
-            r.prop(view.overlay, "normals_length", text="Size")
+            r.prop(active, "show_name", text="Name")
+            r.prop(active, "show_axis", text="Axis")
+            r = row.row()
+            r.prop(active, "show_in_front", text="In Front")
+            if shading.color_type == 'OBJECT':
+                r.prop(active, "color", text="")
 
-            row = column.split(factor=0.25, align=True)
-            row.label(text='Edges')
-            row.prop(view.overlay, "show_edge_crease", text="Creases", toggle=True)
-            row.prop(view.overlay, "show_edge_sharp", text="Sharp", toggle=True)
-            row.prop(view.overlay, "show_edge_bevel_weight", text="Bevel", toggle=True)
-            row.prop(view.overlay, "show_edge_seams", text="Seams", toggle=True)
-
-            if not bpy.app.build_options.freestyle:
-                row.prop(view.overlay, "show_edge_seams", text="Seams", toggle=True)
-
-    def draw_center_column_top(self, context, view, layout):
-        column = layout.column(align=True)
-
-        row = column.split(factor=0.42)
-        row.prop(view.overlay, "show_cursor", text="3D Cursor")
-        r = row.row(align=True)
-        r.prop(view.overlay, "show_object_origins", text="Origins")
-
-        rr = r.row(align=True)
-        rr.active = view.overlay.show_object_origins
-        rr.prop(view.overlay, "show_object_origins_all", text="All")
-
-        if view.shading.type == 'SOLID' and view.overlay.show_overlays:
-            column.separator()
-            row = column.split(factor=0.5, align=True)
-            row.prop(view.shading, "show_backface_culling")
-            row.prop(view.overlay, "show_relationship_lines")
-
-        elif view.shading.type == 'SOLID':
-            column.separator()
-            row = column.row()
-            row.prop(view.shading, "show_backface_culling")
-
-        elif view.overlay.show_overlays:
-            column.separator()
-            row = column.row()
-            row.prop(view.overlay, "show_relationship_lines")
-
-        if view.overlay.show_overlays:
-            if context.mode == 'EDIT_MESH':
-                row = column.split(factor=0.5, align=True)
-                row.prop(view.overlay, "show_face_orientation")
-                row.prop(view.overlay, "show_extra_indices")
-            else:
-                row = column.row()
-                row.prop(view.overlay, "show_face_orientation")
-
-    def draw_center_column_bottom(self, context, layout):
-        column = layout.column(align=True)
-
-        active = context.active_object
-
-        if active:
-            row = column.row()
-            row.prop(active, "name", text="")
-            row.prop(active, "display_type", text="")
-
-            row = column.row()
+        elif overlay.show_overlays:
+            row = column.split(factor=0.5)
             row.prop(active, "show_name", text="Name")
             row.prop(active, "show_axis", text="Axis")
-            row.prop(active, "show_in_front", text="In Front")
-            row.prop(active, "color", text="")
 
-            if active.type == "MESH":
-                mesh = active.data
+        elif shading.type == 'SOLID':
+            if shading.color_type == 'OBJECT':
+                row = column.split(factor=0.5)
+                row.prop(active, "show_in_front", text="In Front")
+                row.prop(active, "color", text="")
 
+            else:
+                row = column.row()
+                row.prop(active, "show_in_front", text="In Front")
+
+
+        if active.type == "MESH":
+            mesh = active.data
+
+            column.separator()
+            row = column.split(factor=0.55, align=True)
+            r = row.row(align=True)
+            r.operator("machin3.shade_smooth", text="Smooth", icon_value=get_icon('smooth'))
+            r.operator("machin3.shade_flat", text="Flat", icon_value=get_icon('flat'))
+
+            icon = "CHECKBOX_HLT" if mesh.use_auto_smooth else "CHECKBOX_DEHLT"
+            row.operator("machin3.toggle_auto_smooth", text="AutoSmooth", icon=icon).angle = 0
+
+            row = column.split(factor=0.55, align=True)
+            r = row.row(align=True)
+            r.active = not mesh.has_custom_normals
+            for angle in [30, 60, 90, 180]:
+                r.operator("machin3.toggle_auto_smooth", text=str(angle)).angle = angle
+
+            r = row.row(align=True)
+            r.active = not mesh.has_custom_normals and mesh.use_auto_smooth
+            r.prop(mesh, "auto_smooth_angle")
+
+            if mesh.use_auto_smooth:
+                if mesh.has_custom_normals:
+                    column.operator("mesh.customdata_custom_splitnormals_clear", text="Clear Custom Normals")
+
+            if active.mode == 'EDIT' and view.overlay.show_overlays:
                 column.separator()
-                row = column.split(factor=0.55, align=True)
-                r = row.row(align=True)
-                r.operator("machin3.shade_smooth", text="Smooth", icon_value=get_icon('smooth'))
-                r.operator("machin3.shade_flat", text="Flat", icon_value=get_icon('flat'))
 
-                icon = "CHECKBOX_HLT" if mesh.use_auto_smooth else "CHECKBOX_DEHLT"
-                row.operator("machin3.toggle_auto_smooth", text="AutoSmooth", icon=icon).angle = 0
-
-                row = column.split(factor=0.55, align=True)
-                r = row.row(align=True)
-                r.active = not mesh.has_custom_normals
-                for angle in [30, 60, 90, 180]:
-                    r.operator("machin3.toggle_auto_smooth", text=str(angle)).angle = angle
+                row = column.split(factor=0.25, align=True)
+                row.label(text='Normals')
+                row.prop(view.overlay, "show_vertex_normals", text="", icon='NORMALS_VERTEX')
+                row.prop(view.overlay, "show_split_normals", text="", icon='NORMALS_VERTEX_FACE')
+                row.prop(view.overlay, "show_face_normals", text="", icon='NORMALS_FACE')
 
                 r = row.row(align=True)
-                r.active = not mesh.has_custom_normals and mesh.use_auto_smooth
-                r.prop(mesh, "auto_smooth_angle")
+                r.active = any([view.overlay.show_vertex_normals, view.overlay.show_face_normals, view.overlay.show_split_normals])
+                r.prop(view.overlay, "normals_length", text="Size")
 
-                if mesh.use_auto_smooth:
-                    if mesh.has_custom_normals:
-                        column.operator("mesh.customdata_custom_splitnormals_clear", text="Clear Custom Normals")
+                row = column.split(factor=0.25, align=True)
+                row.label(text='Edges')
+                row.prop(view.overlay, "show_edge_crease", text="Creases", toggle=True)
+                row.prop(view.overlay, "show_edge_sharp", text="Sharp", toggle=True)
+                row.prop(view.overlay, "show_edge_bevel_weight", text="Bevel", toggle=True)
+                row.prop(view.overlay, "show_edge_seams", text="Seams", toggle=True)
+                # row.prop(view.overlay, "show_freestyle_edge_marks", text="Freestyle", toggle=True)
 
-    def draw_right_column(self, context, view, layout):
+    def draw_shade_box(self, context, view, layout):
         column = layout.column(align=True)
 
         # SOLID
@@ -1078,7 +1107,7 @@ class PieShading(Menu):
             if view.shading.type == 'RENDERED':
                 column.prop(context.scene.render, 'film_transparent')
 
-    def draw_eevee(self, context, view, layout):
+    def draw_eevee_box(self, context, view, layout):
         column = layout.column(align=True)
 
         row = column.row(align=True)
@@ -1151,7 +1180,7 @@ class PieShading(Menu):
             if context.scene.eevee.use_volumetric_shadows:
                 row.prop(context.scene.eevee, "volumetric_shadow_samples", text='Samples')
 
-    def draw_cycles(self, context, view, layout):
+    def draw_cycles_box(self, context, view, layout):
         column = layout.column(align=True)
 
         row = column.split(factor=0.5, align=True)
