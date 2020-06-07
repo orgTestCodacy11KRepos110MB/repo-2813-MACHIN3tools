@@ -569,7 +569,6 @@ class Customize(bpy.types.Operator):
         # enabled eevee ssao and ssr, disable volumetric lighting, which is enabled by default for some reason
         context.scene.M3.eevee_preset = 'LOW'
 
-
     def theme(self, scriptspath, resourcespath):
         print("\n» Installing and Enabling M3 theme")
 
@@ -610,6 +609,8 @@ class Customize(bpy.types.Operator):
                                                       (0, 0.2, 1, -1),
                                                       (0, -1, 0.2, -10),
                                                       (0, 0, 0, 1)))
+
+                            space.show_region_toolbar = False
 
 
     def workspaces(self, context):
