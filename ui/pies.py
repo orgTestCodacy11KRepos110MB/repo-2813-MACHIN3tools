@@ -894,22 +894,35 @@ class PieShading(Menu):
         row = column.row()
         row = column.split(factor=0.6)
         row.prop(active, "name", text="")
-        row.prop(active, "display_type", text="")
+
+        if active.type == 'ARMATURE':
+            row.prop(active.data, "display_type", text="")
+        else:
+            row.prop(active, "display_type", text="")
 
         if overlay.show_overlays and shading.type == 'SOLID':
             row = column.split(factor=0.6)
             r = row.row(align=True)
             r.prop(active, "show_name", text="Name")
-            r.prop(active, "show_axis", text="Axis")
+
+            if active.type == 'ARMATURE':
+                r.prop(active.data, "show_axes", text="Axes")
+            else:
+                r.prop(active, "show_axis", text="Axis")
+
             r = row.row()
             r.prop(active, "show_in_front", text="In Front")
             if shading.color_type == 'OBJECT':
                 r.prop(active, "color", text="")
 
         elif overlay.show_overlays:
-            row = column.split(factor=0.5)
+            row = column.split(factor=0.6)
             row.prop(active, "show_name", text="Name")
-            row.prop(active, "show_axis", text="Axis")
+
+            if active.type == 'ARMATURE':
+                row.prop(active.data, "show_axes", text="Axes")
+            else:
+                row.prop(active, "show_axis", text="Axis")
 
         elif shading.type == 'SOLID':
             if shading.color_type == 'OBJECT':
@@ -1826,7 +1839,7 @@ class PieTransform(Menu):
         # 2 - BOTTOM
         op = pie.operator('machin3.set_transform_preset', text='Active')
         op.pivot = 'ACTIVE_ELEMENT'
-        op.orientation = 'NORMAL' if context.mode == 'EDIT_MESH' else 'LOCAL'
+        op.orientation = 'NORMAL' if context.mode in ['EDIT_MESH', 'EDIT_ARMATURE'] else 'LOCAL'
 
         # 8 - TOP
 
@@ -1855,7 +1868,7 @@ class PieTransform(Menu):
         # 1 - BOTTOM - LEFT
         op = pie.operator('machin3.set_transform_preset', text='Individual')
         op.pivot = 'INDIVIDUAL_ORIGINS'
-        op.orientation = 'NORMAL' if context.mode == 'EDIT_MESH' else 'LOCAL'
+        op.orientation = 'NORMAL' if context.mode in ['EDIT_MESH', 'EDIT_ARMATURE'] else 'LOCAL'
 
         # 3 - BOTTOM - RIGHT
         op = pie.operator('machin3.set_transform_preset', text='Cursor')
