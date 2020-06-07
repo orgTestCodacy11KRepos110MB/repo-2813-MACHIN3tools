@@ -1001,7 +1001,11 @@ class PieShading(Menu):
 
             # studio rotation, same as world rotation in lookdev
             if view.shading.light == "STUDIO":
-                column.prop(view.shading, "studiolight_rotate_z", text="Rotation")
+                row = column.split(factor=0.3, align=True)
+                row.prop(view.shading, "use_world_space_lighting", text='World Space', icon='WORLD')
+                r = row.row(align=True)
+                r.active = view.shading.use_world_space_lighting
+                r.prop(view.shading, "studiolight_rotate_z", text="Rotation")
 
             # switch matcap
             if view.shading.light == "MATCAP":
