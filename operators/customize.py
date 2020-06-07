@@ -15,7 +15,8 @@ class Customize(bpy.types.Operator):
     bl_idname = "machin3.customize"
     bl_label = "MACHIN3: Customize"
     bl_description = "Customize various Blender preferences, settings and keymaps."
-    bl_options = {'INTERNAL'}
+    # bl_options = {'INTERNAL'}
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         scriptspath = bpy.utils.user_resource('SCRIPTS')
@@ -541,26 +542,33 @@ class Customize(bpy.types.Operator):
             get_prefs().switchmatcap2 = "matcap_shiny_red.exr"
 
 
-            print("\n» Setting up Viewport Shading")
+        print("\n» Setting up Viewport Shading")
 
-            ws = context.workspace
+        ws = context.workspace
 
-            shading = False
-            for screen in ws.screens:
-                if not shading:
-                    for area in screen.areas:
-                        if area.type == "VIEW_3D":
-                            shading = area.spaces[0].shading
+        shading = False
+        for screen in ws.screens:
+            if not shading:
+                for area in screen.areas:
+                    if area.type == "VIEW_3D":
+                        shading = area.spaces[0].shading
 
-            if shading:
-                shading.type = "SOLID"
-                shading.light = "MATCAP"
-                shading.studio_light = "matcap_base.exr"
-                shading.color_type = "SINGLE"
-                shading.single_color = (0.2270, 0.2270, 0.2423)  # hex 838387
+        if shading:
+            shading.type = "SOLID"
+            shading.light = "MATCAP"
+            shading.studio_light = "matcap_base.exr"
+            shading.color_type = "SINGLE"
+            shading.single_color = (0.2270, 0.2270, 0.2423)  # hex 838387
 
-                shading.cavity_ridge_factor = 0
-                shading.cavity_valley_factor = 2
+            shading.studiolight_background_alpha = 1
+            shading.studiolight_background_blur = 1
+
+            shading.cavity_ridge_factor = 0
+            shading.cavity_valley_factor = 2
+
+        # enabled eevee ssao and ssr, disable volumetric lighting, which is enabled by default for some reason
+        context.scene.M3.eevee_preset = 'LOW'
+
 
     def theme(self, scriptspath, resourcespath):
         print("\n» Installing and Enabling M3 theme")
@@ -598,10 +606,10 @@ class Customize(bpy.types.Operator):
                         if space.type == 'VIEW_3D':
                             r3d = space.region_3d
 
-                            r3d.view_matrix = Matrix(((1,  0.0, 0.0,   0),
-                                                      (0,  0.2, 1.0,  -1),
-                                                      (0, -1.0, 0.2, -10),
-                                                      (0,  0.0, 0.0,   1)))
+                            r3d.view_matrix = Matrix(((1, 0, 0, 0),
+                                                      (0, 0.2, 1, -1),
+                                                      (0, -1, 0.2, -10),
+                                                      (0, 0, 0, 1)))
 
 
     def workspaces(self, context):
@@ -646,8 +654,6 @@ class Customize(bpy.types.Operator):
                     print("renaming", ws.name, "to", name)
                     ws.name = name
                 """
-
-
 
 
 class RestoreKeymaps(bpy.types.Operator):

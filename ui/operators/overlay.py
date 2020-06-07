@@ -1,5 +1,5 @@
 import bpy
-
+from ... utils.draw import add_object_axes_drawing_handler, remove_object_axes_drawing_handler
 
 axis_x = True
 axis_y = True
@@ -83,43 +83,25 @@ class ToggleWireframe(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ToggleOutline(bpy.types.Operator):
-    bl_idname = "machin3.toggle_outline"
-    bl_label = "Toggle Outline"
-    bl_description = "Toggle Object Outlines"
+class ToggleObjectAxes(bpy.types.Operator):
+    bl_idname = "machin3.toggle_object_axes"
+    bl_label = "MACHIN3: Toggle Object Axes"
+    bl_description = "Show local axes on objects in selection, or all visible objects if nothing is selected"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        shading = context.space_data.shading
+        dns = bpy.app.driver_namespace
+        handler = dns.get('draw_object_axes')
 
-        shading.show_object_outline = not shading.show_object_outline
+        if handler:
+            remove_object_axes_drawing_handler(handler)
 
-        return {'FINISHED'}
+        else:
+            objs = [obj for obj in context.selected_objects] if context.selected_objects else context.visible_objects
 
+            if objs:
+                args = (context, objs)
+                add_object_axes_drawing_handler(dns, args)
 
-class ToggleCavity(bpy.types.Operator):
-    bl_idname = "machin3.toggle_cavity"
-    bl_label = "Toggle Cavity"
-    bl_description = "Toggle Cavity (Screen Space Ambient Occlusion)"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        scene = context.scene
-
-        scene.M3.show_cavity = not scene.M3.show_cavity
-
-        return {'FINISHED'}
-
-
-class ToggleCurvature(bpy.types.Operator):
-    bl_idname = "machin3.toggle_curvature"
-    bl_label = "Toggle Curvature"
-    bl_description = "Toggle Curvature (Edge Highlighting)"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        scene = context.scene
-
-        scene.M3.show_curvature = not scene.M3.show_curvature
-
+        context.area.tag_redraw()
         return {'FINISHED'}

@@ -62,7 +62,7 @@ class PieModes(Menu):
                             pie.operator("machin3.mesh_mode", text="Face", icon_value=get_icon('face')).mode = 'FACE'
 
                             # 2 - BOTTOM
-                            pie.operator("machin3.mesh_mode", text="Edge", icon_value=get_icon('face')).mode = 'EDGE'
+                            pie.operator("machin3.mesh_mode", text="Edge", icon_value=get_icon('edge')).mode = 'EDGE'
 
                             # 8 - TOP
                             if context.mode == 'OBJECT' and grouppro and len(context.scene.storedGroupSettings):
@@ -1229,9 +1229,9 @@ class PieShading(Menu):
         return text, icon
 
 
-class PieViews(Menu):
-    bl_idname = "MACHIN3_MT_views_pie"
-    bl_label = "Views and Cams"
+class PieViewport(Menu):
+    bl_idname = "MACHIN3_MT_viewport_pie"
+    bl_label = "Viewport and Cameras"
 
     def draw(self, context):
         layout = self.layout

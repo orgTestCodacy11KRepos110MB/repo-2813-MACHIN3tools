@@ -1,4 +1,5 @@
 import bpy
+from ... utils.registration import get_prefs
 
 solid_show_overlays = True
 material_show_overlays = False
@@ -125,5 +126,76 @@ class ShadeWire(bpy.types.Operator):
         else:
             shading.type = 'WIREFRAME'
             overlay.show_overlays = wire_show_overlays
+
+        return {'FINISHED'}
+
+
+class ToggleOutline(bpy.types.Operator):
+    bl_idname = "machin3.toggle_outline"
+    bl_label = "Toggle Outline"
+    bl_description = "Toggle Object Outlines"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        shading = context.space_data.shading
+
+        shading.show_object_outline = not shading.show_object_outline
+
+        return {'FINISHED'}
+
+
+class ToggleCavity(bpy.types.Operator):
+    bl_idname = "machin3.toggle_cavity"
+    bl_label = "Toggle Cavity"
+    bl_description = "Toggle Cavity (Screen Space Ambient Occlusion)"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        scene = context.scene
+
+        scene.M3.show_cavity = not scene.M3.show_cavity
+
+        return {'FINISHED'}
+
+
+class ToggleCurvature(bpy.types.Operator):
+    bl_idname = "machin3.toggle_curvature"
+    bl_label = "Toggle Curvature"
+    bl_description = "Toggle Curvature (Edge Highlighting)"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        scene = context.scene
+
+        scene.M3.show_curvature = not scene.M3.show_curvature
+
+        return {'FINISHED'}
+
+
+class MatcapSwitch(bpy.types.Operator):
+    bl_idname = "machin3.matcap_switch"
+    bl_label = "Matcap Switch"
+    bl_description = "Quickly Switch between two Matcaps"
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        shading = context.space_data.shading
+        return shading.type == "SOLID" and shading.light == "MATCAP"
+
+    def execute(self, context):
+        shading = context.space_data.shading
+        matcap1 = get_prefs().switchmatcap1
+        matcap2 = get_prefs().switchmatcap2
+
+        if matcap1 and matcap2 and "NOT FOUND" not in [matcap1, matcap2]:
+            if shading.studio_light == matcap1:
+                shading.studio_light = matcap2
+
+            elif shading.studio_light == matcap2:
+                shading.studio_light = matcap1
+
+            else:
+                shading.studio_light = matcap1
 
         return {'FINISHED'}
