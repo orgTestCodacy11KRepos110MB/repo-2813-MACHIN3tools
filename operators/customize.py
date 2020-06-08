@@ -47,10 +47,11 @@ class Customize(bpy.types.Operator):
         if get_prefs().custom_startup:
             self.startup(context)
 
-        # WORKSPACES
-        # if get_prefs().custom_workspaces:
+        # HIDDEN
         if event.alt:
             self.workspaces(context)
+
+            self.bookmarks(context)
 
         return {'FINISHED'}
 
@@ -684,6 +685,33 @@ class Customize(bpy.types.Operator):
                     ws.name = name
 
                 return
+
+    def bookmarks(self, context):
+        print("\n» Modifying Bookmarks")
+
+        # NOTE: unfortunately it requires a Blender restart before the new bookmarks are read
+        # ####: trying to run the fielbrowser cleanup op in an attempt to force an update, has no effect either
+
+        path = bpy.utils.user_resource('CONFIG', "bookmarks.txt")
+
+        lines = ['[Bookmarks]',
+                 '!Archive',
+                 '/home/x/Archive/blender',
+                 '!TEMP',
+                 '/home/x/TEMP/blender',
+                 '!Addons',
+                 '/home/x/TEMP/blender/Addons',
+                 '!Output',
+                 '/home/x/TEMP/blender/Output',
+                 '[Recent]',
+                 '!DECALmachine',
+                 '/home/x/TEMP/blender/Addons/DECALmachine',
+                 '!MESHmachine',
+                 '/home/x/TEMP/blender/Addons/MESHmachine',
+                 ]
+
+        with open(path, mode='w') as f:
+            f.write('\n'.join(lines))
 
 
 class RestoreKeymaps(bpy.types.Operator):
