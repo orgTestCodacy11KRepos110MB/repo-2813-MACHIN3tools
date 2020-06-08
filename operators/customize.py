@@ -49,6 +49,8 @@ class Customize(bpy.types.Operator):
 
         # HIDDEN
         if event.alt:
+            self.worlds(context, resourcespath, datafilespath)
+
             self.workspaces(context)
 
             self.bookmarks(context)
@@ -559,6 +561,8 @@ class Customize(bpy.types.Operator):
             shading.studiolight_background_alpha = 1
             shading.studiolight_background_blur = 1
 
+            shading.show_cavity = True
+            shading.cavity_type = 'WORLD'
             shading.cavity_ridge_factor = 0
             shading.cavity_valley_factor = 2
 
@@ -644,7 +648,6 @@ class Customize(bpy.types.Operator):
 
                             space.show_region_toolbar = False
 
-
     def workspaces(self, context):
         print("\n» Modifying Workspaces")
 
@@ -715,6 +718,17 @@ class Customize(bpy.types.Operator):
 
         with open(path, mode='w') as f:
             f.write('\n'.join(lines))
+
+    def worlds(self, context, resourcespath, datafilespath):
+        print("\n» Adding Worlds")
+
+        worldssourcepath = os.path.join(resourcespath, "worlds")
+        worldstargetpath = makedir(os.path.join(datafilespath, "studiolights", "world"))
+        worlds = os.listdir(worldssourcepath)
+
+        for world in sorted(worlds):
+            shutil.copy(os.path.join(worldssourcepath, world), worldstargetpath)
+            print("  %s -> %s" % (world, worldstargetpath))
 
 
 class RestoreKeymaps(bpy.types.Operator):
