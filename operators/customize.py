@@ -609,6 +609,10 @@ class Customize(bpy.types.Operator):
     def startup(self, context):
         print("\n» Modifying Startup Scene")
 
+        # enable uv selection sync
+        context.scene.tool_settings.use_uv_select_sync = True
+
+        # remove default objects
         light = bpy.data.lights.get('Light')
         if light:
             bpy.data.lights.remove(light, do_unlink=True)
@@ -640,7 +644,6 @@ class Customize(bpy.types.Operator):
 
                             space.show_region_toolbar = False
 
-                            return
 
     def workspaces(self, context):
         print("\n» Modifying Workspaces")
