@@ -185,10 +185,11 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
 
     custom_startup: BoolProperty(name="Startup Scene", default=True)
-    custom_workspaces: BoolProperty(name="Workspaces", default=False)
     custom_theme: BoolProperty(name="Theme", default=True)
-    custom_matcaps: BoolProperty(name="Shading", default=True)
+    custom_matcaps: BoolProperty(name="Matcaps", default=True)
+    custom_shading: BoolProperty(name="Shading", default=True)
     custom_overlays: BoolProperty(name="Overlays", default=True)
+    custom_outliner: BoolProperty(name="Outliner", default=True)
     custom_preferences_interface: BoolProperty(name="Preferences: Interface", default=True)
     custom_preferences_viewport: BoolProperty(name="Preferences: Viewport", default=True)
     custom_preferences_navigation: BoolProperty(name="Preferences: Navigation", default=True)
@@ -411,11 +412,14 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             column = bbb.column()
 
             row = column.row()
-            row.prop(self, "custom_startup")
-            # row.prop(self, "custom_workspaces")
             row.prop(self, "custom_theme")
             row.prop(self, "custom_matcaps")
+            row.prop(self, "custom_shading")
+
+            row = column.row()
             row.prop(self, "custom_overlays")
+            row.prop(self, "custom_outliner")
+            row.prop(self, "custom_startup")
 
             bbb = bb.box()
             column = bbb.column()

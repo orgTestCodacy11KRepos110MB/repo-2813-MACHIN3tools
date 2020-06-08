@@ -7,8 +7,6 @@ from .. utils.system import makedir
 
 
 # TODO: do the prefs part based on a dictionary?
-# TODO: deactivate shift y/z wire toggle
-
 
 class Customize(bpy.types.Operator):
     bl_idname = "machin3.customize"
@@ -29,13 +27,21 @@ class Customize(bpy.types.Operator):
         if get_prefs().custom_theme:
             self.theme(scriptspath, resourcespath)
 
-        # MATCAPS + DEFAULT SHADING
+        # MATCAPS
         if get_prefs().custom_matcaps:
             self.matcaps(context, resourcespath, datafilespath)
+
+        # SHADING
+        if get_prefs().custom_shading:
+            self.shading(context)
 
         # OVERLAYS
         if get_prefs().custom_overlays:
             self.overlays(context)
+
+        # OUTLINER
+        if get_prefs().custom_outliner:
+            self.outliner(context)
 
         # STARTUP SCENE
         if get_prefs().custom_startup:
@@ -45,7 +51,6 @@ class Customize(bpy.types.Operator):
         # if get_prefs().custom_workspaces:
         if event.alt:
             self.workspaces(context)
-
 
         return {'FINISHED'}
 
@@ -507,21 +512,14 @@ class Customize(bpy.types.Operator):
             f.save_version = 3
             f.recent_files = 20
 
-    def overlays(self, context):
-        print("\n» Modifying Overlays")
+    def theme(self, scriptspath, resourcespath):
+        print("\n» Installing and Enabling M3 theme")
 
-        areas = [area for screen in context.workspace.screens for area in screen.areas if area.type == "VIEW_3D"]
+        themesourcepath = os.path.join(resourcespath, "theme", "m3.xml")
+        themetargetpath = makedir(os.path.join(scriptspath, "presets", "interface_theme"))
 
-        for area in areas:
-            overlay = area.spaces[0].overlay
-            shading = area.spaces[0].shading
-
-            overlay.show_face_center = True
-            overlay.wireframe_threshold = 0.99
-
-            shading.show_backface_culling = True
-
-            overlay.vertex_opacity = 1
+        filepath = shutil.copy(themesourcepath, themetargetpath)
+        bpy.ops.script.execute_preset(filepath=filepath, menu_idname="USERPREF_MT_interface_theme_presets")
 
     def matcaps(self, context, resourcespath, datafilespath):
         print("\n» Adding Matcaps")
@@ -541,53 +539,71 @@ class Customize(bpy.types.Operator):
             get_prefs().switchmatcap1 = "matcap_base.exr"
             get_prefs().switchmatcap2 = "matcap_shiny_red.exr"
 
+    def shading(self, context):
+        print("\n» Setting up Shading and Rendering")
 
-        print("\n» Setting up Viewport Shading")
+        areas = [area for screen in context.workspace.screens for area in screen.areas if area.type == "VIEW_3D"]
 
-        ws = context.workspace
+        for area in areas:
+            shading = area.spaces[0].shading
 
-        for screen in ws.screens:
-            for area in screen.areas:
-                if area.type == "VIEW_3D":
-                    shading = area.spaces[0].shading
+            shading.type = "SOLID"
+            shading.light = "MATCAP"
+            shading.color_type = "SINGLE"
+            shading.single_color = (0.2270, 0.2270, 0.2423)  # hex 838387
 
-                    shading.type = "SOLID"
-                    shading.light = "MATCAP"
-                    shading.studio_light = "matcap_base.exr"
-                    shading.color_type = "SINGLE"
-                    shading.single_color = (0.2270, 0.2270, 0.2423)  # hex 838387
+            if 'matcap_base.exr' in context.preferences.studio_lights:
+                shading.studio_light = "matcap_base.exr"
 
-                    shading.studiolight_background_alpha = 1
-                    shading.studiolight_background_blur = 1
+            shading.studiolight_background_alpha = 1
+            shading.studiolight_background_blur = 1
 
-                    shading.cavity_ridge_factor = 0
-                    shading.cavity_valley_factor = 2
+            shading.cavity_ridge_factor = 0
+            shading.cavity_valley_factor = 2
 
-                    # mimic LOW eevee preset
-                    shading.use_scene_lights = True
-                    shading.use_scene_lights_render = True
-                    shading.use_scene_world_render = False
+            shading.show_backface_culling = True
 
-                    # enabled eevee ssao and ssr, disable volumetric lighting, which is enabled by default for some reason
-                    eevee = context.scene.eevee
+            # mimic LOW eevee preset
+            shading.use_scene_lights = True
+            shading.use_scene_lights_render = True
+            shading.use_scene_world_render = False
 
-                    eevee.use_ssr = True
-                    eevee.use_gtao = True
-                    eevee.use_volumetric_lights = False
+            eevee = context.scene.eevee
 
-                    context.scene.render.engine = 'CYCLES'
-                    context.scene.cycles.device = 'GPU'
+            eevee.use_ssr = True
+            eevee.use_gtao = True
+            eevee.use_volumetric_lights = False
 
-                    return
+            context.scene.render.engine = 'CYCLES'
+            context.scene.cycles.device = 'GPU'
 
-    def theme(self, scriptspath, resourcespath):
-        print("\n» Installing and Enabling M3 theme")
+    def overlays(self, context):
+        print("\n» Modifying Overlays")
 
-        themesourcepath = os.path.join(resourcespath, "theme", "m3.xml")
-        themetargetpath = makedir(os.path.join(scriptspath, "presets", "interface_theme"))
+        areas = [area for screen in context.workspace.screens for area in screen.areas if area.type == "VIEW_3D"]
 
-        filepath = shutil.copy(themesourcepath, themetargetpath)
-        bpy.ops.script.execute_preset(filepath=filepath, menu_idname="USERPREF_MT_interface_theme_presets")
+        for area in areas:
+            overlay = area.spaces[0].overlay
+
+            overlay.show_face_center = True
+            overlay.show_relationship_lines = False
+
+            overlay.wireframe_threshold = 0.99
+            overlay.vertex_opacity = 1
+
+    def outliner(self, context):
+        print("\n» Modifying Outliner")
+
+        areas = [area for screen in context.workspace.screens for area in screen.areas if area.type == "OUTLINER"]
+
+        for area in areas:
+            space = area.spaces[0]
+
+            space.use_filter_children = False
+
+            space.show_restrict_column_select = True
+            space.show_restrict_column_viewport = True
+            space.show_restrict_column_render = True
 
     def startup(self, context):
         print("\n» Modifying Startup Scene")
