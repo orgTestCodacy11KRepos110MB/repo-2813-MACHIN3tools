@@ -66,9 +66,7 @@ class MeshMode(bpy.types.Operator):
                 user_cavity = shading.show_cavity
                 shading.show_cavity = False
 
-        expand = True if event.ctrl else False
-
-        bpy.ops.mesh.select_mode(use_extend=False, use_expand=expand, type=self.mode)
+        bpy.ops.mesh.select_mode(use_extend=False, use_expand=event.ctrl, type=self.mode)
         return {'FINISHED'}
 
 
