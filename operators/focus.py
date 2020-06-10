@@ -30,7 +30,8 @@ class Focus(bpy.types.Operator):
             column.prop(self, "ignore_mirrors", toggle=True)
 
         # only show tool props when initializing local view, this prevents switching modes and settings while in local view
-        elif self.method == 'LOCAL_VIEW' and self.show_tool_props:
+        # elif self.method == 'LOCAL_VIEW' and self.show_tool_props:
+        elif self.method == 'LOCAL_VIEW':
             row = column.row()
             row.label(text="Levels")
             row.prop(self, "levels", expand=True)
@@ -129,7 +130,7 @@ class Focus(bpy.types.Operator):
             history.remove(idx)
 
         view = context.space_data
-        self.show_tool_props = False
+        # self.show_tool_props = False
 
         sel = context.selected_objects
         vis = context.visible_objects
@@ -147,8 +148,8 @@ class Focus(bpy.types.Operator):
                     mod.show_viewport = True if view.local_view else False
 
 
-            if not view.local_view:
-                self.show_tool_props = True
+            # if not view.local_view:
+                # self.show_tool_props = True
 
             bpy.ops.view3d.localview(frame_selected=False)
 
@@ -180,7 +181,7 @@ class Focus(bpy.types.Operator):
                 if history:
                     history.clear()
 
-                self.show_tool_props = True
+                # self.show_tool_props = True
                 focus(context, view, sel, history, init=True)
 
             if debug:
