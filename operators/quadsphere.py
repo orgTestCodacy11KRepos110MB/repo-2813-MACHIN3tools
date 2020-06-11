@@ -32,13 +32,13 @@ class QuadSphere(bpy.types.Operator):
     def execute(self, context):
         bpy.ops.mesh.primitive_cube_add(align='CURSOR' if self.align_rotation else 'WORLD')
 
-        if self.shade_smooth:
-            bpy.ops.object.shade_smooth()
-
         mode = bpy.context.mode
 
         if mode == 'OBJECT':
             bpy.ops.object.mode_set(mode='EDIT')
+
+        if self.shade_smooth:
+            bpy.ops.mesh.faces_shade_smooth()
 
         for sub in range(self.subdivisions):
             bpy.ops.mesh.subdivide(number_cuts=1, smoothness=1)
