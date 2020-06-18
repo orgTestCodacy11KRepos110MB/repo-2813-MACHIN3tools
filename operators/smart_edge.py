@@ -9,6 +9,7 @@ class SmartEdge(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     sharp: BoolProperty(name="Toggle Sharp", default=False)
+    offset: BoolProperty(name="Offset Edge Slide", default=True)
 
     def draw(self, context):
         layout = self.layout
@@ -33,6 +34,9 @@ class SmartEdge(bpy.types.Operator):
 
         if self.sharp and edges:
             self.toggle_sharp(active, bm, edges)
+
+        elif self.offset and edges:
+            self.offset_edges(active, bm, edges)
 
         # SMART
 
@@ -105,6 +109,32 @@ class SmartEdge(bpy.types.Operator):
             e.smooth = smooth
 
         bmesh.update_edit_mesh(active.data)
+
+
+    def offset_edges(self, active, bm, edges):
+        '''
+        offset parallel edges, choosing either the bevel tool or the offset_edge_loop_slide tool to do so, depending on the circumstances
+        '''
+        verts = {v for e in edges for v in e.verts}
+
+        connected_edge_counts = [len([e for e in v.link_edges if e not in edges]) for v in verts]
+
+        # if at least one of the verts doesn't have at least 2 conencted edges use bevel!
+        if any(count < 2 for count in connected_edge_counts):
+            bpy.ops.mesh.bevel('INVOKE_DEFAULT', segments=2, profile=1)
+
+
+        # other wise use edge offset slide
+        else:
+            print(" offset sliding")
+            bpy.ops.mesh.offset_edge_loops_slide('INVOKE_DEFAULT',
+                                                 MESH_OT_offset_edge_loops={"use_cap_endpoint": False},
+                                                 TRANSFORM_OT_edge_slide={"value": -1, "use_even": True, "flipped": False, "use_clamp": True, "correct_uv": True})
+            for e in edges:
+                e.smooth = True
+
+        bmesh.update_edit_mesh(active.data)
+
 
     def star_connect(self, active, bm):
         '''
