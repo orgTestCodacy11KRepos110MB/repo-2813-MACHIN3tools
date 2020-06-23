@@ -174,7 +174,7 @@ class ToggleViewPerspOrtho(bpy.types.Operator):
 class ResetViewport(bpy.types.Operator):
     bl_idname = "machin3.reset_viewport"
     bl_label = "MACHIN3: Reset Viewport"
-    bl_description = ""
+    bl_description = "Perfectly align the viewport with the Y axis, looking into Y+"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod

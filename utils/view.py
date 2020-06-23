@@ -38,6 +38,8 @@ def reset_viewport(context, disable_toolbar=False):
                     if space.type == 'VIEW_3D':
                         r3d = space.region_3d
 
+                        # it seems to be important to set the view distance first, to get the correct viewport rotation focus
+                        r3d.view_distance = 10
                         r3d.view_matrix = Matrix(((1, 0, 0, 0),
                                                   (0, 0.2, 1, -1),
                                                   (0, -1, 0.2, -10),
