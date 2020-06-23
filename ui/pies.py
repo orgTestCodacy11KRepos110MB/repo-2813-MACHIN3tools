@@ -1319,10 +1319,12 @@ class PieViewport(Menu):
         # 3 - BOTTOM - RIGHT
         pie.separator()
 
-    def draw_left_column(self, scene, view, col):
-        col.scale_x = 2
+    def draw_left_column(self, scene, view, layout):
+        column = layout.column(align=True)
 
-        row = col.row()
+        column.scale_x = 2
+
+        row = column.row()
         row.scale_y = 1.5
         row.operator("machin3.smart_view_cam", text="Smart View Cam", icon='HIDE_OFF')
 
@@ -1330,36 +1332,39 @@ class PieViewport(Menu):
             cams = [obj for obj in scene.objects if obj.type == "CAMERA"]
 
             if len(cams) > 1:
-                row = col.row()
+                row = column.row(align=True)
                 row.operator("machin3.next_cam", text="(Q) Previous Cam").previous = True
                 row.operator("machin3.next_cam", text="(W) Next Cam").previous = False
 
 
-        row = col.split()
+        row = column.split(align=True)
         row.operator("machin3.make_cam_active")
         row.prop(scene, "camera", text="")
 
-
-        row = col.split()
+        row = column.split(align=True)
         row.operator("view3d.camera_to_view", text="Cam to view", icon='VIEW_CAMERA')
 
         text, icon = ("Unlock from View", "UNLOCKED") if view.lock_camera else ("Lock to View", "LOCKED")
         row.operator("wm.context_toggle", text=text, icon=icon).data_path = "space_data.lock_camera"
 
-    def draw_center_column(self, col):
-        col.scale_y = 1.5
-        op = col.operator("machin3.view_axis", text="Bottom")
+    def draw_center_column(self, layout):
+        column = layout.column(align=True)
+
+        column.scale_y = 1.2
+        op = column.operator("machin3.view_axis", text="Bottom")
         op.axis='BOTTOM'
 
-        row = col.row(align=True)
+        row = column.row(align=True)
         op = row.operator("machin3.view_axis", text="Left")
         op.axis='LEFT'
 
         op = row.operator("machin3.view_axis", text="Back")
         op.axis='BACK'
 
-    def draw_right_column(self, context, view, r3d, col):
-        row = col.row()
+    def draw_right_column(self, context, view, r3d, layout):
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
         row.scale_y = 1.5
 
         # CAMERA ALIGNED
@@ -1371,10 +1376,10 @@ class PieViewport(Menu):
             row.operator("machin3.toggle_cam_persportho", text=text, icon=icon)
 
             if cam.data.type == "PERSP":
-                col.prop(cam.data, "lens")
+                column.prop(cam.data, "lens")
 
             elif cam.data.type == "ORTHO":
-                col.prop(cam.data, "ortho_scale")
+                column.prop(cam.data, "ortho_scale")
 
         # USER VIEW
 
@@ -1382,7 +1387,9 @@ class PieViewport(Menu):
             text, icon = ("Orthographic", "VIEW_ORTHO") if r3d.is_perspective else ("Perspective", "VIEW_PERSPECTIVE")
             row.operator("machin3.toggle_view_persportho", text=text, icon=icon)
 
-            col.prop(view, "lens")
+            column.prop(view, "lens")
+
+        column.operator("machin3.reset_viewport", text='Reset Viewport')
 
 
 class PieAlign(Menu):

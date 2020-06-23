@@ -1,5 +1,7 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
+from mathutils import Matrix
+
 axisitems = [("FRONT", "Front", ""),
              ("BACK", "Back", ""),
              ("LEFT", "Left", ""),
@@ -165,5 +167,27 @@ class ToggleViewPerspOrtho(bpy.types.Operator):
             prefs.use_auto_perspective = True
 
         bpy.ops.view3d.view_persportho()
+
+        return {'FINISHED'}
+
+
+class ResetViewport(bpy.types.Operator):
+    bl_idname = "machin3.reset_viewport"
+    bl_label = "MACHIN3: Reset Viewport"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for screen in context.workspace.screens:
+            for area in screen.areas:
+                if area.type == 'VIEW_3D':
+                    for space in area.spaces:
+                        if space.type == 'VIEW_3D':
+                            r3d = space.region_3d
+
+                            r3d.view_matrix = Matrix(((1, 0, 0, 0),
+                                                      (0, 0.2, 1, -1),
+                                                      (0, -1, 0.2, -10),
+                                                      (0, 0, 0, 1)))
 
         return {'FINISHED'}
