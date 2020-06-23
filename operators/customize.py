@@ -4,6 +4,7 @@ import os
 import shutil
 from .. utils.registration import get_prefs
 from .. utils.system import makedir
+from .. utils.view import reset_viewport
 
 
 # TODO: do the prefs part based on a dictionary?
@@ -632,19 +633,8 @@ class Customize(bpy.types.Operator):
             bpy.data.materials.remove(mat, do_unlink=True)
 
         # set view matrix
-        for screen in context.workspace.screens:
-            for area in screen.areas:
-                if area.type == 'VIEW_3D':
-                    for space in area.spaces:
-                        if space.type == 'VIEW_3D':
-                            r3d = space.region_3d
+        reset_viewport(context, disable_toolbar=True)
 
-                            r3d.view_matrix = Matrix(((1, 0, 0, 0),
-                                                      (0, 0.2, 1, -1),
-                                                      (0, -1, 0.2, -10),
-                                                      (0, 0, 0, 1)))
-
-                            space.show_region_toolbar = False
 
     def workspaces(self, context):
         print("\n» Modifying Workspaces")

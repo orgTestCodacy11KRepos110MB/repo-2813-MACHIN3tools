@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
 from mathutils import Matrix
+from ... utils.view import reset_viewport
 
 axisitems = [("FRONT", "Front", ""),
              ("BACK", "Back", ""),
@@ -19,7 +20,6 @@ class ViewAxis(bpy.types.Operator):
     axis: EnumProperty(name="Axis", items=axisitems, default="FRONT")
 
     def invoke(self, context, event):
-
         if event.alt:
             bpy.ops.view3d.view_axis(type=self.axis, align_active=True)
         else:
@@ -177,17 +177,14 @@ class ResetViewport(bpy.types.Operator):
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self, context):
-        for screen in context.workspace.screens:
-            for area in screen.areas:
-                if area.type == 'VIEW_3D':
-                    for space in area.spaces:
-                        if space.type == 'VIEW_3D':
-                            r3d = space.region_3d
+    @classmethod
+    def poll(cls, context):
+        return context.space_data.type == 'VIEW_3D'
 
-                            r3d.view_matrix = Matrix(((1, 0, 0, 0),
-                                                      (0, 0.2, 1, -1),
-                                                      (0, -1, 0.2, -10),
-                                                      (0, 0, 0, 1)))
+    def execute(self, context):
+        context.space_data.region_3d.is_orthographic_side_view = False
+        context.space_data.region_3d.view_perspective = 'PERSP'
+
+        reset_viewport(context)
 
         return {'FINISHED'}

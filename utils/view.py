@@ -1,3 +1,5 @@
+from mathutils import Matrix
+
 
 def set_xray(context):
     x = (context.scene.M3.pass_through, context.scene.M3.show_edit_mesh_wire)
@@ -26,3 +28,20 @@ def update_local_view(space_data, states):
     if space_data.local_view:
         for obj, local in states:
             obj.local_view_set(space_data, local)
+
+
+def reset_viewport(context, disable_toolbar=False):
+    for screen in context.workspace.screens:
+        for area in screen.areas:
+            if area.type == 'VIEW_3D':
+                for space in area.spaces:
+                    if space.type == 'VIEW_3D':
+                        r3d = space.region_3d
+
+                        r3d.view_matrix = Matrix(((1, 0, 0, 0),
+                                                  (0, 0.2, 1, -1),
+                                                  (0, -1, 0.2, -10),
+                                                  (0, 0, 0, 1)))
+
+                        if disable_toolbar:
+                            space.show_region_toolbar = False
