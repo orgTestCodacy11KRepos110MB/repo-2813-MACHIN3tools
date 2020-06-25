@@ -1,5 +1,8 @@
 import bpy
+from bpy.props import IntProperty
+from math import degrees, radians
 from ... utils.registration import get_prefs
+
 
 solid_show_overlays = True
 material_show_overlays = False
@@ -197,5 +200,30 @@ class MatcapSwitch(bpy.types.Operator):
 
             else:
                 shading.studio_light = matcap1
+
+        return {'FINISHED'}
+
+
+class RotateStudioLight(bpy.types.Operator):
+    bl_idname = "machin3.rotate_studiolight"
+    bl_label = "MACHIN3: Rotate Studiolight"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    angle: IntProperty(name="Angle")
+
+    def execute(self, context):
+        current = degrees(context.space_data.shading.studiolight_rotate_z)
+        new = (current + self.angle)
+
+        # deal with angles beyond 360
+        if new > 360:
+            new = new % 360
+
+        # shift angle into blender's -180 to 180 range
+        if new > 180:
+            new = -180 + (new - 180)
+
+        context.space_data.shading.studiolight_rotate_z = radians(new)
 
         return {'FINISHED'}

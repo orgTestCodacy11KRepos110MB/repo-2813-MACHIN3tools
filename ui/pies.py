@@ -1083,15 +1083,19 @@ class PieShading(Menu):
                         row.template_icon_view(view.shading, "studio_light", scale=4, scale_popup=4)
 
                         if (view.shading.type == 'MATERIAL' or (view.shading.type == 'RENDERED' and context.scene.render.engine == 'BLENDER_EEVEE')) and view.shading.studiolight_background_alpha:
-                            r = column.split(factor=0.5, align=True)
+                            row = column.split(factor=0.5, align=True)
+                            r = row.row(align=True)
+                            r.operator("machin3.rotate_studiolight", text='+180').angle = 180
                             r.prop(view.shading, "studiolight_rotate_z", text="Rotation")
-                            r.prop(view.shading, "studiolight_background_blur")
+                            row.prop(view.shading, "studiolight_background_blur")
                         else:
-                            column.prop(view.shading, "studiolight_rotate_z", text="Rotation")
+                            row = column.split(factor=0.15, align=True)
+                            row.operator("machin3.rotate_studiolight", text='+180').angle = 180
+                            row.prop(view.shading, "studiolight_rotate_z", text="Rotation")
 
-                        r = column.split(factor=0.5, align=True)
-                        r.prop(view.shading, "studiolight_intensity")
-                        r.prop(view.shading, "studiolight_background_alpha")
+                        row = column.split(factor=0.5, align=True)
+                        row.prop(view.shading, "studiolight_intensity")
+                        row.prop(view.shading, "studiolight_background_alpha")
 
 
             # world background node props

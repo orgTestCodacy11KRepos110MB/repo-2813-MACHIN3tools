@@ -1,5 +1,4 @@
 from mathutils import Matrix, Vector
-from math import degrees
 
 
 def get_center_between_points(point1, point2, center=0.5):
