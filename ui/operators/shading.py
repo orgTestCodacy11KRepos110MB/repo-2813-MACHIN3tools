@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import IntProperty
 from math import degrees, radians
+from mathutils import Matrix
 from ... utils.registration import get_prefs
 
 
@@ -207,12 +208,15 @@ class MatcapSwitch(bpy.types.Operator):
 class RotateStudioLight(bpy.types.Operator):
     bl_idname = "machin3.rotate_studiolight"
     bl_label = "MACHIN3: Rotate Studiolight"
-    bl_description = ""
     bl_options = {'REGISTER', 'UNDO'}
 
     angle: IntProperty(name="Angle")
 
-    def execute(self, context):
+    @classmethod
+    def description(cls, context, properties):
+        return "Rotate Studio Light by %d degrees\nALT: Rotate visible lights too" % (int(properties.angle))
+
+    def invoke(self, context, event):
         current = degrees(context.space_data.shading.studiolight_rotate_z)
         new = (current + self.angle)
 
@@ -225,5 +229,12 @@ class RotateStudioLight(bpy.types.Operator):
             new = -180 + (new - 180)
 
         context.space_data.shading.studiolight_rotate_z = radians(new)
+
+        if event.alt:
+            rmx = Matrix.Rotation(radians(self.angle), 4, 'Z')
+            lights = [obj for obj in context.visible_objects if obj.type == 'LIGHT']
+
+            for light in lights:
+                light.matrix_world = rmx @ light.matrix_world
 
         return {'FINISHED'}
