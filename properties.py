@@ -235,6 +235,8 @@ class M3SceneProperties(bpy.types.PropertyGroup):
         context.scene.cycles.device = self.cycles_device
 
 
+    # SHADING
+
     eevee_preset: EnumProperty(name="Eevee Preset", description="Eevee Quality Presets", items=eevee_preset_items, default='NONE', update=update_eevee_preset)
     eevee_gtao_factor: FloatProperty(name="Factor", default=1, min=0, step=0.1, update=update_eevee_gtao_factor)
     eevee_bloom_intensity: FloatProperty(name="Intensity", default=0.05, min=0, step=0.1, update=update_eevee_bloom_intensity)
@@ -245,6 +247,18 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     object_axes_size: FloatProperty(name="Object Axes Size", default=0.3, min=0)
     object_axes_alpha: FloatProperty(name="Object Axes Alpha", default=0.75, min=0, max=1)
 
+
+    # ALIGN
+
     align_mode: EnumProperty(name="Align Mode", items=align_mode_items, default="VIEW")
+
+
+    # SMART DRIVE
+
+    driver_start: FloatProperty(name="Driver Start Value", precision=3)
+    driver_end: FloatProperty(name="Driver End Value", precision=3)
+
+    driven_start: FloatProperty(name="Driven Start Value", precision=3)
+    driven_end: FloatProperty(name="Driven End Value", precision=3)
 
     avoid_update: BoolProperty()
