@@ -98,8 +98,10 @@ class Align(bpy.types.Operator):
                 self.align_to_active(active, sel)
 
         elif self.mode == "FLOOR":
+            # for some reason a dg is neccessary, in a fresh startup scene, when running clear location follwed for floor alignment
+            # not for the other alignment types however, and only once at the very beginning at the start of the scene editing
+            context.evaluated_depsgraph_get()
             self.drop_to_floor(sel)
-
 
         return {'FINISHED'}
 
