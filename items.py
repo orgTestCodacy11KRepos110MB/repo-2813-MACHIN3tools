@@ -31,7 +31,16 @@ align_direction_items = [('LEFT', 'Left', ''),
                          ('HORIZONTAL', 'Horizontal', ''),
                          ('VERTICAL', 'Vertical', '')]
 
-align_axis_mapping_dict = {'X': 0, 'Y': 1, 'Z': 2}
+driver_limit_items = [('NONE', 'None', ''),
+                      ('START', 'Start', ''),
+                      ('END', 'End', ''),
+                      ('BOTH', 'Both', '')]
+
+driver_transform_items = [('LOCATION', 'Location', ''),
+                          ('ROTATION_EULER', 'Rotation', '')]
+
+
+axis_mapping_dict = {'X': 0, 'Y': 1, 'Z': 2}
 
 uv_align_axis_mapping_dict = {'U': 0, 'V': 1}
 
@@ -48,3 +57,4 @@ render_engine_items = [('BLENDER_EEVEE', 'Eevee', ''),
 
 cycles_device_items = [('CPU', 'CPU', ''),
                        ('GPU', 'GPU', '')]
+

@@ -1,10 +1,12 @@
 import bpy
+from bpy.props import StringProperty
+from .. items import axis_mapping_dict
 
 
 class SmartDrive(bpy.types.Operator):
     bl_idname = "machin3.smart_drive"
     bl_label = "MACHIN3: Smart Drive"
-    bl_description = ""
+    bl_description = "Drive one Object using another"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -28,48 +30,158 @@ class SmartDrive(bpy.types.Operator):
 
         driver_start = m3.driver_start
         driver_end = m3.driver_end
+        driver_transform = m3.driver_transform
+        driver_axis = m3.driver_axis
 
         driven_start = m3.driven_start
         driven_end = m3.driven_end
+        driven_transform = m3.driven_transform
+        driven_axis = m3.driven_axis
+        driven_limit = m3.driven_limit
+
+        path = driven_transform.lower()
+        index = axis_mapping_dict[driven_axis]
 
         driven = context.active_object
         driver = [obj for obj in context.selected_objects if obj != driven][0]
 
-        range_driver = abs(driver_end - driver_start)
-        range_driven = abs(driven_end - driven_start)
+        # remove any existing driver at this path
+        for d in driven.animation_data.drivers:
+            if d.data_path == path and d.array_index == index:
+                driven.animation_data.drivers.remove(d)
 
-        print()
-        print("driver:", driver.name)
-        print(" range:", range_driver)
-
-        print()
-        print("driven:", driven.name)
-        print(" range:", range_driven)
-
-        fcurve = driven.driver_add('location', 1)
+        # add new SCRIPTED_EXPRESSION driver
+        fcurve = driven.driver_add(path, index)
 
         drv = fcurve.driver
         drv.type = 'SCRIPTED'
 
+        # add control variable, controlled by driver object
         var = drv.variables.new()
-        var.name = 'loc'
+        var.name = path[:3]
         var.type = 'TRANSFORMS'
 
         target = var.targets[0]
         target.id = driver
-        target.transform_type = 'LOC_X'
+        target.transform_type = '%s_%s' % (driver_transform[:3], driver_axis)
         target.transform_space = 'WORLD_SPACE'
 
-        # driven end value is bigger than end value!
-        if driven_end > driven_start:
-            expr = f'((({var.name} - {driver_start}) / {range_driver}) * {range_driven}) + {driven_start}'
+        # set expression
+        drv.expression = self.get_expression(driver_start, driver_end, driven_start, driven_end, driven_limit, var.name)
+
+        return {'FINISHED'}
+
+    def get_expression(self, driver_start, driver_end, driven_start, driven_end, driven_limit, varname):
+        '''
+        create expression based on driver and driven values and limit
+        '''
+
+        range_driver = abs(driver_end - driver_start)
+        range_driven = abs(driven_end - driven_start)
+
+        # driver end value is bigger than end value!
+        if driver_end > driver_start:
+            expr = f'((({varname} - {driver_start}) / {range_driver}) * {range_driven})'
 
         # driven start value is bigger than end value!
         else:
-            expr = f'{driven_start} - ((({var.name} - {driver_start}) / {range_driver}) * {range_driven})'
+            expr = f'((({driver_start} - {varname}) / {range_driver}) * {range_driven})'
 
-        drv.expression = expr
+        # driven end value is bigger than end value!
+        if driven_end > driven_start:
+            expr = f'{expr} + {driven_start}'
 
-        # TODO: cap using min and max
+            # limit the start value
+            if driven_limit == 'START':
+                expr = f'max({driven_start}, {expr})'
+
+            # limit the end value
+            elif driven_limit == 'END':
+                expr = f'min({driven_end}, {expr})'
+
+            # limit start and end
+            elif driven_limit == 'BOTH':
+                expr = f'max({driven_start}, min({driven_end}, {expr}))'
+
+
+        # driven start value is bigger than end value!
+        else:
+            expr = f'{driven_start} - {expr}'
+
+            # limit the start value
+            if driven_limit == 'START':
+                expr = f'min({driven_start}, {expr})'
+
+            # limit the end value
+            elif driven_limit == 'END':
+                expr = f'max({driven_end}, {expr})'
+
+            # limit start and end
+            elif driven_limit == 'BOTH':
+                expr = f'min({driven_start}, max({driven_end}, {expr}))'
+
+        return expr
+
+
+class SwitchValues(bpy.types.Operator):
+    bl_idname = "machin3.switch_driver_values"
+    bl_label = "MACHIN3: Switch Driver Values"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    mode: StringProperty(name="Mode", default='DRIVER')
+
+    @classmethod
+    def description(cls, context, properties):
+        return "Switch Start and End %s Values" % (properties.mode.capitalize())
+
+    def execute(self, context):
+        m3 = context.scene.M3
+
+        if self.mode == 'DRIVER':
+            m3.driver_start, m3.driver_end = m3.driver_end, m3.driver_start
+
+        elif self.mode == 'DRIVEN':
+            m3.driven_start, m3.driven_end = m3.driven_end, m3.driven_start
+
+        return {'FINISHED'}
+
+
+class SetValue(bpy.types.Operator):
+    bl_idname = "machin3.set_driver_value"
+    bl_label = "MACHIN3: set_driver_value"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    mode: StringProperty(name="Mode", default='DRIVER')
+    value: StringProperty(name="Value", default='START')
+
+
+    @classmethod
+    def description(cls, context, properties):
+        return "Set %s %s Value" % (properties.mode.capitalize(), properties.value.capitalize())
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object and context.selected_objects == [context.active_object]
+
+    def execute(self, context):
+        active = context.active_object
+
+        m3 = context.scene.M3
+
+        if self.mode == 'DRIVER':
+            axis = m3.driver_axis
+
+            if self.value == 'START':
+                m3.driver_start = active.location[axis_mapping_dict[axis]]
+            elif self.value == 'END':
+                m3.driver_end = active.location[axis_mapping_dict[axis]]
+
+        elif self.mode == 'DRIVEN':
+            axis = m3.driven_axis
+
+            if self.value == 'START':
+                m3.driven_start = active.location[axis_mapping_dict[axis]]
+            elif self.value == 'END':
+                m3.driven_end = active.location[axis_mapping_dict[axis]]
 
         return {'FINISHED'}

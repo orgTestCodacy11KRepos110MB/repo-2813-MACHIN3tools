@@ -26,16 +26,71 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
         column = box.column()
 
-        row = column.split(factor=0.25, align=True)
-        row.label(text="Driver")
-        row.prop(m3, 'driver_start', text='Start')
-        row.prop(m3, 'driver_end', text='End')
+        b = column.box()
+        b.label(text="Driver")
 
-        row = column.split(factor=0.25, align=True)
-        row.label(text="Driven")
-        row.prop(m3, 'driven_start', text='Start')
-        row.prop(m3, 'driven_end', text='End')
+        col = b.column(align=True)
+
+        row = col.split(factor=0.25, align=True)
+        row.label(text="Values")
+        r = row.row(align=True)
+        op = r.operator("machin3.set_driver_value", text='', icon='SORT_ASC')
+        op.mode = 'DRIVER'
+        op.value = 'START'
+        r.prop(m3, 'driver_start', text='')
+        r.operator("machin3.switch_driver_values", text='', icon='ARROW_LEFTRIGHT').mode = 'DRIVER'
+        r.prop(m3, 'driver_end', text='')
+        op = r.operator("machin3.set_driver_value", text='', icon='SORT_ASC')
+        op.mode = 'DRIVER'
+        op.value = 'END'
+
+        row = col.split(factor=0.25, align=True)
+        row.label(text="Transform")
+        r = row.row(align=True)
+        r.prop(m3, 'driver_transform', expand=True)
+
+        row = col.split(factor=0.25, align=True)
+        row.scale_y = 0.9
+        row.label(text="Axis")
+        r = row.row(align=True)
+        r.prop(m3, 'driver_axis', expand=True)
+
+
+        b = column.box()
+        b.label(text="Driven")
+
+        col = b.column(align=True)
+
+        row = col.split(factor=0.25, align=True)
+        row.label(text="Values")
+        r = row.row(align=True)
+        op = r.operator("machin3.set_driver_value", text='', icon='SORT_ASC')
+        op.mode = 'DRIVEN'
+        op.value = 'START'
+        r.prop(m3, 'driven_start', text='')
+        r.operator("machin3.switch_driver_values", text='', icon='ARROW_LEFTRIGHT').mode = 'DRIVEN'
+        r.prop(m3, 'driven_end', text='')
+        op = r.operator("machin3.set_driver_value", text='', icon='SORT_ASC')
+        op.mode = 'DRIVEN'
+        op.value = 'END'
+
+        row = col.split(factor=0.25, align=True)
+        row.label(text="Transform")
+        r = row.row(align=True)
+        r.prop(m3, 'driven_transform', expand=True)
+
+        row = col.split(factor=0.25, align=True)
+        row.scale_y = 0.9
+        row.label(text="Axis")
+        r = row.row(align=True)
+        r.prop(m3, 'driven_axis', expand=True)
+
+        row = col.split(factor=0.25, align=True)
+        row.label(text="Limit")
+        r = row.row(align=True)
+        r.prop(m3, 'driven_limit', expand=True)
+
 
         r = column.row()
         r.scale_y = 1.2
-        r.operator("machin3.smart_drive", text='Drive it!')
+        r.operator("machin3.smart_drive", text='Drive it!', icon='AUTO')

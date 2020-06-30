@@ -3,7 +3,7 @@ from bpy.props import EnumProperty, BoolProperty, StringProperty
 import bmesh
 from mathutils import Vector, Matrix, geometry
 from ... utils.math import get_center_between_verts, create_rotation_difference_matrix_from_quat, get_loc_matrix, create_selection_bbox, get_right_and_up_axes
-from ... items import axis_items, align_type_items, align_axis_mapping_dict, align_direction_items
+from ... items import axis_items, align_type_items, axis_mapping_dict, align_direction_items
 from ... utils.selection import get_selected_vert_sequences
 
 
@@ -30,11 +30,11 @@ class AlignEditMesh(bpy.types.Operator):
     def invoke(self, context, event):
         self.local = not event.alt
 
-        self.align(context, self.type, align_axis_mapping_dict[self.axis], self.direction, local=self.local)
+        self.align(context, self.type, axis_mapping_dict[self.axis], self.direction, local=self.local)
         return {'FINISHED'}
 
     def execute(self, context):
-        self.align(context, self.type, align_axis_mapping_dict[self.axis], self.direction, local=self.local)
+        self.align(context, self.type, axis_mapping_dict[self.axis], self.direction, local=self.local)
         return {'FINISHED'}
 
     def align(self, context, type, axis, direction, local=True):
@@ -137,11 +137,11 @@ class CenterEditMesh(bpy.types.Operator):
     def invoke(self, context, event):
         self.local = not event.alt
 
-        self.center(context, align_axis_mapping_dict[self.axis], self.direction, local=self.local)
+        self.center(context, axis_mapping_dict[self.axis], self.direction, local=self.local)
         return {'FINISHED'}
 
     def execute(self, context):
-        self.center(context, align_axis_mapping_dict[self.axis], self.direction, local=self.local)
+        self.center(context, axis_mapping_dict[self.axis], self.direction, local=self.local)
         return {'FINISHED'}
 
     def center(self, context, axis, direction, local=True):
