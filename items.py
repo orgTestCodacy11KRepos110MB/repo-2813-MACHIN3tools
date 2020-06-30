@@ -39,6 +39,9 @@ driver_limit_items = [('NONE', 'None', ''),
 driver_transform_items = [('LOCATION', 'Location', ''),
                           ('ROTATION_EULER', 'Rotation', '')]
 
+driver_space_items = [('AUTO', 'Auto', 'Choose Local or World space based on whether driver object is parented'),
+                      ('LOCAL_SPACE', 'Local', ''),
+                      ('WORLD_SPACE', 'World', '')]
 
 axis_mapping_dict = {'X': 0, 'Y': 1, 'Z': 2}
 

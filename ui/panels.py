@@ -55,6 +55,11 @@ class PanelMACHIN3tools(bpy.types.Panel):
         r = row.row(align=True)
         r.prop(m3, 'driver_axis', expand=True)
 
+        row = col.split(factor=0.25, align=True)
+        row.label(text="Space")
+        r = row.row(align=True)
+        r.prop(m3, 'driver_space', expand=True)
+
 
         b = column.box()
         b.label(text="Driven")

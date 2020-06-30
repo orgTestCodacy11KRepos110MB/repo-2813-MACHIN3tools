@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import StringProperty
+from math import radians, degrees
 from .. items import axis_mapping_dict
 
 
@@ -32,6 +33,7 @@ class SmartDrive(bpy.types.Operator):
         driver_end = m3.driver_end
         driver_transform = m3.driver_transform
         driver_axis = m3.driver_axis
+        driver_space = m3.driver_space
 
         driven_start = m3.driven_start
         driven_end = m3.driven_end
@@ -64,7 +66,19 @@ class SmartDrive(bpy.types.Operator):
         target = var.targets[0]
         target.id = driver
         target.transform_type = '%s_%s' % (driver_transform[:3], driver_axis)
-        target.transform_space = 'WORLD_SPACE'
+
+        if driver_space == 'AUTO':
+            target.transform_space = 'LOCAL_SPACE' if driver.parent else 'WORLD_SPACE'
+        else:
+            target.transform_space = driver_space
+
+        if driver_transform == 'ROTATION_EULER':
+            driver_start = radians(driver_start)
+            driver_end = radians(driver_end)
+
+        if driven_transform == 'ROTATION_EULER':
+            driven_start = radians(driven_start)
+            driven_end = radians(driven_end)
 
         # set expression
         drv.expression = self.get_expression(driver_start, driver_end, driven_start, driven_end, driven_limit, var.name)
@@ -166,22 +180,19 @@ class SetValue(bpy.types.Operator):
     def execute(self, context):
         active = context.active_object
 
+        value = self.value.lower()
+        mode = self.mode.lower()
+
         m3 = context.scene.M3
 
-        if self.mode == 'DRIVER':
-            axis = m3.driver_axis
+        axis = getattr(m3, f'{mode}_axis')
+        transform = getattr(m3, f'{mode}_transform').lower()
 
-            if self.value == 'START':
-                m3.driver_start = active.location[axis_mapping_dict[axis]]
-            elif self.value == 'END':
-                m3.driver_end = active.location[axis_mapping_dict[axis]]
+        val = getattr(active, transform)[axis_mapping_dict[axis]]
 
-        elif self.mode == 'DRIVEN':
-            axis = m3.driven_axis
+        if transform == 'rotation_euler':
+            val = degrees(val)
 
-            if self.value == 'START':
-                m3.driven_start = active.location[axis_mapping_dict[axis]]
-            elif self.value == 'END':
-                m3.driven_end = active.location[axis_mapping_dict[axis]]
+        setattr(m3, f'{mode}_{value}', val)
 
         return {'FINISHED'}

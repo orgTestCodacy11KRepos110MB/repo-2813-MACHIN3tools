@@ -2,7 +2,7 @@ import bpy
 from bpy.props import StringProperty, IntProperty, BoolProperty, CollectionProperty, PointerProperty, EnumProperty, FloatProperty
 import bmesh
 from . utils.world import get_world_output
-from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items
+from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items
 
 
 # COLLECTIONS
@@ -259,6 +259,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     driver_end: FloatProperty(name="Driver End Value", precision=3)
     driver_axis: EnumProperty(name="Driver Axis", items=axis_items, default='X')
     driver_transform: EnumProperty(name="Driver Transform", items=driver_transform_items, default='LOCATION')
+    driver_space: EnumProperty(name="Driver Space", items=driver_space_items, default='AUTO')
 
     driven_start: FloatProperty(name="Driven Start Value", precision=3)
     driven_end: FloatProperty(name="Driven End Value", precision=3)
