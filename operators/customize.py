@@ -8,6 +8,8 @@ from .. utils.view import reset_viewport
 
 
 # TODO: do the prefs part based on a dictionary?
+# TODO: select linked kmi for uv editor
+# TODO: view selected in uv editor (called "view center"  in keyconfig I think?)
 
 class Customize(bpy.types.Operator):
     bl_idname = "machin3.customize"

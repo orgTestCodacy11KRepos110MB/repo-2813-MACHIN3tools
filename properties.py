@@ -1,7 +1,10 @@
 import bpy
-from bpy.props import StringProperty, IntProperty, BoolProperty, CollectionProperty, PointerProperty, EnumProperty, FloatProperty
+from bpy.props import StringProperty, IntProperty, BoolProperty, CollectionProperty, PointerProperty, EnumProperty, FloatProperty, FloatVectorProperty
+from mathutils import Matrix
 import bmesh
+from . utils.math import flatten_matrix
 from . utils.world import get_world_output
+from . utils.system import abspath
 from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items
 
 
@@ -266,5 +269,37 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     driven_axis: EnumProperty(name="Driven Axis", items=axis_items, default='X')
     driven_transform: EnumProperty(name="Driven Transform", items=driver_transform_items, default='LOCATION')
     driven_limit: EnumProperty(name="Driven Lmit", items=driver_limit_items, default='BOTH')
+
+
+    # UNITY
+
+    def update_unity_export_path(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        path = self.unity_export_path
+
+        if path:
+            if not path.endswith('.fbx'):
+                path += '.fbx'
+
+            self.avoid_update = True
+            self.unity_export_path = abspath(path)
+
+    unity_export_path: StringProperty(name="Unity Export Path", subtype='FILE_PATH', update=update_unity_export_path)
+
+    # hidden
+
+    avoid_update: BoolProperty()
+
+
+class M3ObjectProperties(bpy.types.PropertyGroup):
+    unity_exported: BoolProperty(name="Exported to Unity")
+
+    pre_unity_export_mx: FloatVectorProperty(name="Pre-Unity-Export Matrix", subtype="MATRIX", size=16, default=flatten_matrix(Matrix()))
+    pre_unity_export_mesh: PointerProperty(name="Pre-Unity-Export Mesh", type=bpy.types.Mesh)
+
+    # hidden
 
     avoid_update: BoolProperty()

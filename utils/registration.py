@@ -379,8 +379,12 @@ def get_tools():
     # FILEBROWSER TOOLS
     classlists, keylists, count = get_filebrowser(classlists, keylists, count)
 
+
     # SMART DRIVE
     classlists, keylists, count = get_smart_drive(classlists, keylists, count)
+
+    # UNITY TOOLS
+    classlists, keylists, count = get_unity(classlists, keylists, count)
 
     # CUSTOMIZE
     classlists, keylists, count = get_customize(classlists, keylists, count)
@@ -568,6 +572,14 @@ def get_filebrowser(classlists=[], keylists=[], count=0):
 def get_smart_drive(classlists=[], keylists=[], count=0):
     if get_prefs().activate_smart_drive:
         classlists.append(classesdict["SMART_DRIVE"])
+        count +=1
+
+    return classlists, keylists, count
+
+
+def get_unity(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_unity:
+        classlists.append(classesdict["UNITY"])
         count +=1
 
     return classlists, keylists, count

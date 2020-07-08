@@ -64,7 +64,7 @@ if 'bpy' in locals():
 
 import bpy
 from bpy.props import PointerProperty
-from . properties import M3SceneProperties
+from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus, get_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, add_object_context_menu, remove_object_context_menu
 from . utils.registration import add_object_buttons
@@ -85,6 +85,7 @@ def register():
     # PROPERTIES
 
     bpy.types.Scene.M3 = PointerProperty(type=M3SceneProperties)
+    bpy.types.Object.M3 = PointerProperty(type=M3ObjectProperties)
 
     # TOOLS, PIE MENUS, KEYMAPS, MENUS
 
@@ -140,6 +141,7 @@ def unregister():
     # PROPERTIES
 
     del bpy.types.Scene.M3
+    del bpy.types.Object.M3
 
 
     # ICONS

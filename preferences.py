@@ -129,6 +129,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_smart_drive(self, context):
         activate(self, register=self.activate_smart_drive, tool="smart_drive")
 
+    def update_activate_unity(self, context):
+        activate(self, register=self.activate_unity, tool="unity")
+
     def update_activate_customize(self, context):
         activate(self, register=self.activate_customize, tool="customize")
 
@@ -215,6 +218,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     activate_mesh_cut: BoolProperty(name="Mesh Cut", default=True, update=update_activate_mesh_cut)
     activate_filebrowser_tools: BoolProperty(name="Filebrowser Tools", default=True, update=update_activate_filebrowser_tools)
     activate_smart_drive: BoolProperty(name="Smart Drive", default=True, update=update_activate_smart_drive)
+    activate_unity: BoolProperty(name="Unity", default=False, update=update_activate_unity)
     activate_customize: BoolProperty(name="Customize", default=False, update=update_activate_customize)
 
 
@@ -330,6 +334,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row = column.split(factor=0.25)
         row.prop(self, "activate_smart_drive", toggle=True)
         row.label(text="Quickly use one object to drive another.")
+
+        row = column.split(factor=0.25)
+        row.prop(self, "activate_unity", toggle=True)
+        row.label(text="Unity related Tools")
 
         row = column.split(factor=0.25)
         row.prop(self, "activate_customize", toggle=True)

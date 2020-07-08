@@ -14,13 +14,20 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return get_prefs().activate_smart_drive
+        return get_prefs().activate_smart_drive or get_prefs().activate_unity
 
     def draw(self, context):
         layout = self.layout
 
         m3 = context.scene.M3
 
+        if get_prefs().activate_smart_drive:
+            self.draw_smart_drive(layout, m3)
+
+        if get_prefs().activate_unity:
+            self.draw_unity(layout, m3)
+
+    def draw_smart_drive(self, layout, m3):
         box = layout.box()
         box.label(text="Smart Drive")
 
@@ -99,3 +106,19 @@ class PanelMACHIN3tools(bpy.types.Panel):
         r = column.row()
         r.scale_y = 1.2
         r.operator("machin3.smart_drive", text='Drive it!', icon='AUTO')
+
+    def draw_unity(self, layout, m3):
+        box = layout.box()
+        box.label(text="Unity")
+
+        column = box.column(align=True)
+
+        column.prop(m3, 'unity_export_path', text='')
+
+        row = column.row(align=True)
+        row.scale_y = 1.5
+        row.operator("machin3.prepare_unity_export", text="Export")
+
+        row = column.row(align=True)
+        row.scale_y = 1.2
+        row.operator("machin3.restore_unity_export", text="Restore Transformations")
