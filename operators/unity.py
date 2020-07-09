@@ -4,6 +4,13 @@ from mathutils import Matrix
 from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, flatten_matrix
 
 
+# TODO: all the scaling is causing a lot of complexity
+# ####: maybe consider using the fbx option for that after all
+# ####: how does that affect modifiers?
+
+# TODO: objects parented to bones does not currently work
+
+
 class PrepareExport(bpy.types.Operator):
     bl_idname = "machin3.prepare_unity_export"
     bl_label = "MACHIN3: Prepare Unity Export"
@@ -365,4 +372,4 @@ class RestoreExport(bpy.types.Operator):
 
                 for child in obj.children:
                     if child in exported:
-                        self.restore_exported(child, exported, meshes, detriangulate=detriangulate, depth=depth, child=True)
+                        self.restore_exported(child, exported, meshes, armatures, detriangulate=detriangulate, depth=depth, child=True)
