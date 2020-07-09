@@ -137,7 +137,7 @@ class PrepareExport(bpy.types.Operator):
             apply the inverted transformation to the mesh to compensate for object transformation
             '''
 
-            # store the original mesh and use a duplicate to be able to deal with instanced object
+            # store the original mesh and use a duplicate to be able to deal with instanced object, and to easily restore it later
             obj.M3.pre_unity_export_mesh = obj.data
             obj.data = obj.data.copy()
 
@@ -147,6 +147,34 @@ class PrepareExport(bpy.types.Operator):
 
             obj.data.transform(rotation @ scale)
             obj.data.update()
+
+        def prepare_armature(obj, depth):
+            '''
+            apply the inverted transformation to the bones to compensate for object transformation
+            '''
+
+            # store the original armature and use a duplicate to be able to deal with instanced objects, and to easily restore it later
+            obj.M3.pre_unity_export_armature = obj.data
+            obj.data = obj.data.copy()
+
+            print("INFO: %sadjusting %s's ARMATURE to compensate" % (depth * '  ', obj.name))
+            rotation = Matrix.Rotation(radians(-90), 4, 'X')
+
+            # EDIT MODE (rest pose)
+
+            # scaling here is great, because it won't show up in the scale props of the pose bone
+            scale = Matrix.Scale(100, 4)
+            obj.data.transform(rotation @ scale)
+
+
+            # POSE MODE
+
+            root_bones = [bone for bone in obj.pose.bones if not bone.parent]
+
+            # if you rotate above, you don't need to do it here, as long as you work on the matrix_basis, just need to correct the locations, which gets shifted by the scaling
+            for bone in root_bones:
+                loc, rot, sca = bone.matrix_basis.decompose()
+                bone.matrix_basis = get_loc_matrix(loc * 100) @ get_rot_matrix(rot) @ get_sca_matrix(sca)
 
 
         if obj in sel:
@@ -168,6 +196,9 @@ class PrepareExport(bpy.types.Operator):
 
             elif obj.type == 'MESH':
                 prepare_mesh(obj, depth)
+
+            elif obj.type == 'ARMATURE':
+                prepare_armature(obj, depth)
 
 
             # OBJECT CHILDREN
@@ -197,20 +228,24 @@ class RestoreExport(bpy.types.Operator):
 
         exported = [obj for obj in context.visible_objects if obj.M3.unity_exported]
         meshes = []
+        armatures = []
 
         # get root objects
         roots = [obj for obj in exported if not obj.parent]
 
         # restore objects, meshesand modifiers
         for obj in roots:
-            self.restore_exported(obj, exported, meshes, detriangulate=detriangulate)
+            self.restore_exported(obj, exported, meshes, armatures, detriangulate=detriangulate)
 
         # remove the unique meshes
         bpy.data.batch_remove(meshes)
 
+        # remove the unique armatures
+        bpy.data.batch_remove(armatures)
+
         return {'FINISHED'}
 
-    def restore_exported(self, obj, exported, meshes, detriangulate=True, depth=0, child=False):
+    def restore_exported(self, obj, exported, meshes, armatures, detriangulate=True, depth=0, child=False):
         '''
         recursively restore an the original transformation and mesh of an exported object and its children
         '''
@@ -275,12 +310,28 @@ class RestoreExport(bpy.types.Operator):
             print("INFO: %srestoring %s's original EMPTY DISPLAY SIZE" % (depth * '  ', obj.name))
             obj.empty_display_size /= 100
 
-        def restore_mesh(obj, depth):
+        def restore_mesh(obj, depth, meshes):
             print("INFO: %srestoring %s's original pre-export MESH" % (depth * '  ', obj.name))
             meshes.append(obj.data)
 
             obj.data = obj.M3.pre_unity_export_mesh
             obj.M3.pre_unity_export_mesh = None
+
+        def restore_armature(obj, depth, armatures):
+            print("INFO: %srestoring %s's original pre-export ARMATURE" % (depth * '  ', obj.name))
+            armatures.append(obj.data)
+
+            obj.data = obj.M3.pre_unity_export_armature
+            obj.M3.pre_unity_export_armature = None
+
+            # the pose info is apparently not stored in the armature, and for some reason you can't create a pointer property for poses
+            # so we have to undo the pose transformation
+            root_bones = [bone for bone in obj.pose.bones if not bone.parent]
+
+            # if you rotate above, you don't need to do it here, as long as you work on the matrix_basis, just need to correct the locations, which gets shifted by the scaling
+            for bone in root_bones:
+                loc, rot, sca = bone.matrix_basis.decompose()
+                bone.matrix_basis = get_loc_matrix(loc / 100) @ get_rot_matrix(rot) @ get_sca_matrix(sca)
 
 
         if obj in exported:
@@ -301,7 +352,10 @@ class RestoreExport(bpy.types.Operator):
                 restore_empty(obj, depth)
 
             elif obj.type == 'MESH' and obj.M3.pre_unity_export_mesh:
-                restore_mesh(obj, depth)
+                restore_mesh(obj, depth, meshes)
+
+            elif obj.type == 'ARMATURE' and obj.M3.pre_unity_export_armature:
+                restore_armature(obj, depth, armatures)
 
 
             # OBJECT CHILDREN
