@@ -34,7 +34,7 @@ class PrepareExport(bpy.types.Operator):
 
         sel = context.selected_objects
 
-        # collect all current world matrices and obj data blocks
+        # collect all current world matrices
         matrices = {obj: obj.matrix_world.copy() for obj in sel}
 
         # get root objects
@@ -60,15 +60,15 @@ class PrepareExport(bpy.types.Operator):
         deal with modifers affecting by the rotations/scaling too
         '''
 
-        if obj in sel:
-            print("INFO: %sadjusting %s object's TRANSFORMATIONS: %s" % (depth * '  ', 'child' if child else 'root', obj.name))
+        def prepare_object(obj, mx, depth, child):
+            print("%sINFO: %sadjusting %s object's TRANSFORMATIONS: %s" % ('' if child else '\n', depth * '  ', 'child' if child else 'root', obj.name))
             obj.M3.unity_exported = True
 
             # get and store the current matrix
             mx = matrices[obj]
             obj.M3.pre_unity_export_mx = flatten_matrix(mx)
 
-            loc, rot, sca = matrices[obj].decompose()
+            loc, rot, sca = mx.decompose()
 
             # swivel y and z scale, scale down to 1/100th, and add 90 degree X rotation
             sca[1:3] = sca[2], sca[1]
@@ -78,6 +78,10 @@ class PrepareExport(bpy.types.Operator):
             # rebuild world mx
             obj.matrix_world = get_loc_matrix(loc) @ get_rot_matrix(rot) @ rotation @ scale
 
+        def prepare_modifiers(obj, triangulate, depth):
+            '''
+            prepare/add modifiers
+            '''
 
             # DISPLACE MODS
 
@@ -124,25 +128,46 @@ class PrepareExport(bpy.types.Operator):
                 mod.quad_method = 'FIXED'
                 mod.show_expanded = False
 
+        def prepare_empty(obj, depth):
+            print("INFO: %sadjusting %s's EMPTY DISPLAY SIZE to compensate" % (depth * '  ', obj.name))
+            obj.empty_display_size *= 100
+
+        def prepare_mesh(obj, depth):
+            '''
+            apply the inverted transformation to the mesh to compensate for object transformation
+            '''
+
+            # store the original mesh and use a duplicate to be able to deal with instanced object
+            obj.M3.pre_unity_export_mesh = obj.data
+            obj.data = obj.data.copy()
+
+            print("INFO: %sadjusting %s's MESH to compensate" % (depth * '  ', obj.name))
+            rotation = Matrix.Rotation(radians(-90), 4, 'X')
+            scale = Matrix.Scale(100, 4)
+
+            obj.data.transform(rotation @ scale)
+            obj.data.update()
+
+
+        if obj in sel:
+
+            # OBJECT TRANSFORM
+
+            prepare_object(obj, matrices[obj], depth, child)
+
+
+            # MODIFIERS
+
+            prepare_modifiers(obj, triangulate, depth)
+
 
             # OBJECT DATA
 
             if obj.type == 'EMPTY':
-                print("INFO: %sadjusting %s's EMPTY DISPLAY SIZE to compensate" % (depth * '  ', obj.name))
-                obj.empty_display_size *= 100
+                prepare_empty(obj, depth)
 
             elif obj.type == 'MESH':
-
-                # store the original mesh
-                obj.M3.pre_unity_export_mesh = obj.data
-                obj.data = obj.data.copy()
-
-                print("INFO: %sadjusting %s's MESH to compensate" % (depth * '  ', obj.name))
-                rotation = Matrix.Rotation(radians(-90), 4, 'X')
-                scale = Matrix.Scale(100, 4)
-
-                obj.data.transform(rotation @ scale)
-                obj.data.update()
+                prepare_mesh(obj, depth)
 
 
             # OBJECT CHILDREN
@@ -190,13 +215,17 @@ class RestoreExport(bpy.types.Operator):
         recursively restore an the original transformation and mesh of an exported object and its children
         '''
 
-        if obj in exported:
+        def restore_object(obj, depth, child):
             print("INFO: %srestoring %s object's TRANSFORMATIONS: %s" % (depth * '  ', 'child' if child else 'root', obj.name))
 
             obj.matrix_world = obj.M3.pre_unity_export_mx
             obj.M3.pre_unity_export_mx = flatten_matrix(Matrix())
             obj.M3.unity_exported = False
 
+        def restore_modifiers(obj, detriangulate, depth):
+            '''
+            restore/remove modifiers
+            '''
 
             # DISPLACE MODS
 
@@ -242,19 +271,37 @@ class RestoreExport(bpy.types.Operator):
                     print("INFO: %sremoving %s's TRIANGULATE modifier" % (depth * '  ', obj.name))
                     obj.modifiers.remove(lastmod)
 
+        def restore_empty(obj, depth):
+            print("INFO: %srestoring %s's original EMPTY DISPLAY SIZE" % (depth * '  ', obj.name))
+            obj.empty_display_size /= 100
+
+        def restore_mesh(obj, depth):
+            print("INFO: %srestoring %s's original pre-export MESH" % (depth * '  ', obj.name))
+            meshes.append(obj.data)
+
+            obj.data = obj.M3.pre_unity_export_mesh
+            obj.M3.pre_unity_export_mesh = None
+
+
+        if obj in exported:
+
+            # OBJECT TRANSFORM
+
+            restore_object(obj, depth, child)
+
+
+            # MODIFIERS
+
+            restore_modifiers(obj, detriangulate, depth)
+
 
             # OBJECT DATA
 
             if obj.type == 'EMPTY':
-                print("INFO: %srestoring %s's original EMPTY DISPLAY SIZE" % (depth * '  ', obj.name))
-                obj.empty_display_size /= 100
+                restore_empty(obj, depth)
 
             elif obj.type == 'MESH' and obj.M3.pre_unity_export_mesh:
-                print("INFO: %srestoring %s's original pre-export MESH" % (depth * '  ', obj.name))
-                meshes.append(obj.data)
-
-                obj.data = obj.M3.pre_unity_export_mesh
-                obj.M3.pre_unity_export_mesh = None
+                restore_mesh(obj, depth)
 
 
             # OBJECT CHILDREN

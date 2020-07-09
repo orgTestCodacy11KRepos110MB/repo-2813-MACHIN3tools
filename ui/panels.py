@@ -34,7 +34,7 @@ class PanelMACHIN3tools(bpy.types.Panel):
             box.prop(m3, "show_unity", text="Unity", icon='TRIA_DOWN' if m3.show_unity else 'TRIA_RIGHT', emboss=False)
 
             if m3.show_unity:
-                self.draw_unity(m3, box)
+                self.draw_unity(context, m3, box)
 
     def draw_smart_drive(self, m3, layout):
         column = layout.column()
@@ -112,7 +112,7 @@ class PanelMACHIN3tools(bpy.types.Panel):
         r.scale_y = 1.2
         r.operator("machin3.smart_drive", text='Drive it!', icon='AUTO')
 
-    def draw_unity(self, m3, layout):
+    def draw_unity(self, context, m3, layout):
         column = layout.column(align=True)
 
         row = column.split(factor=0.3)
@@ -130,7 +130,7 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
         row = column.row(align=True)
         row.scale_y = 1.5
-        row.operator("machin3.prepare_unity_export", text="Prepare + Export" if m3.unity_export else "Prepare")
+        row.operator("machin3.prepare_unity_export", text="Prepare + Export %s" % ('Selected' if context.selected_objects else 'Visible') if m3.unity_export else "Prepare %s" % ('Selected' if context.selected_objects else 'Visible'))
 
         row = column.row(align=True)
         row.scale_y = 1.2
