@@ -116,16 +116,21 @@ class PanelMACHIN3tools(bpy.types.Panel):
         column = layout.column(align=True)
 
         row = column.split(factor=0.3)
+        row.label(text="Export")
+        row.prop(m3, 'unity_export', text='True' if m3.unity_export else 'False', toggle=True)
+
+        row = column.split(factor=0.3)
         row.label(text="Triangulate")
         row.prop(m3, 'unity_triangulate', text='True' if m3.unity_triangulate else 'False', toggle=True)
 
         column.separator()
 
-        column.prop(m3, 'unity_export_path', text='')
+        if m3.unity_export:
+            column.prop(m3, 'unity_export_path', text='')
 
         row = column.row(align=True)
         row.scale_y = 1.5
-        row.operator("machin3.prepare_unity_export", text="Export")
+        row.operator("machin3.prepare_unity_export", text="Prepare + Export" if m3.unity_export else "Prepare")
 
         row = column.row(align=True)
         row.scale_y = 1.2

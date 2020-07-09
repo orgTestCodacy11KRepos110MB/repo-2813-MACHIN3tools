@@ -291,8 +291,9 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     show_unity: BoolProperty(name="Show Unity")
 
+    unity_export: BoolProperty(name="Export to Unity")
     unity_export_path: StringProperty(name="Unity Export Path", subtype='FILE_PATH', update=update_unity_export_path)
-    unity_triangulate: BoolProperty(name="Triangulate before exporting", default=True)
+    unity_triangulate: BoolProperty(name="Triangulate before exporting", default=False)
 
     # hidden
 
