@@ -2,13 +2,9 @@ import bpy
 from math import radians
 from mathutils import Matrix
 from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, flatten_matrix
+from .. utils.modifier import add_triangulate, remove_triangulate
 
-
-# TODO: all the scaling is causing a lot of complexity
-# ####: maybe consider using the fbx option for that after all
-# ####: how does that affect modifiers?
-
-# TODO: objects parented to bones does not currently work
+# TODO: generaluzed function for data blocks, so MESH; ARMATURE, etc, they all just use obj.data.transform!
 
 
 class PrepareExport(bpy.types.Operator):
@@ -27,7 +23,7 @@ class PrepareExport(bpy.types.Operator):
         else:
             return "Prepare %s objects for Export to Unity" % ("selected" if context.selected_objects else "visible")
 
-    def invoke(self, context, event):
+    def execute(self, context):
         print("\nINFO: Preparing Unity Export")
 
         path = context.scene.M3.unity_export_path
@@ -47,24 +43,27 @@ class PrepareExport(bpy.types.Operator):
         # get root objects
         roots = [obj for obj in sel if not obj.parent]
 
+        # get direct bone children, they need special treatment
+        bone_children = [obj for obj in sel if obj.parent and obj.parent.type == 'ARMATURE' and obj.parent_bone]
+
         # prepare object transformations and modifiers
         for obj in roots:
-            self.prepare_for_export(obj, sel, matrices, triangulate=triangulate)
+            self.prepare_for_export(obj, sel, matrices, bone_children, triangulate=triangulate)
 
         # export
         if export:
-            bpy.ops.export_scene.fbx('EXEC_DEFAULT' if path else 'INVOKE_DEFAULT', filepath=path, use_selection=True)
+            bpy.ops.export_scene.fbx('EXEC_DEFAULT' if path else 'INVOKE_DEFAULT', filepath=path, use_selection=True, apply_scale_options='FBX_SCALE_ALL')
 
         return {'FINISHED'}
 
-    def prepare_for_export(self, obj, sel, matrices, triangulate=False, depth=0, child=False):
+    def prepare_for_export(self, obj, sel, matrices, bone_children, triangulate=False, depth=0, child=False):
         '''
-        recursively rotate and scale an object and its children 90 degrees along world X and scale them down to 1/100
-        for meshes, compensate by inverting the rotation and scaling 100x again
+        recursively rotate an object and its children 90 degrees along X
+        for meshes, compensate by rotating -90 alog X
         also for meshes, store the original meshes for 2 reasons
         1. to easily restore the original mesh rotation
-        2. to deal with instanced objects and also be able to restore themA
-        deal with modifers affecting by the rotations/scaling too
+        2. to deal with instanced objects and also be able to restore these
+        deal with modifers affecting by the rotations too, like mirror which needs a YZ swivel
         '''
 
         def prepare_object(obj, mx, depth, child):
@@ -75,69 +74,32 @@ class PrepareExport(bpy.types.Operator):
             mx = matrices[obj]
             obj.M3.pre_unity_export_mx = flatten_matrix(mx)
 
-            loc, rot, sca = mx.decompose()
+            obj.matrix_world = obj.matrix_world @ Matrix.Rotation(radians(90), 4, 'X')
 
-            # swivel y and z scale, scale down to 1/100th, and add 90 degree X rotation
-            sca[1:3] = sca[2], sca[1]
-            scale = get_sca_matrix(sca / 100)
-            rotation = Matrix.Rotation(radians(90), 4, 'X')
-
-            # rebuild world mx
-            obj.matrix_world = get_loc_matrix(loc) @ get_rot_matrix(rot) @ rotation @ scale
-
-        def prepare_modifiers(obj, triangulate, depth):
+        def prepare_modifiers(obj, swivel, triangulate, depth):
             '''
             prepare/add modifiers
             '''
 
-            # DISPLACE MODS
-
-            displace = [mod for mod in obj.modifiers if mod.type == 'DISPLACE' and mod.show_viewport]
-
-            if displace:
-                print("INFO: %sadjusting %s's DISPLACE modifiers" % (depth * '  ', obj.name))
-
-                for mod in displace:
-                    mod.strength *= 100
-
-
             # MIRROR MODS
 
-            mirrors = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.show_viewport]
+            # skip swiveling if parent is direct bone child, bc the bone child was not transformed!
+            if swivel:
+                mirrors = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.show_viewport]
 
-            if mirrors:
-                print("INFO: %sadjusting %s's MIRROR modifiers" % (depth * '  ', obj.name))
+                if mirrors:
+                    print("INFO: %sadjusting %s's MIRROR modifiers" % (depth * '  ', obj.name))
 
-                for mod in mirrors:
-                    mod.use_axis[1:3] = mod.use_axis[2], mod.use_axis[1]
-                    mod.use_bisect_axis[1:3] = mod.use_bisect_axis[2], mod.use_bisect_axis[1]
-                    mod.use_bisect_flip_axis[1:3] = mod.use_bisect_flip_axis[2], mod.use_bisect_flip_axis[1]
-
-
-            # BEVEL MODS
-
-            bevels = [mod for mod in obj.modifiers if mod.type == 'BEVEL' and mod.show_viewport]
-
-            if bevels:
-                print("INFO: %sadjusting %s's BEVEL modifiers" % (depth * '  ', obj.name))
-
-                for mod in bevels:
-                    mod.width *= 100
-
+                    for mod in mirrors:
+                        mod.use_axis[1:3] = mod.use_axis[2], mod.use_axis[1]
+                        mod.use_bisect_axis[1:3] = mod.use_bisect_axis[2], mod.use_bisect_axis[1]
+                        mod.use_bisect_flip_axis[1:3] = mod.use_bisect_flip_axis[2], mod.use_bisect_flip_axis[1]
 
             # TRIANGULATION MOD
 
             if triangulate and obj.type == 'MESH':
                 print("INFO: %sadding %s's TRIANGULATE modifier" % (depth * '  ', obj.name))
-
-                mod = obj.modifiers.new(name="Triangulate", type="TRIANGULATE")
-                mod.keep_custom_normals = True
-                mod.quad_method = 'FIXED'
-                mod.show_expanded = False
-
-        def prepare_empty(obj, depth):
-            print("INFO: %sadjusting %s's EMPTY DISPLAY SIZE to compensate" % (depth * '  ', obj.name))
-            obj.empty_display_size *= 100
+                add_triangulate(obj)
 
         def prepare_mesh(obj, depth):
             '''
@@ -149,10 +111,8 @@ class PrepareExport(bpy.types.Operator):
             obj.data = obj.data.copy()
 
             print("INFO: %sadjusting %s's MESH to compensate" % (depth * '  ', obj.name))
-            rotation = Matrix.Rotation(radians(-90), 4, 'X')
-            scale = Matrix.Scale(100, 4)
 
-            obj.data.transform(rotation @ scale)
+            obj.data.transform(Matrix.Rotation(radians(-90), 4, 'X'))
             obj.data.update()
 
         def prepare_armature(obj, depth):
@@ -165,26 +125,31 @@ class PrepareExport(bpy.types.Operator):
             obj.data = obj.data.copy()
 
             print("INFO: %sadjusting %s's ARMATURE to compensate" % (depth * '  ', obj.name))
-            rotation = Matrix.Rotation(radians(-90), 4, 'X')
+            obj.data.transform(Matrix.Rotation(radians(-90), 4, 'X'))
 
-            # EDIT MODE (rest pose)
+        def prepare_children(obj, bone_children, depth):
+            if obj.children:
+                depth += 1
 
-            # scaling here is great, because it won't show up in the scale props of the pose bone
-            scale = Matrix.Scale(100, 4)
-            obj.data.transform(rotation @ scale)
-
-
-            # POSE MODE
-
-            root_bones = [bone for bone in obj.pose.bones if not bone.parent]
-
-            # if you rotate above, you don't need to do it here, as long as you work on the matrix_basis, just need to correct the locations, which gets shifted by the scaling
-            for bone in root_bones:
-                loc, rot, sca = bone.matrix_basis.decompose()
-                bone.matrix_basis = get_loc_matrix(loc * 100) @ get_rot_matrix(rot) @ get_sca_matrix(sca)
-
+                for child in obj.children:
+                    if child in sel:
+                        self.prepare_for_export(child, sel, matrices, bone_children, triangulate=triangulate, depth=depth, child=True)
 
         if obj in sel:
+
+            # BONE CHILDREN
+
+            if obj in bone_children:
+
+                # direct bone children are left alone, but the prop is set anyway, so they an be iterated over and their children can be restored properly
+                obj.M3.unity_exported = True
+
+                if triangulate:
+                    add_triangulate(obj)
+
+                # their own children are adjusted normaly
+                prepare_children(obj, bone_children, depth)
+                return
 
             # OBJECT TRANSFORM
 
@@ -193,15 +158,12 @@ class PrepareExport(bpy.types.Operator):
 
             # MODIFIERS
 
-            prepare_modifiers(obj, triangulate, depth)
+            prepare_modifiers(obj, swivel=False if obj.parent and obj.parent in bone_children else True, triangulate=triangulate, depth=depth)
 
 
             # OBJECT DATA
 
-            if obj.type == 'EMPTY':
-                prepare_empty(obj, depth)
-
-            elif obj.type == 'MESH':
+            if obj.type == 'MESH':
                 prepare_mesh(obj, depth)
 
             elif obj.type == 'ARMATURE':
@@ -210,12 +172,7 @@ class PrepareExport(bpy.types.Operator):
 
             # OBJECT CHILDREN
 
-            if obj.children:
-                depth += 1
-
-                for child in obj.children:
-                    if child in sel:
-                        self.prepare_for_export(child, sel, matrices, triangulate=triangulate, depth=depth, child=True)
+            prepare_children(obj, bone_children, depth)
 
 
 class RestoreExport(bpy.types.Operator):
@@ -240,9 +197,13 @@ class RestoreExport(bpy.types.Operator):
         # get root objects
         roots = [obj for obj in exported if not obj.parent]
 
+        # get direct bone children, they need special treatment
+        bone_children = [obj for obj in exported if obj.parent and obj.parent.type == 'ARMATURE' and obj.parent_bone]
+
         # restore objects, meshesand modifiers
         for obj in roots:
-            self.restore_exported(obj, exported, meshes, armatures, detriangulate=detriangulate)
+            self.restore_exported(obj, exported, bone_children, meshes, armatures, detriangulate=detriangulate)
+
 
         # remove the unique meshes
         bpy.data.batch_remove(meshes)
@@ -252,9 +213,9 @@ class RestoreExport(bpy.types.Operator):
 
         return {'FINISHED'}
 
-    def restore_exported(self, obj, exported, meshes, armatures, detriangulate=True, depth=0, child=False):
+    def restore_exported(self, obj, exported, bone_children, meshes, armatures, detriangulate=True, depth=0, child=False):
         '''
-        recursively restore an the original transformation and mesh of an exported object and its children
+        recursively restore an the original transformation and data of an exported object and its children
         '''
 
         def restore_object(obj, depth, child):
@@ -264,58 +225,30 @@ class RestoreExport(bpy.types.Operator):
             obj.M3.pre_unity_export_mx = flatten_matrix(Matrix())
             obj.M3.unity_exported = False
 
-        def restore_modifiers(obj, detriangulate, depth):
+        def restore_modifiers(obj, swivel, detriangulate, depth):
             '''
             restore/remove modifiers
             '''
 
-            # DISPLACE MODS
-
-            displace = [mod for mod in obj.modifiers if mod.type == 'DISPLACE' and mod.show_viewport]
-
-            if displace:
-                print("INFO: %srestoring %s's DISPLACE modifiers" % (depth * '  ', obj.name))
-
-                for mod in displace:
-                    mod.strength /= 100
-
-
             # MIRROR MODS
 
-            mirrors = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.show_viewport]
+            if swivel:
 
-            if mirrors:
-                print("INFO: %srestoring %s's mirror modifiers" % (depth * '  ', obj.name))
+                mirrors = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.show_viewport]
 
-                for mod in mirrors:
-                    mod.use_axis[1:3] = mod.use_axis[2], mod.use_axis[1]
-                    mod.use_bisect_axis[1:3] = mod.use_bisect_axis[2], mod.use_bisect_axis[1]
-                    mod.use_bisect_flip_axis[1:3] = mod.use_bisect_flip_axis[2], mod.use_bisect_flip_axis[1]
+                if mirrors:
+                    print("INFO: %srestoring %s's mirror modifiers" % (depth * '  ', obj.name))
 
-
-            # BEVEL MODS
-
-            bevels = [mod for mod in obj.modifiers if mod.type == 'BEVEL' and mod.show_viewport]
-
-            if bevels:
-                print("INFO: %srestoring %s's BEVEL modifiers" % (depth * '  ', obj.name))
-
-                for mod in bevels:
-                    mod.width /= 100
-
+                    for mod in mirrors:
+                        mod.use_axis[1:3] = mod.use_axis[2], mod.use_axis[1]
+                        mod.use_bisect_axis[1:3] = mod.use_bisect_axis[2], mod.use_bisect_axis[1]
+                        mod.use_bisect_flip_axis[1:3] = mod.use_bisect_flip_axis[2], mod.use_bisect_flip_axis[1]
 
             # TRIANGULATION MOD
 
             if detriangulate:
-                lastmod = obj.modifiers[-1] if obj.modifiers else None
-
-                if lastmod and lastmod.type == 'TRIANGULATE':
-                    print("INFO: %sremoving %s's TRIANGULATE modifier" % (depth * '  ', obj.name))
-                    obj.modifiers.remove(lastmod)
-
-        def restore_empty(obj, depth):
-            print("INFO: %srestoring %s's original EMPTY DISPLAY SIZE" % (depth * '  ', obj.name))
-            obj.empty_display_size /= 100
+                if remove_triangulate(obj):
+                    print("INFO: %sremoved %s's TRIANGULATE modifier" % (depth * '  ', obj.name))
 
         def restore_mesh(obj, depth, meshes):
             print("INFO: %srestoring %s's original pre-export MESH" % (depth * '  ', obj.name))
@@ -331,17 +264,29 @@ class RestoreExport(bpy.types.Operator):
             obj.data = obj.M3.pre_unity_export_armature
             obj.M3.pre_unity_export_armature = None
 
-            # the pose info is apparently not stored in the armature, and for some reason you can't create a pointer property for poses
-            # so we have to undo the pose transformation
-            root_bones = [bone for bone in obj.pose.bones if not bone.parent]
+        def restore_children(obj, bone_children, depth):
+            if obj.children:
+                depth += 1
 
-            # if you rotate above, you don't need to do it here, as long as you work on the matrix_basis, just need to correct the locations, which gets shifted by the scaling
-            for bone in root_bones:
-                loc, rot, sca = bone.matrix_basis.decompose()
-                bone.matrix_basis = get_loc_matrix(loc / 100) @ get_rot_matrix(rot) @ get_sca_matrix(sca)
-
+                for child in obj.children:
+                    if child in exported:
+                        self.restore_exported(child, exported, bone_children, meshes, armatures, detriangulate=detriangulate, depth=depth, child=True)
 
         if obj in exported:
+
+            # BONE CHILDREN
+
+            if obj in bone_children:
+
+                # direct bone children are left alone, but the prop has to still lbe reset of course
+                obj.M3.unity_exported = False
+
+                if detriangulate:
+                    remove_triangulate(obj)
+
+                # their own children are restored normaly
+                restore_children(obj, bone_children, depth)
+                return
 
             # OBJECT TRANSFORM
 
@@ -350,15 +295,12 @@ class RestoreExport(bpy.types.Operator):
 
             # MODIFIERS
 
-            restore_modifiers(obj, detriangulate, depth)
+            restore_modifiers(obj, swivel=False if obj.parent and obj.parent in bone_children else True, detriangulate=detriangulate, depth=depth)
 
 
             # OBJECT DATA
 
-            if obj.type == 'EMPTY':
-                restore_empty(obj, depth)
-
-            elif obj.type == 'MESH' and obj.M3.pre_unity_export_mesh:
+            if obj.type == 'MESH' and obj.M3.pre_unity_export_mesh:
                 restore_mesh(obj, depth, meshes)
 
             elif obj.type == 'ARMATURE' and obj.M3.pre_unity_export_armature:
@@ -367,9 +309,4 @@ class RestoreExport(bpy.types.Operator):
 
             # OBJECT CHILDREN
 
-            if obj.children:
-                depth += 1
-
-                for child in obj.children:
-                    if child in exported:
-                        self.restore_exported(child, exported, meshes, armatures, detriangulate=detriangulate, depth=depth, child=True)
+            restore_children(obj, bone_children, depth)
