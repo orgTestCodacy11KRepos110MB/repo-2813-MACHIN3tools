@@ -22,16 +22,22 @@ class PanelMACHIN3tools(bpy.types.Panel):
         m3 = context.scene.M3
 
         if get_prefs().activate_smart_drive:
-            self.draw_smart_drive(layout, m3)
+            box = layout.box()
+            box.prop(m3, "show_smart_drive", text="Smart Drive", icon='TRIA_DOWN' if m3.show_smart_drive else 'TRIA_RIGHT', emboss=False)
+
+            if m3.show_smart_drive:
+                self.draw_smart_drive(m3, box)
 
         if get_prefs().activate_unity:
-            self.draw_unity(layout, m3)
+            box = layout.box()
 
-    def draw_smart_drive(self, layout, m3):
-        box = layout.box()
-        box.label(text="Smart Drive")
+            box.prop(m3, "show_unity", text="Unity", icon='TRIA_DOWN' if m3.show_unity else 'TRIA_RIGHT', emboss=False)
 
-        column = box.column()
+            if m3.show_unity:
+                self.draw_unity(m3, box)
+
+    def draw_smart_drive(self, m3, layout):
+        column = layout.column()
 
         b = column.box()
         b.label(text="Driver")
@@ -102,16 +108,18 @@ class PanelMACHIN3tools(bpy.types.Panel):
         r = row.row(align=True)
         r.prop(m3, 'driven_limit', expand=True)
 
-
         r = column.row()
         r.scale_y = 1.2
         r.operator("machin3.smart_drive", text='Drive it!', icon='AUTO')
 
-    def draw_unity(self, layout, m3):
-        box = layout.box()
-        box.label(text="Unity")
+    def draw_unity(self, m3, layout):
+        column = layout.column(align=True)
 
-        column = box.column(align=True)
+        row = column.split(factor=0.3)
+        row.label(text="Triangulate")
+        row.prop(m3, 'unity_triangulate', text='True' if m3.unity_triangulate else 'False', toggle=True)
+
+        column.separator()
 
         column.prop(m3, 'unity_export_path', text='')
 

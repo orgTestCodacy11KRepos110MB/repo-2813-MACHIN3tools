@@ -258,6 +258,8 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     # SMART DRIVE
 
+    show_smart_drive: BoolProperty(name="Show Smart Drive")
+
     driver_start: FloatProperty(name="Driver Start Value", precision=3)
     driver_end: FloatProperty(name="Driver End Value", precision=3)
     driver_axis: EnumProperty(name="Driver Axis", items=axis_items, default='X')
@@ -287,7 +289,10 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             self.avoid_update = True
             self.unity_export_path = abspath(path)
 
+    show_unity: BoolProperty(name="Show Unity")
+
     unity_export_path: StringProperty(name="Unity Export Path", subtype='FILE_PATH', update=update_unity_export_path)
+    unity_triangulate: BoolProperty(name="Triangulate before exporting", default=True)
 
     # hidden
 
