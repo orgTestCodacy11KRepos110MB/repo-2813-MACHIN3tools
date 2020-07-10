@@ -1,12 +1,13 @@
 import bpy
 from bpy.props import BoolProperty
-import bmesh
 from mathutils import Vector, Quaternion
 from .. utils.registration import get_addon
 from .. utils.math import flatten_matrix, get_loc_matrix, get_rot_matrix, get_sca_matrix
 
 
 # TODO: updare child parent inverse mx?
+# TODO: is this tool still relevant? does blender do this properly on its own now? incl the bevel mod?
+# TODO: what about the displace mod?
 
 
 class Apply(bpy.types.Operator):
@@ -47,22 +48,14 @@ class Apply(bpy.types.Operator):
                 loc, rot, sca = mx.decompose()
 
                 # apply the current transformations on the mesh level
-                bm = bmesh.new()
-                bm.from_mesh(obj.data)
-                bm.normal_update()
-                bm.verts.ensure_lookup_table()
-
                 if self.rotation and self.scale:
-                    bmmx = get_rot_matrix(rot) @ get_sca_matrix(sca)
+                    meshmx = get_rot_matrix(rot) @ get_sca_matrix(sca)
                 elif self.rotation:
-                    bmmx = get_rot_matrix(rot)
+                    meshmx = get_rot_matrix(rot)
                 elif self.scale:
-                    bmmx = get_sca_matrix(sca)
+                    meshmx = get_sca_matrix(sca)
 
-                bmesh.ops.transform(bm, matrix=bmmx, verts=bm.verts)
-
-                bm.to_mesh(obj.data)
-                bm.clear()
+                obj.data.transform(meshmx)
 
                 # zero out the transformations on the object level
                 if self.rotation and self.scale:
@@ -91,6 +84,6 @@ class Apply(bpy.types.Operator):
                     # update decal backups's backup matrices as well, we can just reuse the bmesh mx here
                     if decalmachine and obj.DM.decalbackup:
                         backup = obj.DM.decalbackup
-                        backup.DM.backupmx = flatten_matrix(bmmx @ backup.DM.backupmx)
+                        backup.DM.backupmx = flatten_matrix(meshmx @ backup.DM.backupmx)
 
         return {'FINISHED'}
