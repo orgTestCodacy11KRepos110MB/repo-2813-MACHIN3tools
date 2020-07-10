@@ -4,7 +4,8 @@ def add_triangulate(obj):
     mod = obj.modifiers.new(name="Triangulate", type="TRIANGULATE")
     mod.keep_custom_normals = True
     mod.quad_method = 'FIXED'
-    mod.show_expanded = False
+    mod.show_expanded = True
+    return mod
 
 
 def remove_triangulate(obj):

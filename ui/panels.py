@@ -113,6 +113,8 @@ class PanelMACHIN3tools(bpy.types.Panel):
         r.operator("machin3.smart_drive", text='Drive it!', icon='AUTO')
 
     def draw_unity(self, context, m3, layout):
+        all_prepared = True if context.selected_objects and all([obj.M3.unity_exported for obj in context.selected_objects]) else False
+
         column = layout.column(align=True)
 
         row = column.split(factor=0.3)
@@ -128,9 +130,25 @@ class PanelMACHIN3tools(bpy.types.Panel):
         if m3.unity_export:
             column.prop(m3, 'unity_export_path', text='')
 
-        row = column.row(align=True)
-        row.scale_y = 1.5
-        row.operator("machin3.prepare_unity_export", text="Prepare + Export %s" % ('Selected' if context.selected_objects else 'Visible') if m3.unity_export else "Prepare %s" % ('Selected' if context.selected_objects else 'Visible'))
+            # straight export of already prepared objects
+            if all_prepared:
+                row = column.row(align=True)
+                row.scale_y = 1.5
+
+                if m3.unity_export_path:
+                    row.operator_context = 'EXEC_DEFAULT'
+
+                op = row.operator("export_scene.fbx", text='Export')
+                op.use_selection = True
+                op.apply_scale_options = 'FBX_SCALE_ALL'
+
+                if m3.unity_export_path:
+                    op.filepath = m3.unity_export_path
+
+        if not m3.unity_export or not all_prepared:
+            row = column.row(align=True)
+            row.scale_y = 1.5
+            row.operator("machin3.prepare_unity_export", text="Prepare + Export %s" % ('Selected' if context.selected_objects else 'Visible') if m3.unity_export else "Prepare %s" % ('Selected' if context.selected_objects else 'Visible'))
 
         row = column.row(align=True)
         row.scale_y = 1.2

@@ -4,8 +4,6 @@ from mathutils import Matrix
 from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, flatten_matrix
 from .. utils.modifier import add_triangulate, remove_triangulate
 
-# TODO: generaluzed function for data blocks, so MESH; ARMATURE, etc, they all just use obj.data.transform!
-
 
 class PrepareExport(bpy.types.Operator):
     bl_idname = "machin3.prepare_unity_export"
@@ -76,7 +74,7 @@ class PrepareExport(bpy.types.Operator):
 
             obj.matrix_world = obj.matrix_world @ Matrix.Rotation(radians(90), 4, 'X')
 
-        def prepare_modifiers(obj, swivel, triangulate, depth):
+        def prepare_modifiers(obj, swivel, depth):
             '''
             prepare/add modifiers
             '''
@@ -95,11 +93,17 @@ class PrepareExport(bpy.types.Operator):
                         mod.use_bisect_axis[1:3] = mod.use_bisect_axis[2], mod.use_bisect_axis[1]
                         mod.use_bisect_flip_axis[1:3] = mod.use_bisect_flip_axis[2], mod.use_bisect_flip_axis[1]
 
-            # TRIANGULATION MOD
+        def add_triangulation(obj, triangulate):
+            '''
+            triangulate if the prop is set and the object is a mesh, also collapse all other mods!
+            '''
 
             if triangulate and obj.type == 'MESH':
                 print("INFO: %sadding %s's TRIANGULATE modifier" % (depth * '  ', obj.name))
-                add_triangulate(obj)
+                tri = add_triangulate(obj)
+
+                for mod in [mod for mod in obj.modifiers if mod != tri]:
+                    mod.show_expanded = False
 
         def prepare_mesh(obj, depth):
             '''
@@ -137,37 +141,33 @@ class PrepareExport(bpy.types.Operator):
 
         if obj in sel:
 
-            # BONE CHILDREN
-
             if obj in bone_children:
-
-                # direct bone children are left alone, but the prop is set anyway, so they an be iterated over and their children can be restored properly
+                print("%sINFO: %skeeping %s object's TRANSFORMATIONS: %s" % ('' if child else '\n', depth * '  ', 'child' if child else 'root', obj.name))
                 obj.M3.unity_exported = True
 
-                if triangulate:
-                    add_triangulate(obj)
+            else:
 
-                # their own children are adjusted normaly
-                prepare_children(obj, bone_children, depth)
-                return
+                # OBJECT TRANSFORM
 
-            # OBJECT TRANSFORM
+                prepare_object(obj, matrices[obj], depth, child)
 
-            prepare_object(obj, matrices[obj], depth, child)
+                # MODIFIERS
 
-
-            # MODIFIERS
-
-            prepare_modifiers(obj, swivel=False if obj.parent and obj.parent in bone_children else True, triangulate=triangulate, depth=depth)
+                prepare_modifiers(obj, swivel=False if obj.parent and obj.parent in bone_children else True, depth=depth)
 
 
-            # OBJECT DATA
+                # OBJECT DATA
 
-            if obj.type == 'MESH':
-                prepare_mesh(obj, depth)
+                if obj.type == 'MESH':
+                    prepare_mesh(obj, depth)
 
-            elif obj.type == 'ARMATURE':
-                prepare_armature(obj, depth)
+                elif obj.type == 'ARMATURE':
+                    prepare_armature(obj, depth)
+
+
+            # TRIANGULATE
+
+            add_triangulation(obj, triangulate)
 
 
             # OBJECT CHILDREN
@@ -225,7 +225,7 @@ class RestoreExport(bpy.types.Operator):
             obj.M3.pre_unity_export_mx = flatten_matrix(Matrix())
             obj.M3.unity_exported = False
 
-        def restore_modifiers(obj, swivel, detriangulate, depth):
+        def restore_modifiers(obj, swivel, depth):
             '''
             restore/remove modifiers
             '''
@@ -244,8 +244,7 @@ class RestoreExport(bpy.types.Operator):
                         mod.use_bisect_axis[1:3] = mod.use_bisect_axis[2], mod.use_bisect_axis[1]
                         mod.use_bisect_flip_axis[1:3] = mod.use_bisect_flip_axis[2], mod.use_bisect_flip_axis[1]
 
-            # TRIANGULATION MOD
-
+        def remove_triangulation(obj, detriangulate):
             if detriangulate:
                 if remove_triangulate(obj):
                     print("INFO: %sremoved %s's TRIANGULATE modifier" % (depth * '  ', obj.name))
@@ -277,34 +276,32 @@ class RestoreExport(bpy.types.Operator):
             # BONE CHILDREN
 
             if obj in bone_children:
-
-                # direct bone children are left alone, but the prop has to still lbe reset of course
                 obj.M3.unity_exported = False
 
-                if detriangulate:
-                    remove_triangulate(obj)
+            else:
 
-                # their own children are restored normaly
-                restore_children(obj, bone_children, depth)
-                return
+                # OBJECT TRANSFORM
 
-            # OBJECT TRANSFORM
-
-            restore_object(obj, depth, child)
+                restore_object(obj, depth, child)
 
 
-            # MODIFIERS
+                # MODIFIERS
 
-            restore_modifiers(obj, swivel=False if obj.parent and obj.parent in bone_children else True, detriangulate=detriangulate, depth=depth)
+                restore_modifiers(obj, swivel=False if obj.parent and obj.parent in bone_children else True, depth=depth)
 
 
-            # OBJECT DATA
+                # OBJECT DATA
 
-            if obj.type == 'MESH' and obj.M3.pre_unity_export_mesh:
-                restore_mesh(obj, depth, meshes)
+                if obj.type == 'MESH' and obj.M3.pre_unity_export_mesh:
+                    restore_mesh(obj, depth, meshes)
 
-            elif obj.type == 'ARMATURE' and obj.M3.pre_unity_export_armature:
-                restore_armature(obj, depth, armatures)
+                elif obj.type == 'ARMATURE' and obj.M3.pre_unity_export_armature:
+                    restore_armature(obj, depth, armatures)
+
+
+            # TRIANGULATION
+
+            remove_triangulation(obj, detriangulate)
 
 
             # OBJECT CHILDREN
