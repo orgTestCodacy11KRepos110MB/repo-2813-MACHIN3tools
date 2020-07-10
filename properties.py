@@ -291,9 +291,9 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     show_unity: BoolProperty(name="Show Unity")
 
-    unity_export: BoolProperty(name="Export to Unity")
+    unity_export: BoolProperty(name="Export to Unity", description="Enable to do the actual FBX export\nLeave it off to only prepare the Model")
     unity_export_path: StringProperty(name="Unity Export Path", subtype='FILE_PATH', update=update_unity_export_path)
-    unity_triangulate: BoolProperty(name="Triangulate before exporting", default=False)
+    unity_triangulate: BoolProperty(name="Triangulate before exporting", description="Add Triangulate Modifier to the end of every object's stack", default=False)
 
     # hidden
 

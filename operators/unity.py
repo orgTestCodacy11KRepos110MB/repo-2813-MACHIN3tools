@@ -1,4 +1,5 @@
 import bpy
+from bpy.props import BoolProperty
 from math import radians
 from mathutils import Matrix
 from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, flatten_matrix
@@ -9,6 +10,8 @@ class PrepareExport(bpy.types.Operator):
     bl_idname = "machin3.prepare_unity_export"
     bl_label = "MACHIN3: Prepare Unity Export"
     bl_options = {'REGISTER', 'UNDO'}
+
+    prepare_only: BoolProperty(name="Only Prepare, don't export", description="Used by DECALmachine skip Export even if the scene prop is set\nDECALmachine uses its own Export Operator Instead", default=False)
 
     @classmethod
     def poll(cls, context):
@@ -47,6 +50,9 @@ class PrepareExport(bpy.types.Operator):
         # prepare object transformations and modifiers
         for obj in roots:
             self.prepare_for_export(obj, sel, matrices, bone_children, triangulate=triangulate)
+
+        if self.prepare_only:
+            return {'FINISHED'}
 
         # export
         if export:
@@ -219,7 +225,7 @@ class RestoreExport(bpy.types.Operator):
         '''
 
         def restore_object(obj, depth, child):
-            print("INFO: %srestoring %s object's TRANSFORMATIONS: %s" % (depth * '  ', 'child' if child else 'root', obj.name))
+            print("%sINFO: %srestoring %s object's TRANSFORMATIONS: %s" % ('' if child else '\n', depth * '  ', 'child' if child else 'root', obj.name))
 
             obj.matrix_world = obj.M3.pre_unity_export_mx
             obj.M3.pre_unity_export_mx = flatten_matrix(Matrix())
@@ -276,6 +282,7 @@ class RestoreExport(bpy.types.Operator):
             # BONE CHILDREN
 
             if obj in bone_children:
+                print("%sINFO: %skeeping %s object's TRANSFORMATIONS: %s" % ('' if child else '\n', depth * '  ', 'child' if child else 'root', obj.name))
                 obj.M3.unity_exported = False
 
             else:

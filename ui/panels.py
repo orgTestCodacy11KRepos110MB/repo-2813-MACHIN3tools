@@ -148,7 +148,7 @@ class PanelMACHIN3tools(bpy.types.Panel):
         if not m3.unity_export or not all_prepared:
             row = column.row(align=True)
             row.scale_y = 1.5
-            row.operator("machin3.prepare_unity_export", text="Prepare + Export %s" % ('Selected' if context.selected_objects else 'Visible') if m3.unity_export else "Prepare %s" % ('Selected' if context.selected_objects else 'Visible'))
+            row.operator("machin3.prepare_unity_export", text="Prepare + Export %s" % ('Selected' if context.selected_objects else 'Visible') if m3.unity_export else "Prepare %s" % ('Selected' if context.selected_objects else 'Visible')).prepare_only = False
 
         row = column.row(align=True)
         row.scale_y = 1.2

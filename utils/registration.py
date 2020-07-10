@@ -47,7 +47,7 @@ def get_addon(addon, debug=False):
 
 def get_addon_prefs(addon):
     _, foldername, _, _ = get_addon(addon)
-    return bpy.context.preferences.addons.get(foldername)
+    return bpy.context.preferences.addons.get(foldername).preferences
 
 
 # CLASS REGISTRATION
