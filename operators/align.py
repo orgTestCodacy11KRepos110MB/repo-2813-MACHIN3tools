@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import BoolProperty, EnumProperty
+from bpy.props import BoolProperty, EnumProperty, FloatProperty
 from mathutils import Matrix, Vector, Euler
 from math import radians
 from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix
@@ -36,6 +36,8 @@ class Align(bpy.types.Operator):
 
     parent_to_bone: BoolProperty(name='Parent to Bone', default=True)
     align_z_to_y: BoolProperty(name='Align Z to Y', default=True)
+    roll: BoolProperty(name='Roll', default=False)
+    roll_amount: FloatProperty(name='Roll Amount in Degrees', default=90)
 
     def draw(self, context):
         layout = self.layout
@@ -55,6 +57,13 @@ class Align(bpy.types.Operator):
             row = column.split(factor=0.3)
             row.label(text='Align Z to Y')
             row.prop(self, 'align_z_to_y', text='True' if self.align_z_to_y else 'False', toggle=True)
+
+            row = column.split(factor=0.3)
+            row.prop(self, 'roll', text='Roll')
+
+            r = row.row(align=True)
+            r.active = self.roll
+            r.prop(self, 'roll_amount', text='')
 
         else:
             if self.mode in ['ORIGIN', 'CURSOR', 'ACTIVE']:
@@ -295,9 +304,9 @@ class Align(bpy.types.Operator):
                 obj.parent_bone = bonename
 
             if self.align_z_to_y:
-                obj.matrix_world = bone.matrix @ Matrix.Rotation(radians(-90), 4, 'X')
+                obj.matrix_world = bone.matrix @ Matrix.Rotation(radians(-90), 4, 'X') @ Matrix.Rotation(radians(self.roll_amount if self.roll else 0), 4, 'Z')
             else:
-                obj.matrix_world = bone.matrix
+                obj.matrix_world = bone.matrix @ Matrix.Rotation(radians(self.roll_amount if self.roll else 0), 4, 'Y')
 
     def drop_to_floor(self, selection):
         for obj in selection:
