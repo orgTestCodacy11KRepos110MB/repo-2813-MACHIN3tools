@@ -5,9 +5,9 @@ from .. items import axis_mapping_dict
 
 
 class SmartDrive(bpy.types.Operator):
-    bl_idname = "machin3.smart_drive"
-    bl_label = "MACHIN3: Smart Drive"
-    bl_description = "Drive one Object using another"
+    bl_idname = 'machin3.smart_drive'
+    bl_label = 'MACHIN3: Smart Drive'
+    bl_description = 'Drive one Object using another'
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -48,9 +48,10 @@ class SmartDrive(bpy.types.Operator):
         driver = [obj for obj in context.selected_objects if obj != driven][0]
 
         # remove any existing driver at this path
-        for d in driven.animation_data.drivers:
-            if d.data_path == path and d.array_index == index:
-                driven.animation_data.drivers.remove(d)
+        if driven.animation_data:
+            for d in driven.animation_data.drivers:
+                if d.data_path == path and d.array_index == index:
+                    driven.animation_data.drivers.remove(d)
 
         # add new SCRIPTED_EXPRESSION driver
         fcurve = driven.driver_add(path, index)
@@ -138,15 +139,15 @@ class SmartDrive(bpy.types.Operator):
 
 
 class SwitchValues(bpy.types.Operator):
-    bl_idname = "machin3.switch_driver_values"
-    bl_label = "MACHIN3: Switch Driver Values"
+    bl_idname = 'machin3.switch_driver_values'
+    bl_label = 'MACHIN3: Switch Driver Values'
     bl_options = {'REGISTER', 'UNDO'}
 
-    mode: StringProperty(name="Mode", default='DRIVER')
+    mode: StringProperty(name='Mode', default='DRIVER')
 
     @classmethod
     def description(cls, context, properties):
-        return "Switch Start and End %s Values" % (properties.mode.capitalize())
+        return 'Switch Start and End %s Values' % (properties.mode.capitalize())
 
     def execute(self, context):
         m3 = context.scene.M3
@@ -161,17 +162,17 @@ class SwitchValues(bpy.types.Operator):
 
 
 class SetValue(bpy.types.Operator):
-    bl_idname = "machin3.set_driver_value"
-    bl_label = "MACHIN3: set_driver_value"
+    bl_idname = 'machin3.set_driver_value'
+    bl_label = 'MACHIN3: set_driver_value'
     bl_options = {'REGISTER', 'UNDO'}
 
-    mode: StringProperty(name="Mode", default='DRIVER')
-    value: StringProperty(name="Value", default='START')
+    mode: StringProperty(name='Mode', default='DRIVER')
+    value: StringProperty(name='Value', default='START')
 
 
     @classmethod
     def description(cls, context, properties):
-        return "Set %s %s Value" % (properties.mode.capitalize(), properties.value.capitalize())
+        return 'Set %s %s Value' % (properties.mode.capitalize(), properties.value.capitalize())
 
     @classmethod
     def poll(cls, context):
