@@ -81,6 +81,7 @@ class ImageMode(bpy.types.Operator):
         view = context.space_data
         active = context.active_object
 
+        toolsettings = context.scene.tool_settings
         view.mode = self.mode
 
         if self.mode == "UV" and active:
@@ -92,7 +93,9 @@ class ImageMode(bpy.types.Operator):
                     uvs.new()
 
                 bpy.ops.object.mode_set(mode="EDIT")
-                bpy.ops.mesh.select_all(action="SELECT")
+
+                if not toolsettings.use_uv_select_sync:
+                    bpy.ops.mesh.select_all(action="SELECT")
 
         return {'FINISHED'}
 
