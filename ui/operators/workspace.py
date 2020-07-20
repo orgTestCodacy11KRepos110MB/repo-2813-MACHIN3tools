@@ -11,9 +11,9 @@ class SwitchWorkspace(bpy.types.Operator):
 
     @classmethod
     def description(cls, context, properties):
-        return "Switch to Workplace '%s'" % (properties.name)
+        return "Switch to Workplace '%s' and sync Viewport\nALT: Also sync Shading and Overlays" % (properties.name)
 
-    def execute(self, context):
+    def invoke(self, context, event):
 
         # get current workspace
         ws = bpy.data.workspaces.get(self.name)
@@ -38,9 +38,12 @@ class SwitchWorkspace(bpy.types.Operator):
             if shading:
                 self.set_shading_and_overlay(ws, shading, overlay)
 
-        # otherwise just switch to the chosen one, and don't set shading
+        # otherwise just switch to the chosen one, and only sync the shading when the alt key is pressed!
         elif ws:
             bpy.context.window.workspace = ws
+
+            if shading and event.alt:
+                self.set_shading_and_overlay(ws, shading, overlay)
 
         # for all cases, sync the view
         if ws and view:
