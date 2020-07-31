@@ -11,6 +11,9 @@ from .. utils.view import reset_viewport
 # TODO: select linked kmi for uv editor
 # TODO: view selected in uv editor (called "view center"  in keyconfig I think?)
 
+# TODO: loop multi select needs to use tweak instead of mouse now, see https://developer.blender.org/T78197#987581
+
+
 class Customize(bpy.types.Operator):
     bl_idname = "machin3.customize"
     bl_label = "MACHIN3: Customize"

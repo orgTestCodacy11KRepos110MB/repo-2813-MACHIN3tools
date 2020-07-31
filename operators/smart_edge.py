@@ -69,7 +69,10 @@ class SmartEdge(bpy.types.Operator):
                     bpy.ops.mesh.loopcut_slide('INVOKE_DEFAULT')
 
                 if all([not e.is_manifold for e in edges]):
-                    bpy.ops.mesh.bridge_edge_loops()
+                    try:
+                        bpy.ops.mesh.bridge_edge_loops('INVOKE_DEFAULT')
+                    except:
+                        pass
 
                 # TURN EDGE
                 elif 1 <= len(edges) < 4:
