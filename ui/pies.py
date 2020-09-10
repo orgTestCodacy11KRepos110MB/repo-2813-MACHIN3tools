@@ -673,7 +673,6 @@ class PieSave(Menu):
         op.use_selection = True if context.selected_objects else False
         op.apply_scale_options='FBX_SCALE_ALL'
 
-
     def draw_center_column_bottom(self, layout):
         column = layout.column(align=True)
 
