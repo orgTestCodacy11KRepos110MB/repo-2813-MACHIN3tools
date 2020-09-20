@@ -60,10 +60,8 @@ class Focus(bpy.types.Operator):
             sel = context.selected_objects
 
             if not sel:
-                nothing_selected = True
-
-                for obj in context.visible_objects:
-                    obj.select_set(True)
+                bpy.ops.view3d.view_all('INVOKE_DEFAULT') if get_prefs().focus_view_transition else bpy.ops.view3d.view_all()
+                return
 
             if self.ignore_mirrors:
                 mirrors = [mod for obj in sel for mod in obj.modifiers if mod.type == 'MIRROR' and mod.show_viewport]
@@ -71,11 +69,8 @@ class Focus(bpy.types.Operator):
                 for mod in mirrors:
                     mod.show_viewport = False
 
-        if get_prefs().focus_view_transition:
-            bpy.ops.view3d.view_selected('INVOKE_DEFAULT')
 
-        else:
-            bpy.ops.view3d.view_selected()
+        bpy.ops.view3d.view_selected('INVOKE_DEFAULT') if get_prefs().focus_view_transition else bpy.ops.view3d.view_selected()
 
         for mod in mirrors:
             mod.show_viewport = True
