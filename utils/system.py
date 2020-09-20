@@ -1,5 +1,8 @@
 import bpy
 import os
+import sys
+
+enc = sys.getfilesystemencoding()
 
 
 def abspath(path):
@@ -19,7 +22,7 @@ def add_path_to_recent_files(path):
 
     try:
         recent_path = bpy.utils.user_resource('CONFIG', "recent-files.txt")
-        with open(recent_path, "r+", encoding='utf-8') as f:
+        with open(recent_path, "r+", encoding=enc) as f:
             content = f.read()
             f.seek(0, 0)
             f.write(path.rstrip('\r\n') + '\n' + content)
