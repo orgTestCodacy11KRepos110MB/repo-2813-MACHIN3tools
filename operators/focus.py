@@ -54,8 +54,17 @@ class Focus(bpy.types.Operator):
     def view_selected(self, context):
         mirrors = []
 
+        nothing_selected = False
+
         if context.mode == 'OBJECT':
             sel = context.selected_objects
+
+            if not sel:
+                nothing_selected = True
+
+                for obj in context.visible_objects:
+                    obj.select_set(True)
+
             if self.ignore_mirrors:
                 mirrors = [mod for obj in sel for mod in obj.modifiers if mod.type == 'MIRROR' and mod.show_viewport]
 
@@ -70,6 +79,11 @@ class Focus(bpy.types.Operator):
 
         for mod in mirrors:
             mod.show_viewport = True
+
+        if nothing_selected:
+            for obj in context.visible_objects:
+                obj.select_set(False)
+
 
     def local_view(self, context, debug=False):
         def focus(context, view, sel, history, init=False):
