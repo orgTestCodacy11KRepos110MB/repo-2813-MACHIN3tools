@@ -2350,7 +2350,6 @@ class PieTools(Menu):
             else:
                 pie.separator()
 
-
             # 9 - TOP - RIGHT
             if get_prefs().tools_show_tool_bar:
                 pie.operator("wm.toolbar", text="Tool Bar")
@@ -2360,6 +2359,7 @@ class PieTools(Menu):
             # 1 - BOTTOM - LEFT
             pie.separator()
 
+            # 3 - BOTTOM - RIGHT
             if 'Hops' in tools and get_prefs().tools_show_hardops_menu:
                 HOps = importlib.import_module('HOps')
 
