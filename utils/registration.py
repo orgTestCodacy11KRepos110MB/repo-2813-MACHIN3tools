@@ -441,6 +441,11 @@ def get_pie_menus():
 
     classlists, keylists, count = get_workspace_pie(classlists, keylists, count)
 
+
+    # TOOLS
+
+    classlists, keylists, count = get_tools_pie(classlists, keylists, count)
+
     return classlists, keylists, count
 
 
@@ -677,6 +682,15 @@ def get_workspace_pie(classlists=[], keylists=[], count=0):
     if get_prefs().activate_workspace_pie:
         classlists.append(classesdict["WORKSPACE_PIE"])
         keylists.append(keysdict["WORKSPACE_PIE"])
+        count += 1
+
+    return classlists, keylists, count
+
+
+def get_tools_pie(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_tools_pie:
+        classlists.append(classesdict["TOOLS_PIE"])
+        keylists.append(keysdict["TOOLS_PIE"])
         count += 1
 
     return classlists, keylists, count

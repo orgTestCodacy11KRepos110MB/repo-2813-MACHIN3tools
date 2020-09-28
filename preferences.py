@@ -164,6 +164,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_workspace_pie(self, context):
         activate(self, register=self.activate_workspace_pie, tool="workspace_pie")
 
+    def update_activate_tools_pie(self, context):
+        activate(self, register=self.activate_tools_pie, tool="tools_pie")
 
     # RUNTIME MENU ACTIVATION
 
@@ -233,6 +235,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     activate_transform_pie: BoolProperty(name="Transform Pie", default=True, update=update_activate_transform_pie)
     activate_collections_pie: BoolProperty(name="Collections Pie", default=True, update=update_activate_collections_pie)
     activate_workspace_pie: BoolProperty(name="Workspace Pie", default=False, update=update_activate_workspace_pie)
+    activate_tools_pie: BoolProperty(name="Tools Pie", default=False, update=update_activate_tools_pie)
 
 
     # MACHIN3menus
@@ -388,6 +391,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         r = row.split(factor=0.4)
         r.label(text="Switch Workplaces.")
         r.label(text="If enabled, customize it in ui/pies.py", icon="INFO")
+
+        row = column.split(factor=0.25)
+        row.prop(self, "activate_tools_pie", toggle=True)
+        row.label(text="Switch Tools, used primarily for BoxCutter/HardOps.")
 
 
         # MACHIN3menus

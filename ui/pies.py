@@ -5,6 +5,7 @@ from .. utils.registration import get_prefs, get_addon
 from .. utils.ui import get_icon
 from .. utils.collection import get_scene_collections
 from .. utils.system import abspath
+from .. utils.tools import get_tools_from_context
 
 # TODO: snapping pie
 
@@ -2339,3 +2340,55 @@ class PieWorkspace(Menu):
         # 3 - BOTTOM - RIGHT
         # pie.operator("machin3.switch_workspace", text="Video", icon='FILE_MOVIE').name="Video"
         pie.separator()
+
+
+class PieTools(Menu):
+    bl_idname = "MACHIN3_MT_tools_pie"
+    bl_label = "Tools"
+
+    def draw(self, context):
+        layout = self.layout
+        pie = layout.menu_pie()
+
+        tools = get_tools_from_context(context)
+
+        if context.mode in ['OBJECT', 'EDIT_MESH']:
+
+            # 4 - LEFT
+            if 'BC' in tools:
+                tool = tools['BC']
+                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='BC'
+
+            else:
+                pie.separator()
+
+            # 6 - RIGHT
+            # pie.operator("machin3.switch_workspace", text="Compositing", icon='NODE_COMPOSITING').name="Compositing"
+            pie.separator()
+
+            # 2 - BOTTOM
+            # pie.operator("machin3.switch_workspace", text="Scripting", icon='CONSOLE').name="Scripting"
+            pie.separator()
+
+            # 8 - TOP
+            if 'builtin.select_box' in tools:
+                tool = tools['builtin.select_box']
+                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='builtin.select_box'
+
+            else:
+                pie.separator()
+
+            # 7 - TOP - LEFT
+            # pie.operator("machin3.switch_workspace", text="UVs", icon='GROUP_UVS').name="UVs"
+            pie.separator()
+
+            # 9 - TOP - RIGHT
+            # pie.operator("machin3.switch_workspace", text="World", icon='WORLD').name="World"
+            pie.separator()
+
+            # 1 - BOTTOM - LEFT
+            pie.separator()
+
+            # 3 - BOTTOM - RIGHT
+            # pie.operator("machin3.switch_workspace", text="Video", icon='FILE_MOVIE').name="Video"
+            pie.separator()

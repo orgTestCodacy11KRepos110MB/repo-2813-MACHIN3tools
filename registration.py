@@ -112,6 +112,7 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                                                             ('Select', 'select_collection')])],
            'WORKSPACE_PIE': [('ui.pies', [('PieWorkspace', 'workspace_pie')]),
                              ('ui.operators.workspace', [('SwitchWorkspace', 'switch_workspace')])],
+           'TOOLS_PIE': [('ui.pies', [('PieTools', 'tools_pie')])],
            'OBJECT_CONTEXT_MENU': [('ui.menus', [('MenuMACHIN3toolsObjectContextMenu', 'machin3tools_object_context_menu')])],
            }
 
@@ -132,13 +133,12 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
         'MIRROR': [{'label': 'X Axis', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'X', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('use_x', True), ('use_y', False), ('use_z', False)]},
                    {'label': 'Y Axis', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'Y', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('use_x', False), ('use_y', True), ('use_z', False)]},
                    {'label': 'Z Axis', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'Z', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('use_x', False), ('use_y', False), ('use_z', True)]}],
-
         'ALIGN': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'machin3.align', 'type': 'A', 'value': 'PRESS', 'alt': True}],
-
         'FILEBROWSER': [{'label': 'Open Filebrowser', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_open', 'type': 'O', 'value': 'PRESS'},
                         {'label': 'Toggle Sorting', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'ONE', 'value': 'PRESS', 'properties': [('type', 'SORT')]},
                         {'label': 'Toggle Display', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'TWO', 'value': 'PRESS', 'properties': [('type', 'DISPLAY_TYPE')]},
                         {'label': 'Toggle Hidden', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'THREE', 'value': 'PRESS', 'properties': [('type', 'HIDDEN')]}],
+
         'MODES_PIE': [{'label': '3D View', 'keymap': 'Object Non-modal', 'idname': 'wm.call_menu_pie', 'type': 'TAB', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_modes_pie')]},
                       {'label': 'Image Editor', 'keymap': 'Image', 'space_type': 'IMAGE_EDITOR', 'idname': 'wm.call_menu_pie', 'type': 'TAB', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_modes_pie')]}],
         'SAVE_PIE': [{'keymap': 'Window', 'idname': 'wm.call_menu_pie', 'type': 'S', 'value': 'PRESS', 'ctrl': True, 'properties': [('name', 'MACHIN3_MT_save_pie')]}],
@@ -151,4 +151,5 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
         'TRANSFORM_PIE': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'wm.call_menu_pie', 'type': 'BUTTON4MOUSE', 'value': 'PRESS', 'shift': True, 'properties': [('name', 'MACHIN3_MT_transform_pie')]}],
         'COLLECTIONS_PIE': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'wm.call_menu_pie', 'type': 'C', 'value': 'PRESS', 'shift': True, 'properties': [('name', 'MACHIN3_MT_collections_pie')]}],
         'WORKSPACE_PIE': [{'keymap': 'Window', 'idname': 'wm.call_menu_pie', 'type': 'PAUSE', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_workspace_pie')]}],
+        'TOOLS_PIE': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'wm.call_menu_pie', 'type': 'Q', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_tools_pie')]}],
         }
