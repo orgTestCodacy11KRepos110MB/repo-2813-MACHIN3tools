@@ -19,9 +19,6 @@ from .. utils.tools import get_tools_from_context
 
 grouppro = None
 decalmachine = None
-meshmachine = None
-hardops = None
-HOps = None
 
 
 class PieModes(Menu):
@@ -1252,14 +1249,9 @@ class PieViewport(Menu):
         layout = self.layout
         pie = layout.menu_pie()
 
-        # ob = bpy.context.object
-        # obj = context.object
         scene = context.scene
         view = context.space_data
         r3d = view.region_3d
-        # rd = scene.render
-
-        # align_active = bpy.context.scene.machin3.pieviewsalignactive
 
         # 4 - LEFT
         op = pie.operator("machin3.view_axis", text="Front")
@@ -1268,13 +1260,13 @@ class PieViewport(Menu):
         # 6 - RIGHT
         op = pie.operator("machin3.view_axis", text="Right")
         op.axis='RIGHT'
+
         # 2 - BOTTOM
         op = pie.operator("machin3.view_axis", text="Top")
         op.axis='TOP'
-        # 8 - TOP
 
+        # 8 - TOP
         box = pie.split()
-        # box = pie.box().split()
 
         b = box.box()
         column = b.column()
@@ -1288,41 +1280,11 @@ class PieViewport(Menu):
         column = b.column()
         self.draw_right_column(context, view, r3d, column)
 
-
         # 7 - TOP - LEFT
         pie.separator()
 
         # 9 - TOP - RIGHT
         pie.separator()
-
-
-        """
-        box = pie.split()
-        column = box.column()
-        column.scale_x = 0.8
-
-
-        row = column.row()
-        row.label("Resolution")
-        row.prop(context.scene.machin3, "preview_percentage", text="")
-        row.prop(context.scene.machin3, "final_percentage", text="")
-
-        row = column.row()
-        row.label("Samples")
-        row.prop(context.scene.machin3, "preview_samples", text="")
-        row.prop(context.scene.machin3, "final_samples", text="")
-
-        row = column.row(align=True)
-        row.label("Set")
-        row.operator("machin3.set_preview", text="Preview")
-        row.operator("machin3.set_final", text="Final")
-
-        column.separator()
-        column.operator("machin3.pack_images", text="Pack Images")
-        column.separator()
-        column.separator()
-        column.separator()
-        # """
 
         # 1 - BOTTOM - LEFT
         pie.separator()
@@ -2356,18 +2318,6 @@ class PieTools(Menu):
 
         tools = get_tools_from_context(context)
 
-        global hardops, HOps, decalmachine, meshmachine
-
-        if hardops is None:
-            hardops, foldername, _, _ = get_addon("Hard Ops 9")
-            HOps = importlib.import_module(foldername)
-
-        if decalmachine is None:
-            decalmachine, _, _, _ = get_addon("DECALmachine")
-
-        if meshmachine is None:
-            meshmachine, _, _, _ = get_addon("MESHmachine")
-
         if context.mode in ['OBJECT', 'EDIT_MESH']:
 
             # 4 - LEFT
@@ -2378,18 +2328,14 @@ class PieTools(Menu):
                 pie.separator()
 
             # 6 - RIGHT
-            if hardops and HOps and get_prefs().tools_show_hardops:
-                icon = HOps.icons.get('sm_logo_white')
-                pie.operator("wm.call_menu", text="Hard Ops", icon_value=icon.icon_id).name="HOPS_MT_MainMenu"
+            if 'Hops' in tools:
+                tool = tools['Hops']
+                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='Hops'
             else:
                 pie.separator()
 
             # 2 - BOTTOM
-            if get_prefs().tools_show_quick_favorites:
-                pie.operator("wm.call_menu", text="Quick Favorites").name="SCREEN_MT_user_menu"
-            else:
-                pie.separator()
-
+            pie.separator()
 
             # 8 - TOP
             if 'builtin.select_box' in tools:
@@ -2399,19 +2345,25 @@ class PieTools(Menu):
                 pie.separator()
 
             # 7 - TOP - LEFT
-            pie.separator()
-
-            # 9 - TOP - RIGHT
-            pie.separator()
-
-            # 1 - BOTTOM - LEFT
-            if decalmachine and get_prefs().tools_show_decalmachine:
-                pie.operator("machin3.call_decal_pie", text="DECALmachine").idname="decal_machine"
+            if get_prefs().tools_show_quick_favorites:
+                pie.operator("wm.call_menu", text="Quick Favorites").name="SCREEN_MT_user_menu"
             else:
                 pie.separator()
 
-            # 3 - BOTTOM - RIGHT
-            if meshmachine and get_prefs().tools_show_meshmachine:
-                pie.operator("machin3.call_mesh_machine_menu", text="MESHmachine").idname="mesh_machine"
+
+            # 9 - TOP - RIGHT
+            if get_prefs().tools_show_tool_bar:
+                pie.operator("wm.toolbar", text="Tool Bar")
+            else:
+                pie.separator()
+
+            # 1 - BOTTOM - LEFT
+            pie.separator()
+
+            if 'Hops' in tools and get_prefs().tools_show_hardops_menu:
+                HOps = importlib.import_module('HOps')
+
+                icon = HOps.icons.get('sm_logo_white')
+                pie.operator("wm.call_menu", text="Hard Ops Menu", icon_value=icon.icon_id).name="HOPS_MT_MainMenu"
             else:
                 pie.separator()

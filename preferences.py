@@ -189,10 +189,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     obj_mode_rotate_around_active: BoolProperty(name="Rotate Around Selection, but only in Object Mode", default=False)
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
     focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
-    tools_show_hardops: BoolProperty(name="Show Hard Ops", default=True)
-    tools_show_decalmachine: BoolProperty(name="Show DECALmachine", default=False)
-    tools_show_meshmachine: BoolProperty(name="Show MESHmachine", default=False)
+    tools_show_hardops_menu: BoolProperty(name="Show Hard Ops Menu", default=True)
     tools_show_quick_favorites: BoolProperty(name="Show Quick Favorites", default=False)
+    tools_show_tool_bar: BoolProperty(name="Show Tool Bar", default=False)
 
     custom_startup: BoolProperty(name="Startup Scene", default=True)
     custom_theme: BoolProperty(name="Theme", default=True)
@@ -548,10 +547,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             column = bb.column()
             row = column.row()
-            row.prop(self, "tools_show_hardops")
-            row.prop(self, "tools_show_decalmachine")
-            row.prop(self, "tools_show_meshmachine")
+            row.prop(self, "tools_show_hardops_menu")
             row.prop(self, "tools_show_quick_favorites")
+            row.prop(self, "tools_show_tool_bar")
 
 
         # NO SETTINGS
