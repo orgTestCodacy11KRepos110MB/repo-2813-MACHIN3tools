@@ -188,8 +188,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     obj_mode_rotate_around_active: BoolProperty(name="Rotate Around Selection, but only in Object Mode", default=False)
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
-
     focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
+    tools_show_hardops: BoolProperty(name="Show Hard Ops", default=True)
+    tools_show_decalmachine: BoolProperty(name="Show DECALmachine", default=False)
+    tools_show_meshmachine: BoolProperty(name="Show MESHmachine", default=False)
 
     custom_startup: BoolProperty(name="Startup Scene", default=True)
     custom_theme: BoolProperty(name="Theme", default=True)
@@ -537,9 +539,22 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             row.prop(self, "switchmatcap2")
 
 
+        # TOOLS PIE
+
+        if getattr(bpy.types, "MACHIN3_MT_tools_pie", False):
+            bb = b.box()
+            bb.label(text="Tools Pie")
+
+            column = bb.column()
+            row = column.row()
+            row.prop(self, "tools_show_hardops")
+            row.prop(self, "tools_show_decalmachine")
+            row.prop(self, "tools_show_meshmachine")
+
+
         # NO SETTINGS
 
-        if not any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["MT_modes_pie", "MT_save_pie", "MT_shading_pie"]]):
+        if not any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_focus", "OT_customize", "MT_modes_pie", "MT_save_pie", "MT_shading_pie", "MT_tools_pie"]]):
             b.label(text="No tools or pie menus with settings have been activated.")
 
     def draw_keymaps(self, box):

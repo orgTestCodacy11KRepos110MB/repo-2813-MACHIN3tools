@@ -1,6 +1,7 @@
 import bpy
 from bpy.types import Menu
 import os
+import importlib
 from .. utils.registration import get_prefs, get_addon
 from .. utils.ui import get_icon
 from .. utils.collection import get_scene_collections
@@ -18,6 +19,9 @@ from .. utils.tools import get_tools_from_context
 
 grouppro = None
 decalmachine = None
+meshmachine = None
+hardops = None
+HOps = None
 
 
 class PieModes(Menu):
@@ -2352,6 +2356,18 @@ class PieTools(Menu):
 
         tools = get_tools_from_context(context)
 
+        global hardops, HOps, decalmachine, meshmachine
+
+        if hardops is None:
+            hardops, foldername, _, _ = get_addon("Hard Ops 9")
+            HOps = importlib.import_module(foldername)
+
+        if decalmachine is None:
+            decalmachine, _, _, _ = get_addon("DECALmachine")
+
+        if meshmachine is None:
+            meshmachine, _, _, _ = get_addon("MESHmachine")
+
         if context.mode in ['OBJECT', 'EDIT_MESH']:
 
             # 4 - LEFT
@@ -2363,11 +2379,14 @@ class PieTools(Menu):
                 pie.separator()
 
             # 6 - RIGHT
-            # pie.operator("machin3.switch_workspace", text="Compositing", icon='NODE_COMPOSITING').name="Compositing"
-            pie.separator()
+            if hardops and HOps and get_prefs().tools_show_hardops:
+                icon = HOps.icons.get('sm_logo_white')
+                pie.operator("wm.call_menu", text="Hard Ops", icon_value=icon.icon_id).name="HOPS_MT_MainMenu"
+
+            else:
+                pie.separator()
 
             # 2 - BOTTOM
-            # pie.operator("machin3.switch_workspace", text="Scripting", icon='CONSOLE').name="Scripting"
             pie.separator()
 
             # 8 - TOP
@@ -2379,16 +2398,21 @@ class PieTools(Menu):
                 pie.separator()
 
             # 7 - TOP - LEFT
-            # pie.operator("machin3.switch_workspace", text="UVs", icon='GROUP_UVS').name="UVs"
             pie.separator()
 
             # 9 - TOP - RIGHT
-            # pie.operator("machin3.switch_workspace", text="World", icon='WORLD').name="World"
             pie.separator()
 
             # 1 - BOTTOM - LEFT
-            pie.separator()
+            if decalmachine and get_prefs().tools_show_decalmachine:
+                pie.operator("machin3.call_decal_pie", text="DECALmachine").idname="decal_machine"
+
+            else:
+                pie.separator()
 
             # 3 - BOTTOM - RIGHT
-            # pie.operator("machin3.switch_workspace", text="Video", icon='FILE_MOVIE').name="Video"
-            pie.separator()
+            if meshmachine and get_prefs().tools_show_meshmachine:
+                pie.operator("machin3.call_mesh_machine_menu", text="MESHmachine").idname="mesh_machine"
+
+            else:
+                pie.separator()
