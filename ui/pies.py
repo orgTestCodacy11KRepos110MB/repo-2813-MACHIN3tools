@@ -2374,7 +2374,6 @@ class PieTools(Menu):
             if 'BC' in tools:
                 tool = tools['BC']
                 pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='BC'
-
             else:
                 pie.separator()
 
@@ -2382,18 +2381,20 @@ class PieTools(Menu):
             if hardops and HOps and get_prefs().tools_show_hardops:
                 icon = HOps.icons.get('sm_logo_white')
                 pie.operator("wm.call_menu", text="Hard Ops", icon_value=icon.icon_id).name="HOPS_MT_MainMenu"
-
             else:
                 pie.separator()
 
             # 2 - BOTTOM
-            pie.separator()
+            if get_prefs().tools_show_quick_favorites:
+                pie.operator("wm.call_menu", text="Quick Favorites").name="SCREEN_MT_user_menu"
+            else:
+                pie.separator()
+
 
             # 8 - TOP
             if 'builtin.select_box' in tools:
                 tool = tools['builtin.select_box']
                 pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='builtin.select_box'
-
             else:
                 pie.separator()
 
@@ -2406,13 +2407,11 @@ class PieTools(Menu):
             # 1 - BOTTOM - LEFT
             if decalmachine and get_prefs().tools_show_decalmachine:
                 pie.operator("machin3.call_decal_pie", text="DECALmachine").idname="decal_machine"
-
             else:
                 pie.separator()
 
             # 3 - BOTTOM - RIGHT
             if meshmachine and get_prefs().tools_show_meshmachine:
                 pie.operator("machin3.call_mesh_machine_menu", text="MESHmachine").idname="mesh_machine"
-
             else:
                 pie.separator()

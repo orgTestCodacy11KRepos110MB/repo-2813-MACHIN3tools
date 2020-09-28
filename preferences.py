@@ -192,6 +192,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     tools_show_hardops: BoolProperty(name="Show Hard Ops", default=True)
     tools_show_decalmachine: BoolProperty(name="Show DECALmachine", default=False)
     tools_show_meshmachine: BoolProperty(name="Show MESHmachine", default=False)
+    tools_show_quick_favorites: BoolProperty(name="Show Quick Favorites", default=False)
 
     custom_startup: BoolProperty(name="Startup Scene", default=True)
     custom_theme: BoolProperty(name="Theme", default=True)
@@ -550,6 +551,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             row.prop(self, "tools_show_hardops")
             row.prop(self, "tools_show_decalmachine")
             row.prop(self, "tools_show_meshmachine")
+            row.prop(self, "tools_show_quick_favorites")
 
 
         # NO SETTINGS
