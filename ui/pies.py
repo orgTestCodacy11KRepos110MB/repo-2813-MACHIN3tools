@@ -797,15 +797,15 @@ class PieShading(Menu):
         perspective_type = view.region_3d.view_perspective
 
         column = layout.column(align=True)
+        row = column.row(align=True)
 
-        row = column.split(factor=0.5, align=True)
-        row.prop(view.overlay, "show_cursor", text="3D Cursor")
+        row.prop(view.overlay, "show_stats", text="Stats")
+        row.prop(view.overlay, "show_cursor", text="Cursor")
+        row.prop(view.overlay, "show_object_origins", text="Origins")
+
         r = row.row(align=True)
-        r.prop(view.overlay, "show_object_origins", text="Origins")
-
-        rr = r.row(align=True)
-        rr.active = view.overlay.show_object_origins
-        rr.prop(view.overlay, "show_object_origins_all", text="All")
+        r.active = view.overlay.show_object_origins
+        r.prop(view.overlay, "show_object_origins_all", text="All")
 
         if view.shading.type == 'SOLID' and view.overlay.show_overlays:
             row = column.split(factor=0.5, align=True)
@@ -1022,7 +1022,6 @@ class PieShading(Menu):
                 rr = r.row(align=True)
                 rr.active = view.overlay.show_curve_normals
                 rr.prop(view.overlay, "normals_length", text="Length")
-
 
     def draw_shade_box(self, context, view, layout):
         column = layout.column(align=True)
