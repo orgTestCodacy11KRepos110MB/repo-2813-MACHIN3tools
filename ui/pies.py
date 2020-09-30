@@ -1809,6 +1809,7 @@ class PieTransform(Menu):
         pie = layout.menu_pie()
 
         scene = context.scene
+        active = context.active_object
 
         # 4 - LEFT
         op = pie.operator('machin3.set_transform_preset', text='Local')
@@ -1840,7 +1841,7 @@ class PieTransform(Menu):
 
         b = box.box()
         column = b.column()
-        self.draw_right_column(context, scene, column)
+        self.draw_right_column(context, scene, active, column)
 
 
         # 7 - TOP - LEFT
@@ -1887,7 +1888,7 @@ class PieTransform(Menu):
             row.prop(custom, "name", text="")
             row.operator("transform.delete_orientation", text="X", emboss=True)
 
-    def draw_right_column(self, context, scene, layout):
+    def draw_right_column(self, context, scene, active, layout):
         column = layout.column(align=True)
 
         if context.mode == 'OBJECT':
@@ -1900,16 +1901,24 @@ class PieTransform(Menu):
             col.prop(scene.tool_settings, "use_transform_skip_children", text="Parents")
 
         elif context.mode == 'EDIT_MESH':
-            column.label(text="Mirror Editing")
+            column.label(text="Transform")
 
-            active = context.active_object
+            column.prop(scene.tool_settings, "use_transform_correct_face_attributes")
+
+            row = column.row(align=True)
+            row.active = scene.tool_settings.use_transform_correct_face_attributes
+            row.prop(scene.tool_settings, "use_transform_correct_keep_connected")
+
+            column.label(text="Mirror")
 
             row = column.row(align=True)
             row.prop(active.data, "use_mirror_x")
             row.prop(active.data, "use_mirror_y")
             row.prop(active.data, "use_mirror_z")
 
-            column.prop(active.data, "use_mirror_topology", toggle=True)
+            row = column.row(align=True)
+            row.active = any([active.data.use_mirror_x, active.data.use_mirror_y, active.data.use_mirror_z])
+            row.prop(active.data, "use_mirror_topology", toggle=True)
 
 
 class PieCollections(Menu):

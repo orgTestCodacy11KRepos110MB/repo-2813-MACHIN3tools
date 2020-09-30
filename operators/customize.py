@@ -12,6 +12,7 @@ from .. utils.view import reset_viewport
 # TODO: view selected in uv editor (called "view center"  in keyconfig I think?)
 
 # TODO: loop multi select needs to use tweak instead of mouse now, see https://developer.blender.org/T78197#987581
+# TODO: disalbe ALT+M edit mode shortcut, which we use for the hardops material lists instead
 
 
 class Customize(bpy.types.Operator):
