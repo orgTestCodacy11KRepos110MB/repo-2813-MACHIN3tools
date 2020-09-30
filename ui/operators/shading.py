@@ -176,6 +176,9 @@ class ToggleCurvature(bpy.types.Operator):
         return {'FINISHED'}
 
 
+matcap1_color_type = None
+
+
 class MatcapSwitch(bpy.types.Operator):
     bl_idname = "machin3.matcap_switch"
     bl_label = "Matcap Switch"
@@ -192,12 +195,23 @@ class MatcapSwitch(bpy.types.Operator):
         matcap1 = get_prefs().switchmatcap1
         matcap2 = get_prefs().switchmatcap2
 
+        force_single = get_prefs().matcap2_force_single
+        global matcap1_color_type
+
         if matcap1 and matcap2 and "NOT FOUND" not in [matcap1, matcap2]:
             if shading.studio_light == matcap1:
                 shading.studio_light = matcap2
 
+                if force_single and shading.color_type != 'SINGLE':
+                    matcap1_color_type = shading.color_type
+                    shading.color_type = 'SINGLE'
+
             elif shading.studio_light == matcap2:
                 shading.studio_light = matcap1
+
+                if force_single and matcap1_color_type:
+                    shading.color_type = matcap1_color_type
+                    matcap1_color_type = None
 
             else:
                 shading.studio_light = matcap1

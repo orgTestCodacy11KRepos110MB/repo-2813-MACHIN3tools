@@ -185,6 +185,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     switchmatcap1: StringProperty(name="Matcap 1", update=update_switchmatcap1)
     switchmatcap2: StringProperty(name="Matcap 2", update=update_switchmatcap2)
+    matcap2_force_single: BoolProperty(name="Force Single Color for Matcap 2", default=True)
 
     obj_mode_rotate_around_active: BoolProperty(name="Rotate Around Selection, but only in Object Mode", default=False)
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
@@ -534,9 +535,12 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             column = bb.column()
 
             row = column.row()
-
             row.prop(self, "switchmatcap1")
             row.prop(self, "switchmatcap2")
+
+            row = column.split(factor=0.5)
+            row.separator()
+            row.prop(self, "matcap2_force_single")
 
 
         # TOOLS PIE
