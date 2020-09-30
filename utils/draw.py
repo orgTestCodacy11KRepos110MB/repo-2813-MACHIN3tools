@@ -67,48 +67,51 @@ def draw_focus_HUD(context, color=(1, 1, 1), alpha=1, width=2):
     region = context.region
     view = context.space_data
 
-    # draw border
+    # only draw when actually in local view, this prevents it being drawn when switing workspace, which doesn't sync local view
+    if view.local_view:
 
-    coords = [(width, width), (region.width - width, width), (region.width - width, region.height - width), (width, region.height - width)]
-    indices =[(0, 1), (1, 2), (2, 3), (3, 0)]
+        # draw border
 
-    shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
-    shader.bind()
-    shader.uniform_float("color", (*color, alpha / 4))
+        coords = [(width, width), (region.width - width, width), (region.width - width, region.height - width), (width, region.height - width)]
+        indices =[(0, 1), (1, 2), (2, 3), (3, 0)]
 
-    bgl.glEnable(bgl.GL_BLEND)
+        shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+        shader.bind()
+        shader.uniform_float("color", (*color, alpha / 4))
 
-    bgl.glLineWidth(width)
+        bgl.glEnable(bgl.GL_BLEND)
 
-    batch = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
-    batch.draw(shader)
+        bgl.glLineWidth(width)
 
-    # draw title
+        batch = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
+        batch.draw(shader)
 
-    # check if title needs to be offset down due to the header position
-    area = context.area
-    headers = [r for r in area.regions if r.type == 'HEADER']
+        # draw title
 
-    scale = context.preferences.view.ui_scale
-    offset = 4
+        # check if title needs to be offset down due to the header position
+        area = context.area
+        headers = [r for r in area.regions if r.type == 'HEADER']
 
-    if headers:
-        header = headers[0]
+        scale = context.preferences.view.ui_scale
+        offset = 4
 
-        # only offset when the header is on top and when show_region_tool_header is disabled
-        if area.y - header.y and not view.show_region_tool_header:
-            offset += int(25 * scale)
+        if headers:
+            header = headers[0]
 
-    title = "Focus Level: %d" % len(context.scene.M3.focus_history)
+            # only offset when the header is on top and when show_region_tool_header is disabled
+            if area.y - header.y and not view.show_region_tool_header:
+                offset += int(25 * scale)
 
-    stashes = True if context.active_object and getattr(context.active_object, 'MM', False) and getattr(context.active_object.MM, 'stashes') else False
-    center = (region.width / 2) + (scale * 100) if stashes else region.width / 2
+        title = "Focus Level: %d" % len(context.scene.M3.focus_history)
 
-    font = 1
-    fontsize = int(12 * scale)
+        stashes = True if context.active_object and getattr(context.active_object, 'MM', False) and getattr(context.active_object.MM, 'stashes') else False
+        center = (region.width / 2) + (scale * 100) if stashes else region.width / 2
 
-    blf.size(font, fontsize, 72)
-    blf.color(font, *color, alpha)
-    blf.position(font, center - int(60 * scale), region.height - offset - int(fontsize), 0)
+        font = 1
+        fontsize = int(12 * scale)
 
-    blf.draw(font, title)
+        blf.size(font, fontsize, 72)
+        blf.color(font, *color, alpha)
+        blf.position(font, center - int(60 * scale), region.height - offset - int(fontsize), 0)
+
+        blf.draw(font, title)
