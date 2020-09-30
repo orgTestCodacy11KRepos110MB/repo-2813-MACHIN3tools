@@ -79,7 +79,6 @@ class Focus(bpy.types.Operator):
             for obj in context.visible_objects:
                 obj.select_set(False)
 
-
     def local_view(self, context, debug=False):
         def focus(context, view, sel, history, init=False):
             vis = context.visible_objects
@@ -116,8 +115,14 @@ class Focus(bpy.types.Operator):
                             entry.obj = obj
                             entry.name = obj.name
 
+                # selection event to force a HUD drawing/handler update
+                sel[0].select_set(True)
+
         def unfocus(context, view, history):
             last_epoch = history[-1]
+
+            # get obj used for selection event to force a HUD drawing/handler update
+            obj = last_epoch.objects[0].obj
 
             # de-inititalize
             if len(history) == 1:
@@ -133,10 +138,12 @@ class Focus(bpy.types.Operator):
                     if mod.type == "MIRROR":
                         mod.show_viewport = True
 
-
             # delete the last epoch
             idx = history.keys().index(last_epoch.name)
             history.remove(idx)
+
+            # selection event to force a HUD drawing/handler update
+            obj.select_set(False)
 
         view = context.space_data
         # self.show_tool_props = False
@@ -171,7 +178,7 @@ class Focus(bpy.types.Operator):
             if view.local_view:
 
                 # go deeper
-                if context.selected_objects and not (len(vis) == 1 and vis == sel):
+                if context.selected_objects and not vis == sel:
                     focus(context, view, sel, history)
 
                 # go higher
