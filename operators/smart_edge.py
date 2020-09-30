@@ -1,6 +1,9 @@
 import bpy
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, IntProperty, EnumProperty
 import bmesh
+from .. items import bridge_interpolation_items
+from .. utils.ui import popup_message
+
 
 
 class SmartEdge(bpy.types.Operator):
@@ -11,10 +14,20 @@ class SmartEdge(bpy.types.Operator):
     sharp: BoolProperty(name="Toggle Sharp", default=False)
     offset: BoolProperty(name="Offset Edge Slide", default=True)
 
+    bridge_cuts: IntProperty(name="Cuts", default=0, min=0)
+    bridge_interpolation: EnumProperty(name="Interpolation", items=bridge_interpolation_items, default='SURFACE')
+
+    draw_props = False
+
     def draw(self, context):
         layout = self.layout
 
         column = layout.column()
+
+        if self.draw_props:
+            row = column.row(align=True)
+            row.prop(self, "bridge_cuts")
+            row.prop(self, "bridge_interpolation", text="")
 
     @classmethod
     def poll(cls, context):
@@ -22,6 +35,8 @@ class SmartEdge(bpy.types.Operator):
         return any(mode == m for m in [(True, False, False), (False, True, False), (False, False, True)])
 
     def execute(self, context):
+        self.draw_props = False
+
         active = context.active_object
 
         bm = bmesh.from_edit_mesh(active.data)
@@ -68,11 +83,13 @@ class SmartEdge(bpy.types.Operator):
                 if len(edges) == 0:
                     bpy.ops.mesh.loopcut_slide('INVOKE_DEFAULT')
 
-                if all([not e.is_manifold for e in edges]):
+                # BRIDGE
+                elif all([not e.is_manifold for e in edges]):
                     try:
-                        bpy.ops.mesh.bridge_edge_loops('INVOKE_DEFAULT')
+                        bpy.ops.mesh.bridge_edge_loops(number_cuts=self.bridge_cuts, interpolation=self.bridge_interpolation)
+                        self.draw_props = True
                     except:
-                        pass
+                        popup_message("SmartEdge in Bridge mode requires two separate, non-manifold edge loops.")
 
                 # TURN EDGE
                 elif 1 <= len(edges) < 4:
@@ -116,10 +133,9 @@ class SmartEdge(bpy.types.Operator):
 
         bmesh.update_edit_mesh(active.data)
 
-
     def offset_edges(self, active, bm, edges):
         '''
-        offset parallel edges, choosing either the bevel tool or the offset_edge_loop_slide tool to do so, depending on the circumstances
+        offset parallel edges creating a "korean bevel", choosing either the bevel tool or the offset_edge_loop_slide tool to do so, depending on the circumstances
         '''
         verts = {v for e in edges for v in e.verts}
 
@@ -132,7 +148,6 @@ class SmartEdge(bpy.types.Operator):
 
         # other wise use edge offset slide
         else:
-            print(" offset sliding")
             bpy.ops.mesh.offset_edge_loops_slide('INVOKE_DEFAULT',
                                                  MESH_OT_offset_edge_loops={"use_cap_endpoint": False},
                                                  TRANSFORM_OT_edge_slide={"value": -1, "use_even": True, "flipped": False, "use_clamp": True, "correct_uv": True})
@@ -140,7 +155,6 @@ class SmartEdge(bpy.types.Operator):
                 e.smooth = True
 
         bmesh.update_edit_mesh(active.data)
-
 
     def star_connect(self, active, bm):
         '''
