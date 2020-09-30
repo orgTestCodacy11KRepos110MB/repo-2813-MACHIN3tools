@@ -968,7 +968,7 @@ class PieShading(Menu):
             if active.mode == 'EDIT' and view.overlay.show_overlays:
                 column.separator()
 
-                row = column.split(factor=0.25, align=True)
+                row = column.split(factor=0.2, align=True)
                 row.label(text='Normals')
                 row.prop(view.overlay, "show_vertex_normals", text="", icon='NORMALS_VERTEX')
                 row.prop(view.overlay, "show_split_normals", text="", icon='NORMALS_VERTEX_FACE')
@@ -978,13 +978,51 @@ class PieShading(Menu):
                 r.active = any([view.overlay.show_vertex_normals, view.overlay.show_face_normals, view.overlay.show_split_normals])
                 r.prop(view.overlay, "normals_length", text="Size")
 
-                row = column.split(factor=0.25, align=True)
+                row = column.split(factor=0.2, align=True)
                 row.label(text='Edges')
                 row.prop(view.overlay, "show_edge_crease", text="Creases", toggle=True)
                 row.prop(view.overlay, "show_edge_sharp", text="Sharp", toggle=True)
                 row.prop(view.overlay, "show_edge_bevel_weight", text="Bevel", toggle=True)
                 row.prop(view.overlay, "show_edge_seams", text="Seams", toggle=True)
                 # row.prop(view.overlay, "show_freestyle_edge_marks", text="Freestyle", toggle=True)
+
+        if active.type == "CURVE":
+            curve = active.data
+
+            column.separator()
+
+            row = column.split(factor=0.2, align=True)
+            row.label(text='Curve')
+
+            r = row.split(factor=0.4, align=True)
+            r.prop(curve, "bevel_depth", text="Depth")
+            r.prop(curve, "resolution_u")
+
+            row = column.split(factor=0.2, align=True)
+            row.label(text='Fill')
+
+            r = row.split(factor=0.4, align=True)
+            r.active = curve.bevel_depth > 0
+            r.prop(curve, "fill_mode", text="")
+            r.prop(curve, "bevel_resolution", text="Resolution")
+
+
+            if active.mode == 'EDIT' and view.overlay.show_overlays:
+                column.separator()
+
+                row = column.split(factor=0.2, align=True)
+                row.label(text='Handles')
+                row.prop(view.overlay, "display_handle", text="")
+
+                row = column.split(factor=0.2, align=True)
+                row.label(text='Normals')
+
+                r = row.split(factor=0.2, align=True)
+                r.prop(view.overlay, "show_curve_normals", text="", icon='CURVE_PATH')
+                rr = r.row(align=True)
+                rr.active = view.overlay.show_curve_normals
+                rr.prop(view.overlay, "normals_length", text="Length")
+
 
     def draw_shade_box(self, context, view, layout):
         column = layout.column(align=True)
