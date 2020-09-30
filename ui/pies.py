@@ -799,7 +799,9 @@ class PieShading(Menu):
         column = layout.column(align=True)
         row = column.row(align=True)
 
-        row.prop(view.overlay, "show_stats", text="Stats")
+        if bpy.app.version >= (2, 90, 0):
+            row.prop(view.overlay, "show_stats", text="Stats")
+
         row.prop(view.overlay, "show_cursor", text="Cursor")
         row.prop(view.overlay, "show_object_origins", text="Origins")
 
@@ -1006,13 +1008,17 @@ class PieShading(Menu):
             r.prop(curve, "fill_mode", text="")
             r.prop(curve, "bevel_resolution", text="Resolution")
 
-
             if active.mode == 'EDIT' and view.overlay.show_overlays:
                 column.separator()
 
-                row = column.split(factor=0.2, align=True)
-                row.label(text='Handles')
-                row.prop(view.overlay, "display_handle", text="")
+                if bpy.app.version >= (2, 90, 0):
+                    splines = curve.splines
+                    if splines:
+                        spline = curve.splines[0]
+                        if spline.type == 'BEZIER':
+                            row = column.split(factor=0.2, align=True)
+                            row.label(text='Handles')
+                            row.prop(view.overlay, "display_handle", text="")
 
                 row = column.split(factor=0.2, align=True)
                 row.label(text='Normals')
@@ -1938,13 +1944,14 @@ class PieTransform(Menu):
             col.prop(scene.tool_settings, "use_transform_skip_children", text="Parents")
 
         elif context.mode == 'EDIT_MESH':
-            column.label(text="Transform")
+            if bpy.app.version >= (2, 90, 0):
+                column.label(text="Transform")
 
-            column.prop(scene.tool_settings, "use_transform_correct_face_attributes")
+                column.prop(scene.tool_settings, "use_transform_correct_face_attributes")
 
-            row = column.row(align=True)
-            row.active = scene.tool_settings.use_transform_correct_face_attributes
-            row.prop(scene.tool_settings, "use_transform_correct_keep_connected")
+                row = column.row(align=True)
+                row.active = scene.tool_settings.use_transform_correct_face_attributes
+                row.prop(scene.tool_settings, "use_transform_correct_keep_connected")
 
             column.label(text="Mirror")
 
