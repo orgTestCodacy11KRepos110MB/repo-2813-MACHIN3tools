@@ -604,7 +604,7 @@ class Customize(bpy.types.Operator):
             print("  Added", kmi_to_string(kmi))
 
             kmi = km.keymap_items.new("mesh.subdivide", "TWO", "PRESS", alt=True)
-            kmi.properties.smoothness = 1
+            kmi.properties.smoothness = 0
             print("  Added", kmi_to_string(kmi))
 
         kc = context.window_manager.keyconfigs.user
@@ -613,7 +613,7 @@ class Customize(bpy.types.Operator):
 
         add_keymaps(kc)
 
-        # get_prefs().custom_keymaps = False
+        get_prefs().custom_keymaps = False
 
     def preferences(self, context):
         prefs = context.preferences
@@ -626,41 +626,58 @@ class Customize(bpy.types.Operator):
             print("\n» Changing Preferences: Interface")
 
             v = prefs.view
-            s = prefs.system
 
+            print(" Disabled Splash Screen")
             v.show_splash = False
+
+            print(" Enabled Tool Tips")
             v.show_tooltips = True
+
+            print(" Enabled Python Tool Tips")
             v.show_tooltips_python = True
+
+            print(" Enabled Developer Extras")
             v.show_developer_ui = True
 
+            print(" Changed Header Position to BOTTOM")
             v.header_align = 'BOTTOM'
-            s.use_region_overlap = True
+
+            print(" Disabled Navigation Controls")
             v.show_navigate_ui = False
 
+            print(" Changed Color Picker to SQUARE_SV")
             v.color_picker_type = "SQUARE_SV"
 
-            v.use_text_antialiasing = True
-            v.text_hinting = "NONE"
-
+            print(" Changed Pie Menu Animation Timeout to 0")
             v.pie_animation_timeout = 0
+
+            print(" Enabled Status Bar System Memory")
+            v.show_statusbar_memory = True
+
+            print(" Enabled Status Bar Video Memory")
+            v.show_statusbar_vram = True
 
         if get_prefs().custom_preferences_viewport:
             print("\n» Changing Preferences: Viewport")
 
             v = prefs.view
-            s = prefs.system
 
+            print(" Changed 3D Viewport Axis to MINIMAL")
             v.mini_axis_type = 'MINIMAL'
-
-            s.viewport_aa = "8"
 
         if get_prefs().custom_preferences_navigation:
             print("\n» Changing Preferences: Navigation")
 
             i = prefs.inputs
 
+            print(" Inverted Mouse Zoom")
             i.invert_mouse_zoom = True
+
+            print(" Enabled Zoom to Mouse Position")
             i.use_zoom_to_mouse = True
+
+            print(" Changed Double Click Speed to 200")
+            i.mouse_double_click_time = 200
 
         if get_prefs().custom_preferences_keymap:
             print("\n» Changing Preferences: Keymap")
@@ -670,8 +687,10 @@ class Customize(bpy.types.Operator):
             if keyconfigpath:
                 keymappath = os.path.join(keyconfigpath[0], "blender_27x.py")
 
+                print(" Set 2.7X keymap")
                 bpy.ops.preferences.keyconfig_activate(filepath=keymappath)
 
+                print(" Changed Select Mouse to LEFT")
                 kcprefs = context.window_manager.keyconfigs.active.preferences
                 kcprefs.select_mouse = "LEFT"
 
@@ -691,30 +710,39 @@ class Customize(bpy.types.Operator):
             print("\n» Changing Preferences: System")
 
             c = prefs.addons['cycles'].preferences
-            s = prefs.system
             e = prefs.edit
 
+            print(" Changed Cylces Render Decive to CUDA")
             c.compute_device_type = "CUDA"
 
-            # TODO: as of c59370bf643f, likely a bit earlier, the c.devices collection won't update until the user switches to the SYSTEM prefs panel manually, re-investigate later
-            # ####: as a consequence, the integrated gpu won't be activated
+            # TODO: as of c59370bf643f, likely a bit earlier, the c.devices collection won't update until the user switches to the SYSTEM prefs panel manually
+            # ####: as a consequence, the integrated gpu won't be activated, in fact they can't even be listed and so the following doesn't work anymore
 
             for d in c.devices:
                 d.use = True
 
+            print(" Changed Undo Steps to 64")
             e.undo_steps = 64
 
         if get_prefs().custom_preferences_save:
             print("\n» Changing Preferences: Save & Load")
+
             v = prefs.view
             f = prefs.filepaths
 
-            f.use_file_compression = True
-            f.use_load_ui = False
-
+            print(" Disabled Save Prompt")
             v.use_save_prompt = False
 
+            print(" Enabled File Compression")
+            f.use_file_compression = True
+
+            print(" Disabled UI Loading")
+            f.use_load_ui = False
+
+            print(" Changed Save Versions to 3")
             f.save_version = 3
+
+            print(" Changed Recent Files to 20")
             f.recent_files = 20
 
     def theme(self, scriptspath, resourcespath):

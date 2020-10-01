@@ -452,14 +452,14 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             col = row.column()
             col.prop(self, "custom_preferences_interface")
-            col.prop(self, "custom_preferences_viewport")
-
-            col = row.column()
-            col.prop(self, "custom_preferences_navigation")
             col.prop(self, "custom_preferences_keymap")
 
             col = row.column()
+            col.prop(self, "custom_preferences_viewport")
             col.prop(self, "custom_preferences_system")
+
+            col = row.column()
+            col.prop(self, "custom_preferences_navigation")
             col.prop(self, "custom_preferences_save")
 
             if self.dirty_keymaps:
