@@ -664,11 +664,12 @@ class Customize(bpy.types.Operator):
             print(" Changed Pie Menu Animation Timeout to 0")
             v.pie_animation_timeout = 0
 
-            print(" Enabled Status Bar System Memory")
-            v.show_statusbar_memory = True
+            if bpy.app.version >= (2, 90, 0):
+                print(" Enabled Status Bar System Memory")
+                v.show_statusbar_memory = True
 
-            print(" Enabled Status Bar Video Memory")
-            v.show_statusbar_vram = True
+                print(" Enabled Status Bar Video Memory")
+                v.show_statusbar_vram = True
 
         if get_prefs().custom_preferences_viewport:
             print("\n» Changing Preferences: Viewport")
