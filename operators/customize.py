@@ -1,18 +1,10 @@
 import bpy
-from mathutils import Matrix
 import os
 import shutil
 from .. utils.registration import get_prefs
 from .. utils.system import makedir
 from .. utils.view import reset_viewport
-
-
-# TODO: do the prefs part based on a dictionary?
-# TODO: select linked kmi for uv editor
-# TODO: view selected in uv editor (called "view center"  in keyconfig I think?)
-
-# TODO: loop multi select needs to use tweak instead of mouse now, see https://developer.blender.org/T78197#987581
-# TODO: disalbe ALT+M edit mode shortcut, which we use for the hardops material lists instead
+from .. utils.ui import kmi_to_string
 
 
 class Customize(bpy.types.Operator):
@@ -66,251 +58,383 @@ class Customize(bpy.types.Operator):
 
     def customize_keymap(self, context):
         def modify_keymaps(kc):
+            '''
+            modify existing keymap items
+            '''
 
             # WINDOW
             km = kc.keymaps.get("Window")
+            print("\n Window Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "wm.open_mainfile":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
                 if kmi.idname == "wm.doc_view_manual_ui_context":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
             for kmi in km.keymap_items:
                 if kmi.idname == "wm.save_as_mainfile":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
-
 
             # SCREEN
 
             km = kc.keymaps.get("Screen")
+            print("\n Screen Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "ed.undo":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "F1"
                     kmi.ctrl = False
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "ed.redo":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "F2"
                     kmi.ctrl = False
                     kmi.shift = False
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "ed.undo_history":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "F1"
                     kmi.ctrl = False
                     kmi.alt = True
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "screen.redo_last":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "BUTTON4MOUSE"
+                    print("       to", kmi_to_string(kmi))
+
+                if kmi.idname == "screen.screen_full_area":
+                    print("  Deactivated", kmi_to_string(kmi))
+                    kmi.active = False
+
 
             # SCREEN EDITING
 
             km = kc.keymaps.get("Screen Editing")
+            print("\n Screen Editing Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "screen.screen_full_area":
                     if kmi.properties.use_hide_panels:
+                        print("  Changed", kmi_to_string(kmi))
                         kmi.shift = True
                         kmi.alt = False
                         kmi.ctrl = False
-
                         kmi.type = 'SPACE'
                         kmi.value = 'PRESS'
+                        print("       to", kmi_to_string(kmi))
 
+                    # NOTE: doesn't seem necessary anymore
                     else:
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
             # FRAMES
 
             km = kc.keymaps.get("Frames")
+            print("\n Frames Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "screen.animation_play":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
 
             # OUTLINER
 
             km = kc.keymaps.get("Outliner")
+            print("\n Outliner Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "outliner.show_active":
                     if kmi.type == "PERIOD":
+                        print("  Changed", kmi_to_string(kmi))
                         kmi.type = "F"
+                        print("       to", kmi_to_string(kmi))
 
 
             # 3D VIEW
 
             km = kc.keymaps.get("3D View")
+            print("\n 3D View Keymap")
+
             for kmi in km.keymap_items:
+                # """
                 if kmi.idname == "view3d.view_selected":
+
+                    # NOTE: technically no longer necessary IF the Focus tool is activated and mapped to F in view selected mode
                     if kmi.type == "NUMPAD_PERIOD" and not kmi.properties.use_all_regions:
+                        print("  Changed", kmi_to_string(kmi))
                         kmi.type = "F"
+                        print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "view3d.cursor3d":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "RIGHTMOUSE"
                     kmi.alt = True
                     kmi.shift = False
                     kmi.properties.orientation = "GEOM"
+                    print("       to", kmi_to_string(kmi))
 
                 # NOTE: changing these from  CLICK to PRESS seems to introduce weird behavior where blender always selects the object in the back, not in the front
-                # ####: this applies only to the new "just select" tool. for it seems that work properly, it needs to remain at CLICK - but it still acts as it PRESS was set, odd
-                # ####: also the new box select tool, can now be set to PRESS and will still work just fine
+                # ####: this applies only to the new "just select"/Tweak tool. it seems that for it to work properly, it needs to remain at CLICK - but it still acts as it PRESS was set, odd
+                # ####: also the new box select tool, can now be set to PRESS and will still work just fine, so it should be used instead
+                # NOTE: also, the script looks for view3d.select kmi's which are set to CLICK, and it will find them too. however, the UI wil actually only show PRESS if you manually change the keymap to 279
+                # ####: changin it via the script seems to caus this
                 if kmi.idname == "view3d.select":
                     if kmi.value == "CLICK":
                         if not any([getattr(kmi.properties, name, False) for name in ["extend", "deselect", "toggle", "center", "enumerate", "object"]]):
+                            print("  Changed", kmi_to_string(kmi))
                             kmi.value = "PRESS"
+                            print("       to", kmi_to_string(kmi))
 
                         elif kmi.properties.toggle and not any([getattr(kmi.properties, name, False) for name in ["extend", "deselect", "center", "enumerate", "object"]]):
+                            print("  Changed", kmi_to_string(kmi))
                             kmi.value = "PRESS"
+                            print("       to", kmi_to_string(kmi))
 
                         elif kmi.properties.enumerate and not any([getattr(kmi.properties, name, False) for name in ["extend", "deselect", "toggle", "center", "object"]]):
+                            print("  Changed", kmi_to_string(kmi))
                             kmi.value = "PRESS"
+                            print("       to", kmi_to_string(kmi))
 
                         else:
+                            print("  Deactivated", kmi_to_string(kmi))
                             kmi.active = False
 
                 if kmi.idname == "transform.translate":
                     if kmi.map_type == "TWEAK":
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
                 if kmi.idname == "view3d.view_axis":
                     if kmi.map_type == "TWEAK":
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
                 if kmi.idname == "transform.tosphere":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.properties.value = 1
-
-                # if kmi.idname == "wm.context_toggle":  # gizmo toggle
-                    # kmi.active = False
+                    print("       to", kmi_to_string(kmi))
 
 
             # 3D VIEW TOOLS
 
             km = kc.keymaps.get("3D View Tool: Cursor")
+            print("\n 3D View Tool: Cursor Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "view3d.cursor3d":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
                 if kmi.idname == "transform.translate":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
 
             # OBJECT MODE
 
             km = kc.keymaps.get("Object Mode")
+            print("\n Object Mode Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "object.select_all":
                     if kmi.properties.action == "SELECT":
+                        print("  Changed", kmi_to_string(kmi))
                         kmi.properties.action = "TOGGLE"
+                        print("       to", kmi_to_string(kmi))
 
                     elif kmi.properties.action == "DESELECT":
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
                 if kmi.idname == "object.delete":
                     if kmi.type == "X" and kmi.shift:
+                        print("  Deactivated", kmi_to_string(kmi))
+                        kmi.active = False
+
+                    elif kmi.type == "DEL":
+                        print("  Deactivated", kmi_to_string(kmi))
+                        kmi.active = False
+
+
+                if kmi.idname == "object.move_to_collection":
+                    if kmi.type == "M":
+                        print("  Deactivated", kmi_to_string(kmi))
+                        kmi.active = False
+
+                if kmi.idname == "object.link_to_collection":
+                    if kmi.type == "M" and kmi.shift:
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
 
             # OBJECT NON-MODAL
 
             km = kc.keymaps.get("Object Non-modal")
+            print("\n Object Non-modal Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "object.mode_set":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
                 if kmi.idname == "view3d.object_mode_pie_or_toggle":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
 
             # IMAGE
 
             km = kc.keymaps.get("Image")
+            print("\n Image Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "object.mode_set":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
-
 
             # MESH
 
             km = kc.keymaps.get("Mesh")
+            print("\n Mesh Keymap")
+
             for kmi in km.keymap_items:
 
                 if kmi.idname == "wm.call_menu":
                     if kmi.properties.name == "VIEW3D_MT_edit_mesh_select_mode":
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
+                """
+                # not longer necessary as of 2.83, maybe earlier?
                 if kmi.idname == "mesh.select_all":
                     if kmi.properties.action == "SELECT":
+                        print("  Changed", kmi_to_string(kmi))
                         kmi.properties.action = "TOGGLE"
+                        print("       to", kmi_to_string(kmi))
 
                     elif kmi.properties.action == "DESELECT":
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
+                # """
+
 
                 if kmi.idname == "mesh.edge_face_add" and kmi.type == "F":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
+                """
+                # not longer necessary as of 2.83, maybe earlier?
                 if kmi.idname == "mesh.select_mode" and kmi.type in ["ONE", "TWO", "THREE"]:
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
+                """
 
                 if kmi.idname == "mesh.loop_select":
                     if not any([getattr(kmi.properties, name, False) for name in ["extend", "deselect", "toggle", "ring"]]):
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
                     elif kmi.properties.toggle:
+                        print("  Changed", kmi_to_string(kmi))
                         kmi.value = "PRESS"
                         kmi.shift = False
+                        print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "mesh.edgering_select":
                     if kmi.properties.ring and not any([getattr(kmi.properties, name, False) for name in ["extend", "deselect", "toggle"]]):
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
                     elif kmi.properties.toggle:
+                        print("  Changed", kmi_to_string(kmi))
                         kmi.value = "PRESS"
                         kmi.shift = False
+                        print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "mesh.shortest_path_pick":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.value = "PRESS"
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "mesh.select_more":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "WHEELUPMOUSE"
                     kmi.shift = True
                     kmi.ctrl = False
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "mesh.select_less":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "WHEELDOWNMOUSE"
                     kmi.shift = True
                     kmi.ctrl = False
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "mesh.select_next_item":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "WHEELUPMOUSE"
                     kmi.shift = False
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "mesh.select_prev_item":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "WHEELDOWNMOUSE"
                     kmi.shift = False
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "mesh.select_linked":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "LEFTMOUSE"
                     kmi.value = "DOUBLE_CLICK"
                     kmi.ctrl = False
                     kmi.shift = True
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "mesh.select_linked_pick":
                     if kmi.properties.deselect:
+                        print("  Changed", kmi_to_string(kmi))
                         kmi.type = "LEFTMOUSE"
                         kmi.value = "DOUBLE_CLICK"
                         kmi.alt = True
+                        print("       to", kmi_to_string(kmi))
 
                     else:
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
                 if kmi.idname == "object.subdivision_set":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
-                if kmi.idname == "mesh.merge":
-                    kmi.alt = False
+                if kmi.idname == "wm.call_menu":
+                    if kmi.properties.name == "VIEW3D_MT_edit_mesh_merge":
+                        print("  Deactivated", kmi_to_string(kmi))
+                        kmi.active = False
+
+                if kmi.idname == "wm.call_menu":
+                    if kmi.properties.name == "VIEW3D_MT_edit_mesh_split":
+                        print("  Deactivated", kmi_to_string(kmi))
+                        kmi.active = False
 
 
             # CURVE
 
+            """
+            # not longer necessary as of 2.83, maybe earlier?
             km = kc.keymaps.get("Curve")
+            print("\n Curve Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "curve.select_all":
                     if kmi.properties.action == "SELECT":
@@ -320,7 +444,9 @@ class Customize(bpy.types.Operator):
                         kmi.active = False
 
 
+
             # ARMATURE
+            print("\n Curve Keymap")
 
             km = kc.keymaps.get("Armature")
             for kmi in km.keymap_items:
@@ -333,6 +459,7 @@ class Customize(bpy.types.Operator):
 
 
             # POSE
+            print("\n Pose Keymap")
 
             km = kc.keymaps.get("Pose")
             for kmi in km.keymap_items:
@@ -342,12 +469,18 @@ class Customize(bpy.types.Operator):
 
                     elif kmi.properties.action == "DESELECT":
                         kmi.active = False
+            """
 
 
             # UV EDITOR
 
             km = kc.keymaps.get("UV Editor")
+            print("\n UV Editor Keymap")
+
             for kmi in km.keymap_items:
+
+                """
+                # not longer necessary as of 2.83, maybe earlier?
                 if kmi.idname == "uv.select_all":
                     if kmi.properties.action == "SELECT":
                         kmi.properties.action = "TOGGLE"
@@ -360,56 +493,119 @@ class Customize(bpy.types.Operator):
 
                 if kmi.idname == "wm.context_set_enum":
                     kmi.active = False
+                """
 
                 if kmi.idname == "uv.select":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.value = "PRESS"
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "uv.select_loop":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.value = "PRESS"
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "uv.select_more":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "WHEELUPMOUSE"
                     kmi.shift = True
                     kmi.ctrl = False
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "uv.select_less":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.type = "WHEELDOWNMOUSE"
                     kmi.shift = True
                     kmi.ctrl = False
+                    print("       to", kmi_to_string(kmi))
 
                 if kmi.idname == "transform.translate":
                     if kmi.map_type == "TWEAK":
+                        print("  Decactivated", kmi_to_string(kmi))
                         kmi.active = False
 
                 if kmi.idname == "uv.cursor_set":
+                    print("  Changed", kmi_to_string(kmi))
                     kmi.alt = True
                     kmi.shift = False
+                    print("       to", kmi_to_string(kmi))
+
+                if kmi.idname == "uv.shortest_path_pick":
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.value = "PRESS"
+                    print("       to", kmi_to_string(kmi))
+
+                if kmi.idname == "uv.select_linked":
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.type = "LEFTMOUSE"
+                    kmi.value = "DOUBLE_CLICK"
+                    kmi.ctrl = False
+                    kmi.shift = True
+                    print("       to", kmi_to_string(kmi))
+
+                if kmi.idname == "uv.select_linked_pick":
+                    if kmi.properties.deselect:
+                        print("  Changed", kmi_to_string(kmi))
+                        kmi.type = "LEFTMOUSE"
+                        kmi.value = "DOUBLE_CLICK"
+                        kmi.alt = True
+                        print("       to", kmi_to_string(kmi))
+
+                    else:
+                        print("  Deactivated", kmi_to_string(kmi))
+                        kmi.active = False
+
+            km = kc.keymaps.get("Image")
+            print("\n Image Keymap")
+
+            for kmi in km.keymap_items:
+                if kmi.idname == "image.view_selected":
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.type = "F"
+                    print("       to", kmi_to_string(kmi))
 
 
             # IMAGE EDITOR TOOL: UV, CURSOR
 
             km = kc.keymaps.get("Image Editor Tool: Uv, Cursor")
+            print("\n Image Editor Tool: Uv, Cursor  Keymap")
+
             for kmi in km.keymap_items:
                 if kmi.idname == "transform.translate":
                     if kmi.map_type == "TWEAK":
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
                 if kmi.idname == "uv.cursor_set":
+                    print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
-
         def add_keymaps(kc):
+            '''
+            add new keymap items
+            '''
+
             # MESH
             km = kc.keymaps.get("Mesh")
+            print("\n Mesh Keymap")
 
-            kmi = km.keymap_items.new("mesh.loop_multi_select", "LEFTMOUSE", "CLICK_DRAG", alt=True)
+            kmi = km.keymap_items.new("mesh.loop_multi_select", "LEFTMOUSE", "SOUTH", alt=True)
+            kmi.map_type = 'TWEAK'
+            kmi.type = 'EVT_TWEAK_L'
+            kmi.value = 'SOUTH'
             kmi.properties.ring = False
+            print("  Added", kmi_to_string(kmi))
 
-            kmi = km.keymap_items.new("mesh.loop_multi_select", "LEFTMOUSE", "CLICK_DRAG", alt=True, ctrl=True)
+            kmi = km.keymap_items.new("mesh.loop_multi_select", "LEFTMOUSE", "SOUTH", alt=True, ctrl=True)
+            kmi.map_type = 'TWEAK'
+            kmi.type = 'EVT_TWEAK_L'
+            kmi.value = 'SOUTH'
             kmi.properties.ring = True
+            print("  Added", kmi_to_string(kmi))
 
             kmi = km.keymap_items.new("mesh.subdivide", "TWO", "PRESS", alt=True)
-            # kmi.properties.smoothness = 1
+            kmi.properties.smoothness = 1
+            print("  Added", kmi_to_string(kmi))
 
         kc = context.window_manager.keyconfigs.user
 
@@ -417,7 +613,7 @@ class Customize(bpy.types.Operator):
 
         add_keymaps(kc)
 
-        get_prefs().custom_keymaps = False
+        # get_prefs().custom_keymaps = False
 
     def preferences(self, context):
         prefs = context.preferences
@@ -480,8 +676,9 @@ class Customize(bpy.types.Operator):
                 kcprefs.select_mouse = "LEFT"
 
                 # """
-                # for some weird reason doing this 2 times is required if you edit the keymaps afterwards, TODO: check if still true
+                # for some weird reason doing this 2 times is required if you edit the keymaps afterwards
                 # otherwise middle mouse mappings for zoom, pan, rotate and dolly will be missing, perhaps some other things as well
+                # it seems to be related to doing ANY change in the 3D View keymap, see 3D View notes for some more details
                 bpy.ops.preferences.keyconfig_activate(filepath=keymappath)
 
                 kcprefs = context.window_manager.keyconfigs.active.preferences
@@ -640,7 +837,6 @@ class Customize(bpy.types.Operator):
 
         # set view matrix
         reset_viewport(context, disable_toolbar=True)
-
 
     def workspaces(self, context):
         print("\n» Modifying Workspaces")

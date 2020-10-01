@@ -1,9 +1,8 @@
 import bpy
 from bpy.props import IntProperty, StringProperty, CollectionProperty, BoolProperty, EnumProperty
 import os
-import rna_keymap_ui
 from . properties import AppendMatsCollection
-from . utils.ui import get_icon
+from . utils.ui import get_icon, draw_keymap_items
 from . utils.registration import activate, get_path, get_name
 
 
@@ -606,7 +605,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             if "PIE" not in name:
                 keylist = keysdict.get(name)
 
-                if self.draw_keymap_items(kc, name, keylist, layout):
+                if draw_keymap_items(kc, name, keylist, layout):
                     drawn = True
 
         return drawn
@@ -618,74 +617,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             if "PIE" in name:
                 keylist = keysdict.get(name)
 
-                if self.draw_keymap_items(kc, name, keylist, layout):
+                if draw_keymap_items(kc, name, keylist, layout):
                     drawn = True
 
-        return drawn
-
-    def draw_keymap_items(self, kc, name, keylist, layout):
-        drawn = []
-
-        # index keeping track of SUCCESSFULL kmi iterations
-        idx = 0
-
-        for item in keylist:
-            keymap = item.get("keymap")
-            isdrawn = False
-
-            if keymap:
-                km = kc.keymaps.get(keymap)
-
-                kmi = None
-                if km:
-                    idname = item.get("idname")
-
-                    for kmitem in km.keymap_items:
-                        if kmitem.idname == idname:
-                            properties = item.get("properties")
-
-                            if properties:
-                                if all([getattr(kmitem.properties, name, None) == value for name, value in properties]):
-                                    kmi = kmitem
-                                    break
-
-                            else:
-                                kmi = kmitem
-                                break
-
-                # draw keymap item
-
-                if kmi:
-                    # multi kmi tools, will share a single box, created for the first kmi
-                    if idx == 0:
-                        box = layout.box()
-
-                    # single kmi tools, get their label from the title
-                    if len(keylist) == 1:
-                        label = name.title().replace("_", " ")
-
-                    # multi kmi tools, get it from the label tag, while the title is printed once, before the first item
-                    else:
-                        if idx == 0:
-                            box.label(text=name.title().replace("_", " "))
-
-                        label = item.get("label")
-
-                    row = box.split(factor=0.15)
-                    row.label(text=label)
-
-                    # layout.context_pointer_set("keymap", km)
-                    rna_keymap_ui.draw_kmi(["ADDON", "USER", "DEFAULT"], kc, km, kmi, row, 0)
-
-                    # draw info, if available
-                    infos = item.get("info", [])
-                    for text in infos:
-                        row = box.split(factor=0.15)
-                        row.separator()
-                        row.label(text=text, icon="INFO")
-
-                    isdrawn = True
-                    idx += 1
-
-            drawn.append(isdrawn)
         return drawn
