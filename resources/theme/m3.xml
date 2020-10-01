@@ -9,12 +9,16 @@
         widget_emboss="#00000005"
         editor_outline="#1c1d20"
         widget_text_cursor="#3399e6"
+        transparent_checker_primary="#333333"
+        transparent_checker_secondary="#262626"
+        transparent_checker_size="8"
         axis_x="#dc4242"
         axis_y="#42dc42"
         axis_z="#4242dc"
         gizmo_hi="#ffffff"
         gizmo_primary="#f5f14d"
         gizmo_secondary="#63ffff"
+        gizmo_view_align="#ffffff"
         gizmo_a="#4da84d"
         gizmo_b="#a33535"
         icon_scene="#e6e6e6ff"
@@ -405,6 +409,7 @@
         bone_pose="#62c93b"
         bone_pose_active="#9cffba"
         bone_solid="#c8c8c8"
+        bone_locked_weight="#ff000080"
         bundle_solid="#c8c8c8"
         camera_path="#000000"
         skin_root="#b44d4d"
@@ -437,7 +442,7 @@
             >
             <gradients>
               <ThemeGradientColors
-                show_grad="FALSE"
+                background_type="SINGLE_COLOR"
                 high_gradient="#343538"
                 gradient="#29282e"
                 >
@@ -460,6 +465,8 @@
         grid="#17171a"
         frame_current="#308837"
         time_scrub_background="#292929e6"
+        time_marker_line="#00000060"
+        time_marker_line_selected="#ffffff60"
         window_sliders="#969696"
         channels_region="#29282e"
         dopesheet_channel="#26537f"
@@ -587,6 +594,8 @@
         keyframe_border_selected="#000000ff"
         frame_current="#308837"
         time_scrub_background="#292929e6"
+        time_marker_line="#00000060"
+        time_marker_line_selected="#ffffff60"
         >
         <space>
           <ThemeSpaceGeneric
@@ -634,6 +643,8 @@
         grid="#17171a"
         frame_current="#308837"
         time_scrub_background="#292929e6"
+        time_marker_line="#00000060"
+        time_marker_line_selected="#ffffff60"
         value_sliders="#000000"
         view_sliders="#969696"
         dopesheet_channel="#547ca624"
@@ -787,11 +798,16 @@
         scene_strip="#4e983e"
         audio_strip="#2e8f8f"
         effect_strip="#a9547c"
-        transition_strip="#a25f6f"
+        color_strip="#8f8f8f"
         meta_strip="#6d9183"
+        mask_strip="#666666"
         text_strip="#a29700"
+        active_strip="#d9d9d9"
+        selected_strip="#ff8f0d"
         frame_current="#308837"
         time_scrub_background="#292929e6"
+        time_marker_line="#00000060"
+        time_marker_line_selected="#ffffff60"
         keyframe="#ff8500"
         draw_action="#50c8ff"
         preview_back="#000000"
@@ -929,6 +945,7 @@
         matte_node="#977474"
         distor_node="#749797"
         noodle_curving="5"
+        grid_levels="2"
         input_node="#ff6675"
         output_node="#ff6675"
         filter_node="#6c696f"
@@ -1026,14 +1043,18 @@
       <ThemeInfo
         info_selected="#8b8b8b"
         info_selected_text="#000000"
-        info_error="#900f00"
+        info_error="#900f00ff"
         info_error_text="#ffffff"
-        info_warning="#c97700"
+        info_warning="#c97700ff"
         info_warning_text="#ffffff"
-        info_info="#1d4383"
+        info_info="#1d4383ff"
         info_info_text="#ffffff"
-        info_debug="#d3d3d3"
+        info_debug="#d3d3d3ff"
         info_debug_text="#000000"
+        info_property="#3ace87ff"
+        info_property_text="#ffffff"
+        info_operator="#3ace87ff"
+        info_operator_text="#ffffff"
         >
         <space>
           <ThemeSpaceGeneric
@@ -1144,6 +1165,7 @@
     </console>
     <clip_editor>
       <ThemeClipEditor
+        grid="#000000"
         marker_outline="#000000"
         marker="#7f7f00"
         active_marker="#ffffff"
@@ -1156,6 +1178,8 @@
         path_keyframe_after="#c4c4ff"
         frame_current="#308837"
         time_scrub_background="#292929e6"
+        time_marker_line="#00000060"
+        time_marker_line_selected="#ffffff60"
         strips="#0c0a0a"
         strips_selected="#ff8c00"
         metadatabg="#000000"

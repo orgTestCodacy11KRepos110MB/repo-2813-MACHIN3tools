@@ -193,35 +193,35 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     tools_show_quick_favorites: BoolProperty(name="Show Quick Favorites", default=False)
     tools_show_tool_bar: BoolProperty(name="Show Tool Bar", default=False)
 
-    custom_startup: BoolProperty(name="Startup Scene", default=True)
+    custom_startup: BoolProperty(name="Startup Scene", default=False)
     custom_theme: BoolProperty(name="Theme", default=True)
     custom_matcaps: BoolProperty(name="Matcaps", default=True)
-    custom_shading: BoolProperty(name="Shading", default=True)
-    custom_overlays: BoolProperty(name="Overlays", default=True)
-    custom_outliner: BoolProperty(name="Outliner", default=True)
-    custom_preferences_interface: BoolProperty(name="Preferences: Interface", default=True)
-    custom_preferences_viewport: BoolProperty(name="Preferences: Viewport", default=True)
-    custom_preferences_navigation: BoolProperty(name="Preferences: Navigation", default=True)
+    custom_shading: BoolProperty(name="Shading", default=False)
+    custom_overlays: BoolProperty(name="Overlays", default=False)
+    custom_outliner: BoolProperty(name="Outliner", default=False)
+    custom_preferences_interface: BoolProperty(name="Preferences: Interface", default=False)
+    custom_preferences_viewport: BoolProperty(name="Preferences: Viewport", default=False)
+    custom_preferences_navigation: BoolProperty(name="Preferences: Navigation", default=False)
     custom_preferences_keymap: BoolProperty(name="Preferences: Keymap", default=False, update=update_custom_preferences_keymap)
     custom_preferences_system: BoolProperty(name="Preferences: System", default=False)
-    custom_preferences_save: BoolProperty(name="Preferences: Save & Load", default=True)
+    custom_preferences_save: BoolProperty(name="Preferences: Save & Load", default=False)
 
 
     # MACHIN3tools
 
-    activate_smart_vert: BoolProperty(name="Smart Vert", default=True, update=update_activate_smart_vert)
-    activate_smart_edge: BoolProperty(name="Smart Edge", default=True, update=update_activate_smart_edge)
-    activate_smart_face: BoolProperty(name="Smart Face", default=True, update=update_activate_smart_face)
-    activate_clean_up: BoolProperty(name="Clean Up", default=True, update=update_activate_clean_up)
-    activate_clipping_toggle: BoolProperty(name="Clipping Toggle", default=True, update=update_activate_clipping_toggle)
+    activate_smart_vert: BoolProperty(name="Smart Vert", default=False, update=update_activate_smart_vert)
+    activate_smart_edge: BoolProperty(name="Smart Edge", default=False, update=update_activate_smart_edge)
+    activate_smart_face: BoolProperty(name="Smart Face", default=False, update=update_activate_smart_face)
+    activate_clean_up: BoolProperty(name="Clean Up", default=False, update=update_activate_clean_up)
+    activate_clipping_toggle: BoolProperty(name="Clipping Toggle", default=False, update=update_activate_clipping_toggle)
     activate_focus: BoolProperty(name="Focus", default=True, update=update_activate_focus)
-    activate_mirror: BoolProperty(name="Mirror", default=True, update=update_activate_mirror)
-    activate_align: BoolProperty(name="Align", default=True, update=update_activate_align)
-    activate_apply: BoolProperty(name="Apply", default=True, update=update_activate_apply)
-    activate_select: BoolProperty(name="Select", default=True, update=update_activate_select)
-    activate_mesh_cut: BoolProperty(name="Mesh Cut", default=True, update=update_activate_mesh_cut)
-    activate_filebrowser_tools: BoolProperty(name="Filebrowser Tools", default=True, update=update_activate_filebrowser_tools)
-    activate_smart_drive: BoolProperty(name="Smart Drive", default=True, update=update_activate_smart_drive)
+    activate_mirror: BoolProperty(name="Mirror", default=False, update=update_activate_mirror)
+    activate_align: BoolProperty(name="Align", default=False, update=update_activate_align)
+    activate_apply: BoolProperty(name="Apply", default=False, update=update_activate_apply)
+    activate_select: BoolProperty(name="Select", default=False, update=update_activate_select)
+    activate_mesh_cut: BoolProperty(name="Mesh Cut", default=False, update=update_activate_mesh_cut)
+    activate_filebrowser_tools: BoolProperty(name="Filebrowser Tools", default=False, update=update_activate_filebrowser_tools)
+    activate_smart_drive: BoolProperty(name="Smart Drive", default=False, update=update_activate_smart_drive)
     activate_unity: BoolProperty(name="Unity", default=False, update=update_activate_unity)
     activate_customize: BoolProperty(name="Customize", default=False, update=update_activate_customize)
 
@@ -229,19 +229,19 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     # MACHIN3pies
 
     activate_modes_pie: BoolProperty(name="Modes Pie", default=True, update=update_activate_modes_pie)
-    activate_save_pie: BoolProperty(name="Save Pie", default=True, update=update_activate_save_pie)
-    activate_shading_pie: BoolProperty(name="Shading Pie", default=True, update=update_activate_shading_pie)
-    activate_views_pie: BoolProperty(name="Views Pie", default=True, update=update_activate_views_pie)
-    activate_align_pie: BoolProperty(name="Align Pies", default=True, update=update_activate_align_pie)
-    activate_cursor_pie: BoolProperty(name="Cursor Pie", default=True, update=update_activate_cursor_pie)
-    activate_transform_pie: BoolProperty(name="Transform Pie", default=True, update=update_activate_transform_pie)
-    activate_collections_pie: BoolProperty(name="Collections Pie", default=True, update=update_activate_collections_pie)
+    activate_save_pie: BoolProperty(name="Save Pie", default=False, update=update_activate_save_pie)
+    activate_shading_pie: BoolProperty(name="Shading Pie", default=False, update=update_activate_shading_pie)
+    activate_views_pie: BoolProperty(name="Views Pie", default=False, update=update_activate_views_pie)
+    activate_align_pie: BoolProperty(name="Align Pies", default=False, update=update_activate_align_pie)
+    activate_cursor_pie: BoolProperty(name="Cursor Pie", default=False, update=update_activate_cursor_pie)
+    activate_transform_pie: BoolProperty(name="Transform Pie", default=False, update=update_activate_transform_pie)
+    activate_collections_pie: BoolProperty(name="Collections Pie", default=False, update=update_activate_collections_pie)
     activate_workspace_pie: BoolProperty(name="Workspace Pie", default=False, update=update_activate_workspace_pie)
     activate_tools_pie: BoolProperty(name="Tools Pie", default=False, update=update_activate_tools_pie)
 
 
     # MACHIN3menus
-    activate_object_context_menu: BoolProperty(name="Object Context Menu", default=True, update=update_activate_object_context_menu)
+    activate_object_context_menu: BoolProperty(name="Object Context Menu", default=False, update=update_activate_object_context_menu)
 
 
     # hidden
@@ -401,14 +401,16 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         # MACHIN3menus
 
-        bb = b.box()
-        bb.label(text="Menus")
+        if any([self.activate_mirror, self.activate_mesh_cut, self.activate_apply, self.activate_select]):
 
-        column = bb.column()
+            bb = b.box()
+            bb.label(text="Menus")
 
-        row = column.split(factor=0.25)
-        row.prop(self, "activate_object_context_menu", toggle=True)
-        row.label(text="Object Context Menu, access tools, that aren't keymapped.")
+            column = bb.column()
+
+            row = column.split(factor=0.25)
+            row.prop(self, "activate_object_context_menu", toggle=True)
+            row.label(text="Object Context Menu, access tools, that aren't keymapped.")
 
 
         # RIGHT

@@ -19,40 +19,53 @@ class Customize(bpy.types.Operator):
 
         resourcespath = os.path.join(get_prefs().path, "resources")
 
-        # PREFERENCES
-        self.preferences(context)
+        # basic customization
+        if not any([event.alt, event.ctrl]):
 
-        # THEME
-        if get_prefs().custom_theme:
-            self.theme(scriptspath, resourcespath)
+            # PREFERENCES
+            self.preferences(context)
 
-        # MATCAPS
-        if get_prefs().custom_matcaps:
-            self.matcaps(context, resourcespath, datafilespath)
+            # THEME
+            if get_prefs().custom_theme:
+                self.theme(scriptspath, resourcespath)
 
-        # SHADING
-        if get_prefs().custom_shading:
-            self.shading(context)
+            # MATCAPS
+            if get_prefs().custom_matcaps:
+                self.matcaps(context, resourcespath, datafilespath)
 
-        # OVERLAYS
-        if get_prefs().custom_overlays:
-            self.overlays(context)
+            # SHADING
+            if get_prefs().custom_shading:
+                self.shading(context)
 
-        # OUTLINER
-        if get_prefs().custom_outliner:
-            self.outliner(context)
+            # OVERLAYS
+            if get_prefs().custom_overlays:
+                self.overlays(context)
 
-        # STARTUP SCENE
-        if get_prefs().custom_startup:
-            self.startup(context)
+            # OUTLINER
+            if get_prefs().custom_outliner:
+                self.outliner(context)
+
+            # STARTUP SCENE
+            if get_prefs().custom_startup:
+                self.startup(context)
+
 
         # HIDDEN
-        if event.alt:
-            self.worlds(context, resourcespath, datafilespath)
 
-            self.workspaces(context)
+        else:
 
-            self.bookmarks(context)
+            # copy custom exrs, setup bookmarks and remove workspaces
+            if event.alt:
+                self.worlds(context, resourcespath, datafilespath)
+
+                self.bookmarks(context)
+
+                self.clear_workspaces(context)
+
+            # just duplicate the workspace
+            elif event.ctrl:
+                self.add_workspaces(context)
+
 
         return {'FINISHED'}
 
@@ -746,7 +759,7 @@ class Customize(bpy.types.Operator):
             f.recent_files = 20
 
     def theme(self, scriptspath, resourcespath):
-        print("\n» Installing and Enabling M3 theme")
+        print("\n» Installing and Enabling M3 theme (a merger of Flatty Dark Blueberry + rTheme)")
 
         themesourcepath = os.path.join(resourcespath, "theme", "m3.xml")
         themetargetpath = makedir(os.path.join(scriptspath, "presets", "interface_theme"))
@@ -765,7 +778,6 @@ class Customize(bpy.types.Operator):
             shutil.copy(os.path.join(matcapsourcepath, matcap), matcaptargetpath)
             print("  %s -> %s" % (matcap, matcaptargetpath))
 
-
         context.preferences.studio_lights.refresh()
 
         if all([mc in matcaps for mc in ["matcap_base.exr", "matcap_shiny_red.exr"]]):
@@ -780,36 +792,69 @@ class Customize(bpy.types.Operator):
         for area in areas:
             shading = area.spaces[0].shading
 
+            print(" Changed shading.type to SOLID")
             shading.type = "SOLID"
+
+            print(" Changed shading.light to MATCAP")
             shading.light = "MATCAP"
+
+            print(" Changed shading.color_type to SINGLE")
             shading.color_type = "SINGLE"
+
+            print(" Changed shading.single_color to #838387")
             shading.single_color = (0.2270, 0.2270, 0.2423)  # hex 838387
 
             if 'matcap_base.exr' in context.preferences.studio_lights:
+                print(" Changed shading.studio_light to matcap_base.exr")
                 shading.studio_light = "matcap_base.exr"
 
-            shading.studiolight_background_alpha = 1
+            print(" Changed shading.studiolight_background_alpha to 0")
+            shading.studiolight_background_alpha = 0
+
+            print(" Changed shading.studiolight_background_blur to 1")
             shading.studiolight_background_blur = 1
 
+            print(" Enabled shading.show_cavity")
             shading.show_cavity = True
+
+            print(" Changed shading.cavity_type to WORLD")
             shading.cavity_type = 'WORLD'
+
+            print(" Changed shading.cavity_ridge_factor to 0")
             shading.cavity_ridge_factor = 0
+
+            print(" Changed shading.cavity_valley_factor to 2")
             shading.cavity_valley_factor = 2
 
+            print(" Enabled shading.show_backface_culling")
             shading.show_backface_culling = True
 
             # mimic LOW eevee preset
+
+            print(" Enabled shading.use_scene_lights")
             shading.use_scene_lights = True
+
+            print(" Enabled shading.use_scene_lights_render")
             shading.use_scene_lights_render = True
+
+            print(" Disabled shading.use_scene_world_render")
             shading.use_scene_world_render = False
 
             eevee = context.scene.eevee
 
+            print(" Enabled eevee.use_ssr")
             eevee.use_ssr = True
+
+            print(" Enabled eevee.use_gtao")
             eevee.use_gtao = True
+
+            print(" Disabled eevee.use_volumetric_lights")
             eevee.use_volumetric_lights = False
 
+            print(" Changed Render Engine to CYCLES")
             context.scene.render.engine = 'CYCLES'
+
+            print(" Changed Cycles Devices to GPU")
             context.scene.cycles.device = 'GPU'
 
     def overlays(self, context):
@@ -820,10 +865,16 @@ class Customize(bpy.types.Operator):
         for area in areas:
             overlay = area.spaces[0].overlay
 
+            print(" Enabled overlay.show_face_center")
             overlay.show_face_center = True
+
+            print(" Disabled overlay.show_relationship_lines")
             overlay.show_relationship_lines = False
 
+            print(" Changed overlay.wireframe_threshold to 0.99")
             overlay.wireframe_threshold = 0.99
+
+            print(" Changed overlay.vertex_opacity to 1")
             overlay.vertex_opacity = 1
 
     def outliner(self, context):
@@ -834,87 +885,65 @@ class Customize(bpy.types.Operator):
         for area in areas:
             space = area.spaces[0]
 
+            print(" Disabled outliner.use_filter_children")
             space.use_filter_children = False
 
+            print(" Enabled outliner.show_restrict_column_select")
             space.show_restrict_column_select = True
+
+            print(" Enabled outliner.show_restrict_column_viewport")
             space.show_restrict_column_viewport = True
+
+            print(" Enabled outliner.show_restrict_column_render")
             space.show_restrict_column_render = True
 
     def startup(self, context):
         print("\n» Modifying Startup Scene")
 
         # enable uv selection sync
+        print(" Enabled tool_settings.use_uv_select_sync")
         context.scene.tool_settings.use_uv_select_sync = True
 
         # remove default objects
         light = bpy.data.lights.get('Light')
         if light:
+
+            print(" Removed default Light")
             bpy.data.lights.remove(light, do_unlink=True)
 
         cube = bpy.data.meshes.get('Cube')
         if cube:
+            print(" Removed default Cube")
             bpy.data.meshes.remove(cube, do_unlink=True)
 
         cam = bpy.data.cameras.get('Camera')
         if cam:
+            print(" Removed default Camera")
             bpy.data.cameras.remove(cam, do_unlink=True)
 
         mat = bpy.data.materials.get('Material')
         if mat:
+            print(" Removed default Material")
             bpy.data.materials.remove(mat, do_unlink=True)
 
         # set view matrix
+        print(" Aligned Viewport with Y Axis")
         reset_viewport(context, disable_toolbar=True)
+        print(" Disabled Tool Bar")
 
-    def workspaces(self, context):
-        print("\n» Modifying Workspaces")
+    def worlds(self, context, resourcespath, datafilespath):
+        print("\n» Adding Custom EXRs")
 
-        # remove all but one Layout
-        workspaces = [ws for ws in bpy.data.workspaces if ws != context.workspace]
-        bpy.data.batch_remove(ids=workspaces)
+        worldssourcepath = os.path.join(resourcespath, "worlds")
+        worldstargetpath = makedir(os.path.join(datafilespath, "studiolights", "world"))
+        worlds = os.listdir(worldssourcepath)
 
-        # name the basic 3d workspace
-        bpy.data.workspaces[-1].name = "General"
-
-        # remove the dope sheet editor
-        screens = [screen for screen in context.workspace.screens if screen.name == 'Layout']
-
-        if screens:
-            screen = screens[0]
-            areas = [area for area in screen.areas if area.type == 'VIEW_3D']
-
-            if areas:
-                area = areas[0]
-
-                override = {'screen': screen,
-                            'area': area}
-
-                areas = [area for area in screen.areas if area.type == 'DOPESHEET_EDITOR']
-
-                if areas:
-                    area = areas[0]
-
-                    bpy.ops.screen.area_join(override, cursor=(area.x, area.y + area.height))
-                    # print(ret)
-
-                # TODO: whatever I try, I can't get them sorted properly, not even with the reorder op
-                # ####: also, running this will turn the prefs into a 3d view for some reason
-
-                names = ['General.alt', 'UVs', 'UVs.alt', 'Material', 'World', 'Scripting']
-
-                for idx, name in enumerate(names):
-                    bpy.ops.workspace.duplicate(override)
-
-                for name, ws in zip(names, bpy.data.workspaces[1:]):
-                    ws.name = name
-
-                return
+        for world in sorted(worlds):
+            shutil.copy(os.path.join(worldssourcepath, world), worldstargetpath)
+            print("  %s -> %s" % (world, worldstargetpath))
 
     def bookmarks(self, context):
-        print("\n» Modifying Bookmarks")
-
-        # NOTE: unfortunately it requires a Blender restart before the new bookmarks are read
-        # ####: trying to run the fielbrowser cleanup op in an attempt to force an update, has no effect either
+        print("\n» Setting Custom Bookmarks")
 
         path = bpy.utils.user_resource('CONFIG', "bookmarks.txt")
 
@@ -937,16 +966,53 @@ class Customize(bpy.types.Operator):
         with open(path, mode='w') as f:
             f.write('\n'.join(lines))
 
-    def worlds(self, context, resourcespath, datafilespath):
-        print("\n» Adding Worlds")
+    def clear_workspaces(self, context):
+        print("\n» Clearing Workspaces")
 
-        worldssourcepath = os.path.join(resourcespath, "worlds")
-        worldstargetpath = makedir(os.path.join(datafilespath, "studiolights", "world"))
-        worlds = os.listdir(worldssourcepath)
+        # remove all but one Layout
+        workspaces = [ws for ws in bpy.data.workspaces if ws != context.workspace]
+        bpy.data.batch_remove(ids=workspaces)
 
-        for world in sorted(worlds):
-            shutil.copy(os.path.join(worldssourcepath, world), worldstargetpath)
-            print("  %s -> %s" % (world, worldstargetpath))
+        # name the basic 3d workspace
+        bpy.data.workspaces[-1].name = "General"
+
+        # remove the dope sheet editor
+        screens = [screen for screen in context.workspace.screens if screen.name == 'Layout']
+
+
+        if screens:
+            screen = screens[0]
+            areas = [area for area in screen.areas if area.type == 'VIEW_3D']
+
+            if areas:
+                area = areas[0]
+
+                override = {'screen': screen,
+                            'area': area}
+
+                areas = [area for area in screen.areas if area.type == 'DOPESHEET_EDITOR']
+
+                if areas:
+                    area = areas[0]
+
+                    bpy.ops.screen.area_join(override, cursor=(area.x, area.y + area.height))
+
+    def add_workspaces(self, context):
+        print("\n» Adding Workspaces")
+
+        areas = [area for screen in context.workspace.screens for area in screen.areas if area.type == "VIEW_3D"]
+        override = {'area': areas[0]}
+
+        # TODO: whatever I try, I can't get them sorted properly, not even with the reorder op
+        # ####: also, running this will turn the prefs into a 3d view for some reason
+
+        names = ['General.alt', 'UVs', 'UVs.alt', 'Material', 'World', 'Scripting', 'Scripting.alt']
+
+        for idx, name in enumerate(names):
+            bpy.ops.workspace.duplicate(override)
+
+        for name, ws in zip(names, bpy.data.workspaces[1:]):
+            ws.name = name
 
 
 class RestoreKeymaps(bpy.types.Operator):
