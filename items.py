@@ -31,6 +31,13 @@ align_direction_items = [('LEFT', 'Left', ''),
                          ('HORIZONTAL', 'Horizontal', ''),
                          ('VERTICAL', 'Vertical', '')]
 
+
+cleanup_select_items = [("NON-MANIFOLD", "Non-Manifold", ""),
+                        ("TRIS", "Tris", ""),
+                        ("NGONS", "Ngons", "")]
+
+
+
 driver_limit_items = [('NONE', 'None', ''),
                       ('START', 'Start', ''),
                       ('END', 'End', ''),
