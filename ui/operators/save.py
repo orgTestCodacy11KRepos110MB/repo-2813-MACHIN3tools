@@ -7,6 +7,7 @@ import time
 from ... utils.registration import get_prefs, get_addon
 from ... utils.append import append_material, append_world
 from ... utils.system import add_path_to_recent_files
+from ... utils.ui import popup_message
 
 
 class New(bpy.types.Operator):
@@ -127,8 +128,11 @@ class LoadMostRecent(bpy.types.Operator):
         if recent_files:
             most_recent = recent_files[0]
 
-            # load_ui ensures the the viewport location/angle is loaded as well
-            bpy.ops.wm.open_mainfile(filepath=most_recent, load_ui=True)
+            if os.path.exists(most_recent):
+                bpy.ops.wm.open_mainfile(filepath=most_recent, load_ui=True)
+
+            else:
+                popup_message("File %s does not exist" % (most_recent), title="File not found")
 
         return {'FINISHED'}
 
