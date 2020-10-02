@@ -965,7 +965,7 @@ class PieShading(Menu):
 
             if mesh.use_auto_smooth:
                 if mesh.has_custom_normals:
-                    column.operator("mesh.customdata_custom_splitnormals_clear", text="Clear Custom Normals")
+                    column.operator("mesh.customdata_custom_splitnormals_clear", text="(N) Clear Custom Normals")
 
             if active.mode == 'EDIT' and view.overlay.show_overlays:
                 column.separator()

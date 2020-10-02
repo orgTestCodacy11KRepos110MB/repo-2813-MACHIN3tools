@@ -124,6 +124,12 @@ class Customize(bpy.types.Operator):
                     kmi.type = "BUTTON4MOUSE"
                     print("       to", kmi_to_string(kmi))
 
+                if kmi.idname == "screen.repeat_history":
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.ctrl = False
+                    kmi.shift = True
+                    print("       to", kmi_to_string(kmi))
+
                 if kmi.idname == "screen.screen_full_area":
                     print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False

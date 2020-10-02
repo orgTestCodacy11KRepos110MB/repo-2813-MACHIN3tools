@@ -38,14 +38,14 @@ class CleanUp(bpy.types.Operator):
 
         col = box.column()
 
-        row = col.split(factor=0.33, align=True)
+        row = col.split(factor=0.3, align=True)
         row.prop(self, "remove_doubles", text="Doubles")
         row.prop(self, "dissolve_degenerate", text="Degenerate")
         r = row.row()
         r.active = any([self.remove_doubles, self.dissolve_degenerate])
         r.prop(self, "distance", text="")
 
-        row = col.split(factor=0.33, align=True)
+        row = col.split(factor=0.3, align=True)
         row.prop(self, "delete_loose", text="Loose")
         r = row.row(align=True)
         r.active = self.delete_loose
@@ -53,7 +53,7 @@ class CleanUp(bpy.types.Operator):
         r.prop(self, "delete_loose_edges", text="Edges", toggle=True)
         r.prop(self, "delete_loose_faces", text="Faces", toggle=True)
 
-        row = col.split(factor=0.33, align=True)
+        row = col.split(factor=0.3, align=True)
         row.prop(self, "dissolve_redundant", text="Redundant")
         r = row.row(align=True)
         r.active = self.dissolve_redundant
