@@ -2388,7 +2388,15 @@ class PieTools(Menu):
                 pie.separator()
 
             # 2 - BOTTOM
-            pie.separator()
+            if not (get_prefs().tools_show_quick_favorites and get_prefs().tools_show_tool_bar):
+                if get_prefs().tools_show_quick_favorites:
+                    pie.operator("wm.call_menu", text="Quick Favorites").name="SCREEN_MT_user_menu"
+                elif get_prefs().tools_show_tool_bar:
+                    pie.operator("wm.toolbar", text="Tool Bar")
+                else:
+                    pie.separator()
+            else:
+                pie.separator()
 
             # 8 - TOP
             if 'builtin.select_box' in tools:
@@ -2398,13 +2406,13 @@ class PieTools(Menu):
                 pie.separator()
 
             # 7 - TOP - LEFT
-            if get_prefs().tools_show_quick_favorites:
+            if get_prefs().tools_show_quick_favorites and get_prefs().tools_show_tool_bar:
                 pie.operator("wm.call_menu", text="Quick Favorites").name="SCREEN_MT_user_menu"
             else:
                 pie.separator()
 
             # 9 - TOP - RIGHT
-            if get_prefs().tools_show_tool_bar:
+            if get_prefs().tools_show_tool_bar and get_prefs().tools_show_quick_favorites:
                 pie.operator("wm.toolbar", text="Tool Bar")
             else:
                 pie.separator()
