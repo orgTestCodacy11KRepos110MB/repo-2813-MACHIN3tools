@@ -1442,11 +1442,11 @@ class PieAlign(Menu):
 
         # 2 - BOTTOM
         box = pie.split()
-        column = box.column()
+        column = box.column(align=True)
 
         column.separator()
 
-        row = column.split(factor=0.2)
+        row = column.split(factor=0.2, align=True)
         row.separator()
         row.label(text="Center")
 
@@ -1456,17 +1456,18 @@ class PieAlign(Menu):
         row.operator("machin3.center_editmesh", text="Y").axis = "Y"
         row.operator("machin3.center_editmesh", text="Z").axis = "Z"
 
+        column.separator()
+
         row = column.row(align=True)
         row.scale_y = 1.2
         row.operator("machin3.straighten", text="Straighten")
 
         if sel:
-            row = column.row()
+            row = column.row(align=True)
             row.scale_y = 1.2
             row.operator("machin3.align_object_to_vert", text="Align Object to Vert")
 
-            column.separator()
-            row = column.row()
+            row = column.row(align=True)
             row.scale_y = 1.2
             row.operator("machin3.align_object_to_edge", text="Align Object to Edge")
 
@@ -1587,7 +1588,7 @@ class PieAlign(Menu):
 
         # 1 - BOTTOM - LEFT
         box = pie.split()
-        column = box.column()
+        column = box.column(align=True)
 
         column.separator()
 
@@ -1602,18 +1603,18 @@ class PieAlign(Menu):
         op.direction = "VERTICAL"
 
         column.separator()
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.scale_y = 1.2
         row.separator()
         row.operator("machin3.straighten", text="Straighten")
 
         if sel:
-            row = column.split(factor=0.25)
+            row = column.split(factor=0.25, align=True)
             row.scale_y = 1.2
             row.separator()
             row.operator("machin3.align_object_to_vert", text="Align Object to Vert")
 
-            row = column.split(factor=0.25)
+            row = column.split(factor=0.25, align=True)
             row.scale_y = 1.2
             row.separator()
             row.operator("machin3.align_object_to_edge", text="Align Object to Edge")
@@ -1621,9 +1622,9 @@ class PieAlign(Menu):
 
         # 3 - BOTTOM - RIGHT
         box = pie.split()
-        column = box.column()
+        column = box.column(align=True)
 
-        row = column.split(factor=0.2)
+        row = column.split(factor=0.2, align=True)
         # row.label(text="Zero")
         row.label(icon="FREEZE")
 
@@ -1636,7 +1637,7 @@ class PieAlign(Menu):
         op.type = "ZERO"
         op.direction = "VERTICAL"
 
-        row = column.split(factor=0.2)
+        row = column.split(factor=0.2, align=True)
         # row.label(text="Average")
         row.label(icon="ARROW_LEFTRIGHT")
 
@@ -1649,7 +1650,7 @@ class PieAlign(Menu):
         op.type = "AVERAGE"
         op.direction = "VERTICAL"
 
-        row = column.split(factor=0.2)
+        row = column.split(factor=0.2, align=True)
         # row.label(text="Cursor")
         row.label(icon="PIVOT_CURSOR")
 
@@ -1790,7 +1791,6 @@ class PieCursor(Menu):
         layout = self.layout
         pie = layout.menu_pie()
 
-
         # 4 - LEFT
         pie.operator("machin3.cursor_to_origin", text="to Origin", icon="PIVOT_CURSOR")
 
@@ -1799,9 +1799,9 @@ class PieCursor(Menu):
 
         # 2 - BOTTOM
 
-        if context.mode == "OBJECT":
+        if context.mode in ['OBJECT', 'EDIT_MESH']:
             box = pie.split()
-            column = box.column()
+            column = box.column(align=True)
 
             column.separator()
             column.separator()
@@ -1810,19 +1810,30 @@ class PieCursor(Menu):
             row.separator()
             row.label(text="Object Origin")
 
-            column.scale_x = 1.1
+            if context.mode == 'OBJECT':
+                column.scale_x = 1.1
 
-            row = column.split(factor=0.5)
-            row.scale_y = 1.5
-            row.operator("object.origin_set", text="to Cursor", icon="LAYER_ACTIVE").type = "ORIGIN_CURSOR"
-            row.operator("object.origin_set", text="to Geometry", icon="OBJECT_ORIGIN").type = "ORIGIN_GEOMETRY"
+                row = column.split(factor=0.5, align=True)
+                row.scale_y = 1.5
+                row.operator("object.origin_set", text="to Cursor", icon="LAYER_ACTIVE").type = "ORIGIN_CURSOR"
+                row.operator("object.origin_set", text="to Geometry", icon="OBJECT_ORIGIN").type = "ORIGIN_GEOMETRY"
 
-            row = column.split(factor=0.20)
-            row.scale_y = 1.5
-            row.separator()
-            r = row.split(factor=0.7)
-            r.operator("machin3.origin_to_active", text="to Active", icon="TRANSFORM_ORIGINS")
+                row = column.split(factor=0.20, align=True)
+                row.scale_y = 1.5
+                row.separator()
+                r = row.split(factor=0.7, align=True)
+                r.operator("machin3.origin_to_active", text="to Active", icon="TRANSFORM_ORIGINS")
 
+            elif context.mode == 'EDIT_MESH':
+                column.scale_x = 1.1
+
+                row = column.split(factor=0.25)
+                row.scale_y = 1.5
+                row.separator()
+
+                sel, icon = ('Vert', 'VERTEXSEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) else ('Edge', 'EDGESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False) else ('Face', 'FACESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) else (None, None)
+                if sel:
+                    row.operator("machin3.origin_to_active", text="to %s" % (sel), icon=icon)
 
         else:
             pie.separator()

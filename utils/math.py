@@ -13,6 +13,15 @@ def get_edge_normal(edge):
     return average_normals([f.normal for f in edge.link_faces])
 
 
+def average_locations(locationslist, size=3):
+    avg = Vector.Fill(size)
+
+    for n in locationslist:
+        avg += n
+
+    return avg / len(locationslist)
+
+
 def average_normals(normalslist):
     avg = Vector()
 
@@ -65,38 +74,107 @@ def create_rotation_matrix_from_normal(obj, normal):
     return rotmx.transposed()
 
 
+def create_rotation_matrix_from_vertex(obj, vert):
+    '''
+    create world space rotation matrix from vertex
+    supports loose vertices too
+    '''
+    mx = obj.matrix_world
+
+    # get the vertex normal in world space
+    normal = mx.to_3x3() @ vert.normal
+
+    # get binormal from longest linked edge
+    if vert.link_edges:
+        longest_edge = max([e for e in vert.link_edges], key=lambda x: x.calc_length())
+        binormal = (mx.to_3x3() @ (longest_edge.other_vert(vert).co - vert.co)).normalized()
+
+        # the tangent is a simple cross product
+        tangent = binormal.cross(normal).normalized()
+
+        # recalculate the binormal, because it's not guarantieed the previous one is 90 degrees to the normal
+        binormal = normal.cross(tangent).normalized()
+
+    # without linked faces get a binormal from the objects up vector
+    else:
+        objup = (mx.to_3x3() @ Vector((0, 0, 1))).normalized()
+
+
+        # use the x axis if the edge is already pointing in z
+        dot = normal.dot(objup)
+        if abs(round(dot, 6)) == 1:
+            objup = (mx.to_3x3() @ Vector((1, 0, 0))).normalized()
+
+
+        tangent = normal.cross(objup).normalized()
+        binormal = normal.cross(tangent).normalized()
+
+    # we want the normal, tangent and binormal to become Z, X and Y, in that order
+    # see http://renderdan.blogspot.com/2006/05/rotation-matrix-from-axis-vectors.html
+    rot = Matrix()
+    rot[0].xyz = tangent
+    rot[1].xyz = binormal
+    rot[2].xyz = normal
+    return rot.transposed()
+
+
 def create_rotation_matrix_from_edge(obj, edge):
+    '''
+    create world space rotation matrix from edge
+    supports loose edges too
+    '''
     mx = obj.matrix_world
 
     # call the direction, the binormal, we want this to be the y axis at the end
-    binormal = mx.to_3x3() @ (edge.verts[1].co - edge.verts[0].co)
+    binormal = (mx.to_3x3() @ (edge.verts[1].co - edge.verts[0].co)).normalized()
 
-    # get a normal from the linked faces
+    # get normal from linked faces
     if edge.link_faces:
-        normal = mx.to_3x3() @ get_edge_normal(edge)
+        normal = (mx.to_3x3() @ get_edge_normal(edge)).normalized()
+        tangent = binormal.cross(normal)
 
     # without linked faces get a normal from the objects up vector
     else:
-        objup = mx.to_3x3() @ Vector((0, 0, 1))
+        objup = (mx.to_3x3() @ Vector((0, 0, 1))).normalized()
 
         # use the x axis if the edge is already pointing in z
         dot = binormal.dot(objup)
         if abs(round(dot, 6)) == 1:
-            objup = mx.to_3x3() @ Vector((1, 0, 0))
+            objup = (mx.to_3x3() @ Vector((1, 0, 0))).normalized()
 
-        normal = objup.cross(binormal)
+        tangent = (binormal.cross(objup)).normalized()
+        normal = tangent.cross(binormal)
 
-    # get the tangent
-    tangent = normal.cross(-binormal)
-
-    # create rotation matrix from coordnate vectors, see http://renderdan.blogspot.com/2006/05/rotation-matrix-from-axis-vectors.html
+    # we want the normal, tangent and binormal to become Z, X and Y, in that order
     rotmx = Matrix()
-    rotmx[0].xyz = tangent.normalized()
-    rotmx[1].xyz = binormal.normalized()
-    rotmx[2].xyz = normal.normalized()
+    rotmx[0].xyz = tangent
+    rotmx[1].xyz = binormal
+    rotmx[2].xyz = normal
 
     # transpose, because blender is column major?
     return rotmx.transposed()
+
+
+def create_rotation_matrix_from_face(mx, face):
+    '''
+    create world space rotation matrix from face
+    '''
+
+    # get the face normal in world space
+    normal = (mx.to_3x3() @ face.normal).normalized()
+
+    # tangent = (mx.to_3x3() @ face.calc_tangent_edge()).normalized()
+    tangent = (mx.to_3x3() @ face.calc_tangent_edge_pair()).normalized()
+
+    # the binormal is a simple cross product
+    binormal = normal.cross(tangent)
+
+    # we want the normal, tangent and binormal to become Z, X and Y, in that order
+    rot = Matrix()
+    rot[0].xyz = tangent
+    rot[1].xyz = binormal
+    rot[2].xyz = normal
+    return rot.transposed()
 
 
 def create_rotation_difference_matrix_from_quat(v1, v2):
