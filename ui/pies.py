@@ -1269,7 +1269,7 @@ class PieShading(Menu):
             icon = "OVERLAY"
         else:
             if shading == "SOLID":
-                text = "Solid"
+                text = "(L) Solid"
                 icon = "SHADING_SOLID"
             elif shading == "MATERIAL":
                 text = "Material"
