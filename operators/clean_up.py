@@ -25,7 +25,7 @@ class CleanUp(bpy.types.Operator):
     dissolve_redundant: BoolProperty(name="Dissolve Redundant", default=True)
     dissolve_redundant_verts: BoolProperty(name="Dissolve Redundant Verts", default=True)
     dissolve_redundant_edges: BoolProperty(name="Dissolve Redundant Edges", default=False)
-    dissolve_redundant_angle: FloatProperty(name="Dissolve Redundnat Angle", default=179.5, min=0, max=180)
+    dissolve_redundant_angle: FloatProperty(name="Dissolve Redundnat Angle", default=179.999, min=0, max=180, step=0.01, precision=6)
 
     select: BoolProperty(name="Select", default=True)
     select_type: EnumProperty(name="Select", items=cleanup_select_items, default="NON-MANIFOLD")

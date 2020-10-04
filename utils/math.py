@@ -190,7 +190,7 @@ def get_right_and_up_axes(context, mx):
     view_right = r3d.view_rotation @ Vector((1, 0, 0))
     view_up = r3d.view_rotation @ Vector((0, 1, 0))
 
-    # get the right and up axes in the objects or world space, depending on the axis that was passed in
+    # get the right and up axes depending on the matrix that was passed in (object's local space, world space, etc)
     axes_right = []
     axes_up = []
 

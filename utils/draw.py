@@ -42,11 +42,19 @@ def draw_object_axes(args):
 
             for obj in objs:
                 mx = obj.matrix_world
-                origin, _, _ = mx.decompose()
+                origin = mx.decompose()[0]
 
                 # coords.append(origin)
                 coords.append(origin + mx.to_3x3() @ axis * size * 0.1)
                 coords.append(origin + mx.to_3x3() @ axis * size)
+
+            # cursor
+            if context.space_data.overlay.show_cursor:
+                cmx = context.scene.cursor.matrix
+                corigin = cmx.decompose()[0]
+
+                coords.append(corigin + cmx.to_3x3() @ axis * size * 0.1 * 0.5)
+                coords.append(corigin + cmx.to_3x3() @ axis * size * 0.5)
 
             indices = [(i, i + 1) for i in range(0, len(coords), 2)]
 
