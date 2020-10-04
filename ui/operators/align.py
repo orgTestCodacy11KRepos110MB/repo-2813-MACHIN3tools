@@ -148,12 +148,13 @@ class CenterEditMesh(bpy.types.Operator):
     bl_idname = "machin3.center_editmesh"
     bl_label = "MACHIN3: Center (Edit Mesh)"
     bl_options = {'REGISTER', 'UNDO'}
-    bl_description = "Default: Local Center\nAlt + Click: Global Center"
+    bl_description = "Local Space Center\nALT: World Space Center\nCTRL: Cursor Space Center"
 
     axis: EnumProperty(name="Axis", items=axis_items, default="X")
     direction: EnumProperty(name="Axis", items=align_direction_items, default="HORIZONTAL")
 
-    local: BoolProperty(name="Local Space", default=True)
+    # local: BoolProperty(name="Local Space", default=True)
+    orientation: EnumProperty(name="Orientation", items=align_orientation_items, default="LOCAL")
 
     @classmethod
     def poll(cls, context):
@@ -163,24 +164,25 @@ class CenterEditMesh(bpy.types.Operator):
             return [v for v in bm.verts if v.select]
 
     def invoke(self, context, event):
-        self.local = not event.alt
+        if event.alt and event.ctrl:
+            popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
+            return {'CANCELLED'}
 
-        self.center(context, axis_mapping_dict[self.axis], self.direction, local=self.local)
+        self.orientation = 'WORLD' if event.alt else 'CURSOR' if event.ctrl else 'LOCAL'
+
+        self.center(context, axis_mapping_dict[self.axis], self.direction, self.orientation)
         return {'FINISHED'}
 
-    def execute(self, context):
-        self.center(context, axis_mapping_dict[self.axis], self.direction, local=self.local)
-        return {'FINISHED'}
-
-    def center(self, context, axis, direction, local=True):
+    def center(self, context, axis, direction, orientation):
         active = context.active_object
-        mx = active.matrix_world
+        mx = active.matrix_world if orientation == 'LOCAL' else context.scene.cursor.matrix if orientation == 'CURSOR' else Matrix()
 
         mode = context.scene.M3.align_mode
 
         # calculate axis from viewport
         if mode == 'VIEW':
-            axis_right, axis_up, flip_right, flip_up = get_right_and_up_axes(context, mx=mx if local else Matrix())
+            axis_right, axis_up, flip_right, flip_up = get_right_and_up_axes(context, mx=mx)
+
             axis = axis_right if direction == "HORIZONTAL" else axis_up
 
         bm = bmesh.from_edit_mesh(active.data)
@@ -202,22 +204,30 @@ class CenterEditMesh(bpy.types.Operator):
             _, origin = create_selection_bbox([v.co for v in verts])
 
         # the target location will be the origin with the axis zeroed out
-        if local:
+        if orientation == 'LOCAL':
             target = origin.copy()
             target[axis] = 0
 
-        # bring into world space
-        else:
-            origin = mx @ origin
-            target = origin.copy()
-            target[axis] = 0
-
-        # create mxt
-        if local:
+            # create translation matrix
             mxt = get_loc_matrix(target - origin)
 
-        else:
-            mxt = get_loc_matrix(mx.inverted().to_3x3() @ (target - origin))
+        elif orientation == 'WORLD':
+            # bring into world space
+            origin = active.matrix_world @ origin
+            target = origin.copy()
+            target[axis] = 0
+
+            # create translation matrix (in local space again)
+            mxt = get_loc_matrix(active.matrix_world.inverted().to_3x3() @ (target - origin))
+
+        elif orientation == 'CURSOR':
+            # bring into cursor space
+            origin = mx.inverted_safe() @ active.matrix_world @ origin
+            target = origin.copy()
+            target[axis] = 0
+
+            # create translation matrix (in local space again)
+            mxt = get_loc_matrix(active.matrix_world.inverted().to_3x3() @ mx.to_3x3() @ (target - origin))
 
         # move the selection
         for v in verts:
