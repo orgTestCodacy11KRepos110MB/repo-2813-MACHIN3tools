@@ -2,11 +2,12 @@ import bpy
 import bmesh
 from ... utils.object import parent, unparent
 from ... utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, create_rotation_matrix_from_vertex, create_rotation_matrix_from_edge, get_center_between_verts, create_rotation_matrix_from_face
-from ... utils.math import average_locations
+from ... utils.math import average_locations, flatten_matrix
 from ... utils.ui import popup_message
+from ... utils.registration import get_addon
 
 
-# TODO: update decal backup matrices
+decalmachine = None
 
 
 class OriginToActive(bpy.types.Operator):
@@ -34,21 +35,26 @@ class OriginToActive(bpy.types.Operator):
                 return [v for v in bm.verts if v.select]
 
     def invoke(self, context, event):
+        global decalmachine
+
+        if decalmachine is None:
+            decalmachine = get_addon('DECALmachine')[0]
+
         active = context.active_object
 
         if context.mode == 'OBJECT':
-            self.origin_to_object(context, context.active_object.matrix_world)
+            self.origin_to_object(context, decalmachine)
 
         elif context.mode == 'EDIT_MESH':
             if event.alt and event.ctrl:
                 popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
                 return {'CANCELLED'}
 
-            self.origin_to_editmesh(active, only_location=event.alt, only_rotation=event.ctrl)
+            self.origin_to_editmesh(active, only_location=event.alt, only_rotation=event.ctrl, decalmachine=decalmachine)
 
         return {'FINISHED'}
 
-    def origin_to_editmesh(self, active, only_location, only_rotation):
+    def origin_to_editmesh(self, active, only_location, only_rotation, decalmachine):
         mx = active.matrix_world
 
         children = self.unparent_children(active.children)
@@ -105,6 +111,10 @@ class OriginToActive(bpy.types.Operator):
         sca = get_sca_matrix(mx.to_scale())
         selmx = loc @ rot @ sca
 
+        # selmx expressed in obj's local space used for decal backup matrices
+        if decalmachine:
+            deltamx = active.matrix_world.inverted_safe() @ selmx
+
         # move the object and compensate on the meh level for it
         bmesh.ops.transform(bm, verts=bm.verts, matrix=selmx.inverted_safe() @ mx)
         active.matrix_world = selmx
@@ -113,10 +123,25 @@ class OriginToActive(bpy.types.Operator):
 
         self.reparent_children(children, active)
 
-    def origin_to_object(self, context, mx):
+        # update the backupmx to compensate for the change in parent object origin
+        if decalmachine:
+            for child in children:
+                if child.DM.isdecal and child.DM.decalbackup:
+                    backup = child.DM.decalbackup
+
+                    backup.DM.backupmx = flatten_matrix(deltamx.inverted_safe() @ backup.DM.backupmx)
+
+    def origin_to_object(self, context, decalmachine):
+        mx = context.active_object.matrix_world
+
         sel = [obj for obj in context.selected_objects if obj != context.active_object and obj.type not in ['EMPTY', 'FONT']]
 
         for obj in sel:
+
+            # active mx expressed in obj's local space used for decal backup matrices
+            if decalmachine:
+                deltamx = obj.matrix_world.inverted_safe() @ mx
+
             children = self.unparent_children(obj.children)
 
             obj.data.transform(mx.inverted_safe() @ obj.matrix_world)
@@ -126,6 +151,14 @@ class OriginToActive(bpy.types.Operator):
                 obj.data.update()
 
             self.reparent_children(children, obj)
+
+            # update the backupmx to compensate for the change in parent object origin
+            if decalmachine:
+                for child in children:
+                    if child.DM.isdecal and child.DM.decalbackup:
+                        backup = child.DM.decalbackup
+
+                        backup.DM.backupmx = flatten_matrix(deltamx.inverted_safe() @ backup.DM.backupmx)
 
     def unparent_children(self, children):
         children = [o for o in children]
