@@ -51,29 +51,6 @@ def get_sca_matrix(scale):
     return scale_mx
 
 
-def create_rotation_matrix_from_normal(obj, normal):
-    mx = obj.matrix_world
-
-    objup = mx.to_3x3() @ Vector((0, 0, 1))
-
-    dot = normal.dot(objup)
-    if abs(round(dot, 6)) == 1:
-        # use x instead of z as the up axis
-        objup = mx.to_3x3() @ Vector((1, 0, 0))
-
-    tangent = objup.cross(normal)
-    binormal = tangent.cross(-normal)
-
-    # create rotation matrix from coordnate vectors, see http://renderdan.blogspot.com/2006/05/rotation-matrix-from-axis-vectors.html
-    rotmx = Matrix()
-    rotmx[0].xyz = tangent.normalized()
-    rotmx[1].xyz = binormal.normalized()
-    rotmx[2].xyz = normal.normalized()
-
-    # transpose, because blender is column major?
-    return rotmx.transposed()
-
-
 def create_rotation_matrix_from_vertex(obj, vert):
     '''
     create world space rotation matrix from vertex
