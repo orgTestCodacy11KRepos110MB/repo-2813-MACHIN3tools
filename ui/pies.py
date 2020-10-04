@@ -1848,7 +1848,12 @@ class PieCursor(Menu):
         pie.separator()
 
         # 7 - TOP - LEFT
-        pie.operator("machin3.cursor_to_selected", text="to Selected", icon="PIVOT_CURSOR")
+
+        if context.mode == 'EDIT_MESH':
+            sel, icon = ('Vert', 'VERTEXSEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (True, False, False) else ('Edge', 'EDGESEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (False, True, False) else ('Face', 'FACESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) else (None, None)
+            pie.operator("machin3.cursor_to_selected", text="to %s" % (sel), icon="PIVOT_CURSOR")
+        else:
+            pie.operator("machin3.cursor_to_selected", text="to Selected", icon="PIVOT_CURSOR")
 
         # 9 - TOP - RIGHT
         pie.operator("view3d.snap_selected_to_cursor", text="to Cursor, Offset", icon="RESTRICT_SELECT_OFF").use_offset = True

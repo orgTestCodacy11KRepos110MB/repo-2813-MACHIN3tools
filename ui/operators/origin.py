@@ -50,7 +50,6 @@ class OriginToActive(bpy.types.Operator):
             self.origin_to_active_object(context, only_location=event.alt, only_rotation=event.ctrl, decalmachine=decalmachine)
 
         elif context.mode == 'EDIT_MESH':
-
             self.origin_to_editmesh(active, only_location=event.alt, only_rotation=event.ctrl, decalmachine=decalmachine)
 
         return {'FINISHED'}
