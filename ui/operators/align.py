@@ -1,24 +1,25 @@
 import bpy
-from bpy.props import EnumProperty, BoolProperty, StringProperty
+from bpy.props import EnumProperty, BoolProperty
 import bmesh
 from mathutils import Vector, Matrix, geometry
 from ... utils.math import get_center_between_verts, create_rotation_difference_matrix_from_quat, get_loc_matrix, create_selection_bbox, get_right_and_up_axes
-from ... items import axis_items, align_type_items, axis_mapping_dict, align_direction_items
+from ... items import axis_items, align_type_items, axis_mapping_dict, align_direction_items, align_orientation_items
 from ... utils.selection import get_selected_vert_sequences
+from ... utils.ui import popup_message
 
 
 class AlignEditMesh(bpy.types.Operator):
     bl_idname = "machin3.align_editmesh"
     bl_label = "MACHIN3: Align (Edit Mesh)"
     bl_options = {'REGISTER', 'UNDO'}
-    bl_description = "Default: Local Align\nAlt + Click: Global Align"
+    bl_description = "Local Space Align\nALT: World Space Align\nCTRL: Cursor Space Align"
 
     type: EnumProperty(name="Type", items=align_type_items, default="MINMAX")
 
     axis: EnumProperty(name="Axis", items=axis_items, default="X")
     direction: EnumProperty(name="Axis", items=align_direction_items, default="LEFT")
 
-    local: BoolProperty(name="Local Space", default=True)
+    orientation: EnumProperty(name="Orientation", items=align_orientation_items, default="LOCAL")
 
     @classmethod
     def poll(cls, context):
@@ -28,24 +29,25 @@ class AlignEditMesh(bpy.types.Operator):
             return [v for v in bm.verts if v.select]
 
     def invoke(self, context, event):
-        self.local = not event.alt
+        if event.alt and event.ctrl:
+            popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
+            return {'CANCELLED'}
 
-        self.align(context, self.type, axis_mapping_dict[self.axis], self.direction, local=self.local)
+        self.orientation = 'WORLD' if event.alt else 'CURSOR' if event.ctrl else 'LOCAL'
+
+        self.align(context, self.type, axis_mapping_dict[self.axis], self.direction, self.orientation)
         return {'FINISHED'}
 
-    def execute(self, context):
-        self.align(context, self.type, axis_mapping_dict[self.axis], self.direction, local=self.local)
-        return {'FINISHED'}
-
-    def align(self, context, type, axis, direction, local=True):
+    def align(self, context, type, axis, direction, orientation):
         active = context.active_object
-        mx = active.matrix_world
+
+        mx = active.matrix_world if orientation == 'LOCAL' else context.scene.cursor.matrix if orientation == 'CURSOR' else Matrix()
 
         mode = context.scene.M3.align_mode
 
-        # calculate axis from viewport
+        # in VIEW mode the axis is calculated from from viewport direction giving in the pie
         if mode == 'VIEW':
-            axis_right, axis_up, flip_right, flip_up = get_right_and_up_axes(context, mx=mx if local else Matrix())
+            axis_right, axis_up, flip_right, flip_up = get_right_and_up_axes(context, mx=mx)
 
             if type == 'MINMAX':
                 axis = axis_right if direction in ['RIGHT', 'LEFT'] else axis_up
@@ -53,14 +55,23 @@ class AlignEditMesh(bpy.types.Operator):
             elif type in ['ZERO', 'AVERAGE', 'CURSOR']:
                 axis = axis_right if direction == "HORIZONTAL" else axis_up
 
-
         bm = bmesh.from_edit_mesh(active.data)
         bm.normal_update()
         bm.verts.ensure_lookup_table()
 
         verts = [v for v in bm.verts if v.select]
 
-        axiscoords = [v.co[axis] for v in verts] if local else [(mx @ v.co)[axis] for v in verts]
+        # axis coordinates in local space
+        if orientation == 'LOCAL':
+            axiscoords = [v.co[axis] for v in verts]
+
+        # coordinates in world space
+        elif orientation == 'WORLD':
+            axiscoords = [(active.matrix_world @ v.co)[axis] for v in verts]
+
+        # coordinates in cursor space
+        elif orientation == 'CURSOR':
+            axiscoords = [(mx.inverted_safe() @ active.matrix_world @ v.co)[axis] for v in verts]
 
         # get min or max target value
         if type == "MIN":
@@ -93,24 +104,41 @@ class AlignEditMesh(bpy.types.Operator):
 
         # get cursor target value
         elif type == "CURSOR":
-            if local:
+            if orientation == 'LOCAL':
                 c_world = context.scene.cursor.location
                 c_local = mx.inverted() @ c_world
                 target = c_local[axis]
 
-            else:
+            elif orientation == 'WORLD':
                 target = context.scene.cursor.location[axis]
+
+            elif orientation == 'CURSOR':
+                target = 0
 
         # set the new coordinates
         for v in verts:
-            if local:
+            if orientation == 'LOCAL':
                 v.co[axis] = target
 
-            else:
-                world_co = mx @ v.co
+            elif orientation == 'WORLD':
+                # bring vertex coords into world space
+                world_co = active.matrix_world @ v.co
+
+                # set the target value
                 world_co[axis] = target
 
-                v.co = mx.inverted() @ world_co
+                # bring it back into local space
+                v.co = active.matrix_world.inverted_safe() @ world_co
+
+            elif orientation == 'CURSOR':
+                # bring vertex coords into cursor space
+                cursor_co = mx.inverted_safe() @ active.matrix_world @ v.co
+
+                # set the target value
+                cursor_co[axis] = target
+
+                # bring it back into local space
+                v.co = active.matrix_world.inverted_safe() @ mx @ cursor_co
 
         bm.normal_update()
         bmesh.update_edit_mesh(active.data)

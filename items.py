@@ -31,12 +31,13 @@ align_direction_items = [('LEFT', 'Left', ''),
                          ('HORIZONTAL', 'Horizontal', ''),
                          ('VERTICAL', 'Vertical', '')]
 
+align_orientation_items = [('LOCAL', 'Local', ''),
+                           ('WORLD', 'World', ''),
+                           ('CURSOR', 'Cursor', '')]
 
 cleanup_select_items = [("NON-MANIFOLD", "Non-Manifold", ""),
                         ("TRIS", "Tris", ""),
                         ("NGONS", "Ngons", "")]
-
-
 
 driver_limit_items = [('NONE', 'None', ''),
                       ('START', 'Start', ''),
