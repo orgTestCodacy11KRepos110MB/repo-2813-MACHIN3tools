@@ -63,11 +63,8 @@ class OriginToActive(bpy.types.Operator):
         bm.normal_update()
         bm.verts.ensure_lookup_table()
 
-        verts = [v for v in bm.verts if v.select]
-        edges = [e for e in bm.edges if e.select]
-        faces = [f for f in bm.faces if f.select]
-
         if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
+            verts = [v for v in bm.verts if v.select]
             co = average_locations([v.co for v in verts])
 
             # create vertex world matrix components
@@ -79,6 +76,7 @@ class OriginToActive(bpy.types.Operator):
                 rot = create_rotation_matrix_from_vertex(active, v)
 
         elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
+            edges = [e for e in bm.edges if e.select]
             center = average_locations([get_center_between_verts(*e.verts) for e in edges])
 
             # create edge world matrix components
@@ -90,6 +88,7 @@ class OriginToActive(bpy.types.Operator):
                 rot = create_rotation_matrix_from_edge(active, e)
 
         elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
+            faces = [f for f in bm.faces if f.select]
             center = average_locations([f.calc_center_bounds() for f in faces])
 
             # create face world matrix components
