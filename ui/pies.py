@@ -1803,14 +1803,14 @@ class PieCursor(Menu):
             box = pie.split()
             column = box.column(align=True)
 
-            column.separator()
-            column.separator()
-
-            row = column.split(factor=0.25)
-            row.separator()
-            row.label(text="Object Origin")
-
             if context.mode == 'OBJECT':
+                column.separator()
+                column.separator()
+
+                row = column.split(factor=0.25)
+                row.separator()
+                row.label(text="Object Origin")
+
                 column.scale_x = 1.1
 
                 row = column.split(factor=0.5, align=True)
@@ -1824,14 +1824,20 @@ class PieCursor(Menu):
                 r = row.split(factor=0.7, align=True)
                 r.operator("machin3.origin_to_active", text="to Active", icon="TRANSFORM_ORIGINS")
 
-            elif context.mode == 'EDIT_MESH':
+            elif context.mode == 'EDIT_MESH' and tuple(context.scene.tool_settings.mesh_select_mode) in [(True, False, False), (False, True, False), (False, False, True)]:
+                column.separator()
+                column.separator()
+
+                row = column.split(factor=0.25)
+                row.separator()
+                row.label(text="Object Origin")
                 column.scale_x = 1.1
 
                 row = column.split(factor=0.25)
                 row.scale_y = 1.5
                 row.separator()
 
-                sel, icon = ('Vert', 'VERTEXSEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) else ('Edge', 'EDGESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False) else ('Face', 'FACESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) else (None, None)
+                sel, icon = ('Vert', 'VERTEXSEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (True, False, False) else ('Edge', 'EDGESEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (False, True, False) else ('Face', 'FACESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) else (None, None)
                 if sel:
                     row.operator("machin3.origin_to_active", text="to %s" % (sel), icon=icon)
 

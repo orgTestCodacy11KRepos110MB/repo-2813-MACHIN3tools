@@ -2,6 +2,7 @@ import bpy
 import bmesh
 from ... utils.object import parent, unparent
 from ... utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, create_rotation_matrix_from_vertex, create_rotation_matrix_from_edge, get_center_between_verts, create_rotation_matrix_from_face
+from ... utils.math import average_locations
 from ... utils.ui import popup_message
 
 
@@ -28,7 +29,7 @@ class OriginToActive(bpy.types.Operator):
             if context.mode == 'OBJECT':
                 return [obj for obj in context.selected_objects if obj != active and obj.type not in ['EMPTY', 'FONT']]
 
-            elif context.mode == 'EDIT_MESH':
+            elif context.mode == 'EDIT_MESH' and tuple(context.scene.tool_settings.mesh_select_mode) in [(True, False, False), (False, True, False), (False, False, True)]:
                 bm = bmesh.from_edit_mesh(active.data)
                 return [v for v in bm.verts if v.select]
 
@@ -43,11 +44,7 @@ class OriginToActive(bpy.types.Operator):
                 popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
                 return {'CANCELLED'}
 
-            ret = self.origin_to_editmesh(active, only_location=event.alt, only_rotation=event.ctrl)
-
-            if not ret:
-                popup_message("Select a single Vert, Edge or Face!", title="Illegal Selection")
-                return {'CANCELLED'}
+            self.origin_to_editmesh(active, only_location=event.alt, only_rotation=event.ctrl)
 
         return {'FINISHED'}
 
@@ -64,41 +61,38 @@ class OriginToActive(bpy.types.Operator):
         edges = [e for e in bm.edges if e.select]
         faces = [f for f in bm.faces if f.select]
 
-        if len(verts) == 1:
-            v = verts[0]
+        if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
+            co = average_locations([v.co for v in verts])
 
             # create vertex world matrix components
             if not only_rotation:
-                loc = get_loc_matrix(mx @ v.co)
+                loc = get_loc_matrix(mx @ co)
 
             if not only_location:
+                v = bm.select_history[-1] if bm.select_history else verts[0]
                 rot = create_rotation_matrix_from_vertex(active, v)
 
-
-        elif len(edges) == 1:
-            e = edges[0]
-            center = get_center_between_verts(*e.verts)
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
+            center = average_locations([get_center_between_verts(*e.verts) for e in edges])
 
             # create edge world matrix components
             if not only_rotation:
                 loc = get_loc_matrix(mx @ center)
 
             if not only_location:
+                e = bm.select_history[-1] if bm.select_history else edges[0]
                 rot = create_rotation_matrix_from_edge(active, e)
 
-        elif len(faces) == 1:
-            f = faces[0]
-            center = f.calc_center_bounds()
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
+            center = average_locations([f.calc_center_bounds() for f in faces])
 
             # create face world matrix components
             if not only_rotation:
                 loc = get_loc_matrix(mx @ center)
 
             if not only_location:
+                f = bm.faces.active if bm.faces.active and bm.faces.active in faces else faces[0]
                 rot = create_rotation_matrix_from_face(mx, f)
-
-        else:
-            return False
 
         # with alt pressed, ignore vert/edge/face rotation
         if only_location:
@@ -118,7 +112,6 @@ class OriginToActive(bpy.types.Operator):
         bmesh.update_edit_mesh(active.data)
 
         self.reparent_children(children, active)
-        return True
 
     def origin_to_object(self, context, mx):
         sel = [obj for obj in context.selected_objects if obj != context.active_object and obj.type not in ['EMPTY', 'FONT']]
