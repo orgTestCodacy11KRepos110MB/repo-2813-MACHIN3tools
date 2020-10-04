@@ -432,6 +432,11 @@ def get_pie_menus():
     classlists, keylists, count = get_transform_pie(classlists, keylists, count)
 
 
+    # SNAP
+
+    classlists, keylists, count = get_snap_pie(classlists, keylists, count)
+
+
     # COLLECTIONS
 
     classlists, keylists, count = get_collections_pie(classlists, keylists, count)
@@ -664,6 +669,15 @@ def get_transform_pie(classlists=[], keylists=[], count=0):
     if get_prefs().activate_transform_pie:
         classlists.append(classesdict["TRANSFORM_PIE"])
         keylists.append(keysdict["TRANSFORM_PIE"])
+        count += 1
+
+    return classlists, keylists, count
+
+
+def get_snap_pie(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_snap_pie:
+        classlists.append(classesdict["SNAP_PIE"])
+        keylists.append(keysdict["SNAP_PIE"])
         count += 1
 
     return classlists, keylists, count

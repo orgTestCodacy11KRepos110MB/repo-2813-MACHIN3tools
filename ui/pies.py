@@ -1987,6 +1987,75 @@ class PieTransform(Menu):
             row.prop(active.data, "use_mirror_topology", toggle=True)
 
 
+class PieSnap(Menu):
+    bl_idname = "MACHIN3_MT_snap_pie"
+    bl_label = "Snap"
+
+    def draw(self, context):
+        layout = self.layout
+        pie = layout.menu_pie()
+
+        scene = context.scene
+        ts = scene.tool_settings
+
+
+        # 4 - LEFT
+        op = pie.operator('machin3.set_snap_preset', text='Vertex', depress=ts.snap_elements == {'VERTEX'} and not ts.use_snap_align_rotation)
+        op.element = 'VERTEX'
+        op.target = 'CLOSEST'
+        op.align_rotation = False
+
+        # 6 - RIGHT
+        op = pie.operator('machin3.set_snap_preset', text='Surface', depress=ts.snap_elements == {'FACE'} and ts.use_snap_align_rotation)
+        op.element = 'FACE'
+        op.target = 'MEDIAN'
+        op.align_rotation = True
+
+        # 2 - BOTTOM
+        op = pie.operator('machin3.set_snap_preset', text='Edge', depress=ts.snap_elements == {'EDGE'} and not ts.use_snap_align_rotation)
+        op.element = 'EDGE'
+        op.target = 'CLOSEST'
+        op.align_rotation = False
+
+        # 8 - TOP
+
+        box = pie.split()
+
+        b = box.box()
+        column = b.column()
+        self.draw_left_column(ts, column)
+
+
+        # 7 - TOP - LEFT
+        pie.separator()
+
+        # 9 - TOP - RIGHT
+        pie.separator()
+
+        # 1 - BOTTOM - LEFT
+        pie.separator()
+
+        # 3 - BOTTOM - RIGHT
+        pie.separator()
+
+
+    def draw_left_column(self, tool_settings, layout):
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.25
+        row.popover(panel="VIEW3D_PT_snapping", text="More...")
+
+        row = column.row(align=True)
+        row.scale_y = 1.5
+        row.scale_x = 0.9
+        row.prop(tool_settings, 'snap_target', expand=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.25
+        row.prop(tool_settings, 'use_snap_align_rotation')
+
+
 class PieCollections(Menu):
     bl_idname = "MACHIN3_MT_collections_pie"
     bl_label = "Collections"
