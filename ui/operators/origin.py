@@ -18,7 +18,7 @@ class OriginToActive(bpy.types.Operator):
     @classmethod
     def description(cls, context, properties):
         if context.mode == 'OBJECT':
-            return "Set Selected Objects' Origin to Active Object"
+            return "Set Selected Objects' Origin to Active Object\nALT: only set Origin Location\nCTRL: only set Origin Rotation"
         elif context.mode == 'EDIT_MESH':
             return "Set Selected Objects' Origin to Active Vert/Edge/Face\nALT: only set Origin Location\nCTRL: only set Origin Rotation"
 
@@ -35,6 +35,10 @@ class OriginToActive(bpy.types.Operator):
                 return [v for v in bm.verts if v.select]
 
     def invoke(self, context, event):
+        if event.alt and event.ctrl:
+            popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
+            return {'CANCELLED'}
+
         global decalmachine
 
         if decalmachine is None:
@@ -43,12 +47,9 @@ class OriginToActive(bpy.types.Operator):
         active = context.active_object
 
         if context.mode == 'OBJECT':
-            self.origin_to_object(context, decalmachine)
+            self.origin_to_active_object(context, only_location=event.alt, only_rotation=event.ctrl, decalmachine=decalmachine)
 
         elif context.mode == 'EDIT_MESH':
-            if event.alt and event.ctrl:
-                popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
-                return {'CANCELLED'}
 
             self.origin_to_editmesh(active, only_location=event.alt, only_rotation=event.ctrl, decalmachine=decalmachine)
 
@@ -130,12 +131,22 @@ class OriginToActive(bpy.types.Operator):
 
                     backup.DM.backupmx = flatten_matrix(deltamx.inverted_safe() @ backup.DM.backupmx)
 
-    def origin_to_object(self, context, decalmachine):
-        mx = context.active_object.matrix_world
-
+    def origin_to_active_object(self, context, only_location, only_rotation, decalmachine):
         sel = [obj for obj in context.selected_objects if obj != context.active_object and obj.type not in ['EMPTY', 'FONT']]
 
+        aloc, arot, asca = context.active_object.matrix_world.decompose()
+
         for obj in sel:
+            oloc, orot, osca = obj.matrix_world.decompose()
+
+            if only_location:
+                mx = get_loc_matrix(aloc) @ get_rot_matrix(orot) @ get_sca_matrix(osca)
+
+            elif only_rotation:
+                mx = get_loc_matrix(oloc) @ get_rot_matrix(arot) @ get_sca_matrix(osca)
+
+            else:
+                mx = context.active_object.matrix_world
 
             # active mx expressed in obj's local space used for decal backup matrices
             if decalmachine:
