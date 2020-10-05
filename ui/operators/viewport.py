@@ -37,7 +37,7 @@ class ViewAxis(bpy.types.Operator):
             if context.scene.M3.custom_view_type == 'CURSOR':
                 mx = context.scene.cursor.matrix
 
-            elif context.scene.M3.custom_view_type == 'OBJECT' and context.active_object:
+            elif context.scene.M3.custom_view_type == 'LOCAL' and context.active_object:
                 mx = context.active_object.matrix_world
 
             else:

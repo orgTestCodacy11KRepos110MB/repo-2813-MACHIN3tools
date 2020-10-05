@@ -257,7 +257,8 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     # VIEW
 
     custom_view: BoolProperty(name="Custom View", description="Use Custom Views, based on either the active object or the cursor", default=False, update=update_custom_view)
-    custom_view_type: EnumProperty(name="Custom View Type", items=custom_view_items, default='OBJECT')
+    custom_view_type: EnumProperty(name="Custom View Type", items=custom_view_items, default='LOCAL')
+
 
     # ALIGN
 
