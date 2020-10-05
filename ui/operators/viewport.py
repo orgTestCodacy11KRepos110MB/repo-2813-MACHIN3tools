@@ -18,7 +18,7 @@ class ViewAxis(bpy.types.Operator):
     @classmethod
     def description(cls, context, properties):
         if context.scene.M3.custom_view:
-            return "Align Custom View (%s)" % (context.scene.M3.custom_view_type.capitalize())
+            return "Align Custom View (%s)\nALT: Align View to Active" % (context.scene.M3.custom_view_type.capitalize())
         else:
             return "Align View to World\nALT: Align View to Active"
 
@@ -27,7 +27,13 @@ class ViewAxis(bpy.types.Operator):
         return context.space_data.type == 'VIEW_3D'
 
     def invoke(self, context, event):
-        if context.scene.M3.custom_view:
+
+        # align to the active selection
+        if event.alt:
+            bpy.ops.view3d.view_axis(type=self.axis, align_active=True)
+
+        # align custom view in object or cursor space
+        elif context.scene.M3.custom_view:
             if context.scene.M3.custom_view_type == 'CURSOR':
                 mx = context.scene.cursor.matrix
 
@@ -61,10 +67,7 @@ class ViewAxis(bpy.types.Operator):
                 r3d.is_orthographic_side_view = True
                 r3d.is_perspective = True
 
-                return {'FINISHED'}
-
-        if event.alt:
-            bpy.ops.view3d.view_axis(type=self.axis, align_active=True)
+        # align in world space
         else:
             bpy.ops.view3d.view_axis(type=self.axis, align_active=False)
 
