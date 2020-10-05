@@ -59,6 +59,17 @@ bridge_interpolation_items = [('LINEAR', 'Linear', ''),
                               ('PATH', 'Path', ''),
                               ('SURFACE', 'Surface', '')]
 
+view_axis_items = [("FRONT", "Front", ""),
+                   ("BACK", "Back", ""),
+                   ("LEFT", "Left", ""),
+                   ("RIGHT", "Right", ""),
+                   ("TOP", "Top", ""),
+                   ("BOTTOM", "Bottom", "")]
+
+
+custom_view_items = [('OBJECT', 'Object', ''),
+                     ('CURSOR', 'Cursor', '')]
+
 # PIES
 
 eevee_preset_items = [('NONE', 'None', ''),

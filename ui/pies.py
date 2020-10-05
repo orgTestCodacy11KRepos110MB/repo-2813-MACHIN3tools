@@ -749,7 +749,6 @@ class PieShading(Menu):
             b = box.box()
             self.draw_object_box(active, view, b)
 
-
         if overlay.show_overlays and shading.type == 'SOLID':
             column = box.column()
             b = column.box()
@@ -765,7 +764,6 @@ class PieShading(Menu):
         elif shading.type == 'SOLID':
             b = box.box()
             self.draw_solid_box(context, view, b)
-
 
         b = box.box()
         self.draw_shade_box(context, view, b)
@@ -1312,16 +1310,17 @@ class PieViewport(Menu):
         box = pie.split()
 
         b = box.box()
-        column = b.column()
-        self.draw_left_column(scene, view, column)
+        self.draw_camera_box(scene, view, b)
+
+        column = box.column()
+        b = column.box()
+        self.draw_other_views_box(b)
+
+        b = column.box()
+        self.draw_custom_view_box(scene, b)
 
         b = box.box()
-        column = b.column()
-        self.draw_center_column(column)
-
-        b = box.box()
-        column = b.column()
-        self.draw_right_column(context, view, r3d, column)
+        self.draw_view_properties_box(context, view, r3d, b)
 
         # 7 - TOP - LEFT
         pie.separator()
@@ -1335,7 +1334,7 @@ class PieViewport(Menu):
         # 3 - BOTTOM - RIGHT
         pie.separator()
 
-    def draw_left_column(self, scene, view, layout):
+    def draw_camera_box(self, scene, view, layout):
         column = layout.column(align=True)
 
         column.scale_x = 2
@@ -1363,7 +1362,7 @@ class PieViewport(Menu):
         text, icon = ("Unlock from View", "UNLOCKED") if view.lock_camera else ("Lock to View", "LOCKED")
         row.operator("wm.context_toggle", text=text, icon=icon).data_path = "space_data.lock_camera"
 
-    def draw_center_column(self, layout):
+    def draw_other_views_box(self, layout):
         column = layout.column(align=True)
 
         column.scale_y = 1.2
@@ -1377,7 +1376,18 @@ class PieViewport(Menu):
         op = row.operator("machin3.view_axis", text="Back")
         op.axis='BACK'
 
-    def draw_right_column(self, context, view, r3d, layout):
+    def draw_custom_view_box(self, scene, layout):
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.25
+        row.prop(scene.M3, "custom_view")
+
+        r = row.row(align=True)
+        r. active = scene.M3.custom_view
+        r.prop(scene.M3, "custom_view_type", expand=True)
+
+    def draw_view_properties_box(self, context, view, r3d, layout):
         column = layout.column(align=True)
 
         row = column.row(align=True)

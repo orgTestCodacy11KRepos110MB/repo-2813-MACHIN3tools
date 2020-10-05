@@ -5,7 +5,7 @@ import bmesh
 from . utils.math import flatten_matrix
 from . utils.world import get_world_output
 from . utils.system import abspath
-from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items
+from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, custom_view_items
 
 
 # COLLECTIONS
@@ -250,6 +250,11 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     object_axes_size: FloatProperty(name="Object Axes Size", default=0.3, min=0)
     object_axes_alpha: FloatProperty(name="Object Axes Alpha", default=0.75, min=0, max=1)
 
+
+    # VIEW
+
+    custom_view: BoolProperty(name="Custom View", default=False)
+    custom_view_type: EnumProperty(name="Custom View Type", items=custom_view_items, default='OBJECT')
 
     # ALIGN
 

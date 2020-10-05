@@ -1,31 +1,124 @@
 import bpy
+import bmesh
 from bpy.props import EnumProperty, BoolProperty
-from mathutils import Matrix
+from mathutils import Matrix, Euler, Quaternion
+from math import radians
 from ... utils.view import reset_viewport
-
-axisitems = [("FRONT", "Front", ""),
-             ("BACK", "Back", ""),
-             ("LEFT", "Left", ""),
-             ("RIGHT", "Right", ""),
-             ("TOP", "Top", ""),
-             ("BOTTOM", "Bottom", "")]
+from ... utils.math import average_locations
+from ... items import view_axis_items
 
 
 class ViewAxis(bpy.types.Operator):
     bl_idname = "machin3.view_axis"
     bl_label = "View Axis"
-    bl_description = "Click: Align View\nALT + Click: Align View to Active"
     bl_options = {'REGISTER'}
 
-    axis: EnumProperty(name="Axis", items=axisitems, default="FRONT")
+    axis: EnumProperty(name="Axis", items=view_axis_items, default="FRONT")
+
+    @classmethod
+    def description(cls, context, properties):
+        if context.scene.M3.custom_view:
+            return "Align Custom View (%s)" % (context.scene.M3.custom_view_type.capitalize())
+        else:
+            return "Align View to World\nALT: Align View to Active"
+
+    @classmethod
+    def poll(cls, context):
+        return context.space_data.type == 'VIEW_3D'
 
     def invoke(self, context, event):
+        if context.scene.M3.custom_view:
+            if context.scene.M3.custom_view_type == 'CURSOR':
+                mx = context.scene.cursor.matrix
+
+            elif context.scene.M3.custom_view_type == 'OBJECT' and context.active_object:
+                mx = context.active_object.matrix_world
+
+            else:
+                mx = None
+                context.scene.M3.custom_view = False
+
+            if mx:
+                loc, rot, _ = mx.decompose()
+                rot = self.create_view_rotation(rot, self.axis)
+
+                # in edit mesh mode, also change the viewport location if anything is selected
+                if context.scene.M3.custom_view_type == 'OBJECT' and context.mode == 'EDIT_MESH':
+                    bm = bmesh.from_edit_mesh(context.active_object.data)
+
+                    verts = [v for v in bm.verts if v.select]
+
+                    if verts:
+                        loc = mx @ average_locations([v.co for v in verts])
+
+                r3d = context.space_data.region_3d
+                r3d.view_location = loc
+                r3d.view_rotation = rot
+
+                return {'FINISHED'}
+
         if event.alt:
             bpy.ops.view3d.view_axis(type=self.axis, align_active=True)
         else:
             bpy.ops.view3d.view_axis(type=self.axis, align_active=False)
 
         return {'FINISHED'}
+
+    def create_view_rotation(self, rot, axis):
+        '''
+        rotate passed in quaternion based on view axis
+        TOP is unchanged
+        '''
+
+        if self.axis == 'FRONT':
+            rmx = rot.to_matrix()
+            rotated = rot.to_matrix()
+
+            rotated.col[1] = rmx.col[2]
+            rotated.col[2] = -rmx.col[1]
+
+            rot = rotated.to_quaternion()
+
+        elif self.axis == 'BACK':
+            rmx = rot.to_matrix()
+            rotated = rot.to_matrix()
+
+            rotated.col[0] = -rmx.col[0]
+            rotated.col[1] = rmx.col[2]
+            rotated.col[2] = rmx.col[1]
+
+            rot = rotated.to_quaternion()
+
+        elif self.axis == 'RIGHT':
+            rmx = rot.to_matrix()
+            rotated = rot.to_matrix()
+
+            rotated.col[0] = rmx.col[1]
+            rotated.col[1] = rmx.col[2]
+            rotated.col[2] = rmx.col[0]
+
+            rot = rotated.to_quaternion()
+
+        elif self.axis == 'LEFT':
+            rmx = rot.to_matrix()
+            rotated = rot.to_matrix()
+
+            rotated.col[0] = -rmx.col[1]
+            rotated.col[1] = rmx.col[2]
+            rotated.col[2] = -rmx.col[0]
+
+            rot = rotated.to_quaternion()
+
+        elif self.axis == 'BOTTOM':
+            rmx = rot.to_matrix()
+            rotated = rot.to_matrix()
+
+            rotated.col[1] = -rmx.col[1]
+            rotated.col[2] = -rmx.col[2]
+
+            rot = rotated.to_quaternion()
+
+        return rot
 
 
 class MakeCamActive(bpy.types.Operator):
