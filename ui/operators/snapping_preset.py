@@ -2,10 +2,10 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 
 
-class SetSnapPreset(bpy.types.Operator):
-    bl_idname = "machin3.set_snap_preset"
-    bl_label = "MACHIN3: Set Snap Preset"
-    bl_description = "Set Snap Preset"
+class SetSnappingPreset(bpy.types.Operator):
+    bl_idname = "machin3.set_snapping_preset"
+    bl_label = "MACHIN3: Set Snapping Preset"
+    bl_description = "Set Snapping Preset"
     bl_options = {'REGISTER', 'UNDO'}
 
     element: StringProperty(name="Snap Element")

@@ -1987,9 +1987,9 @@ class PieTransform(Menu):
             row.prop(active.data, "use_mirror_topology", toggle=True)
 
 
-class PieSnap(Menu):
-    bl_idname = "MACHIN3_MT_snap_pie"
-    bl_label = "Snap"
+class PieSnapping(Menu):
+    bl_idname = "MACHIN3_MT_snapping_pie"
+    bl_label = "Snapping"
 
     def draw(self, context):
         layout = self.layout
@@ -2000,19 +2000,19 @@ class PieSnap(Menu):
 
 
         # 4 - LEFT
-        op = pie.operator('machin3.set_snap_preset', text='Vertex', depress=ts.snap_elements == {'VERTEX'} and not ts.use_snap_align_rotation)
+        op = pie.operator('machin3.set_snapping_preset', text='Vertex', depress=ts.snap_elements == {'VERTEX'} and ts.snap_target == 'CLOSEST' and not ts.use_snap_align_rotation)
         op.element = 'VERTEX'
         op.target = 'CLOSEST'
         op.align_rotation = False
 
         # 6 - RIGHT
-        op = pie.operator('machin3.set_snap_preset', text='Surface', depress=ts.snap_elements == {'FACE'} and ts.use_snap_align_rotation)
+        op = pie.operator('machin3.set_snapping_preset', text='Surface', depress=ts.snap_elements == {'FACE'} and ts.snap_target == 'MEDIAN' and ts.use_snap_align_rotation)
         op.element = 'FACE'
         op.target = 'MEDIAN'
         op.align_rotation = True
 
         # 2 - BOTTOM
-        op = pie.operator('machin3.set_snap_preset', text='Edge', depress=ts.snap_elements == {'EDGE'} and not ts.use_snap_align_rotation)
+        op = pie.operator('machin3.set_snapping_preset', text='Edge', depress=ts.snap_elements == {'EDGE'} and ts.snap_target == 'CLOSEST' and not ts.use_snap_align_rotation)
         op.element = 'EDGE'
         op.target = 'CLOSEST'
         op.align_rotation = False
