@@ -1892,9 +1892,11 @@ class PieTransform(Menu):
         op.orientation = 'LOCAL'
 
         # 6 - RIGHT
-        op = pie.operator('machin3.set_transform_preset', text='Global')
+
+        orientation = 'VIEW' if scene.M3.custom_view else 'GLOBAL'
+        op = pie.operator('machin3.set_transform_preset', text=orientation.capitalize())
         op.pivot = 'MEDIAN_POINT'
-        op.orientation = 'GLOBAL'
+        op.orientation = orientation
 
         # 2 - BOTTOM
         op = pie.operator('machin3.set_transform_preset', text='Active')
