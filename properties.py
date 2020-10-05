@@ -5,6 +5,7 @@ import bmesh
 from . utils.math import flatten_matrix
 from . utils.world import get_world_output
 from . utils.system import abspath
+from . utils.registration import get_prefs
 from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, custom_view_items
 
 
@@ -239,6 +240,9 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     def update_custom_view(self, context):
         context.space_data.overlay.show_ortho_grid = not self.custom_view
+
+        if get_prefs().custom_views_use_trackball:
+            context.preferences.inputs.view_rotate_method = 'TRACKBALL' if self.custom_view else 'TURNTABLE'
 
 
     # SHADING

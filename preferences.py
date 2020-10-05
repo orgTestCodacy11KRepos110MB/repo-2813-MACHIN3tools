@@ -189,6 +189,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     switchmatcap2: StringProperty(name="Matcap 2", update=update_switchmatcap2)
     matcap2_force_single: BoolProperty(name="Force Single Color for Matcap 2", default=True)
 
+    custom_views_use_trackball: BoolProperty(name="Force Trackball Navigation when using Custom Views", default=True)
+
     obj_mode_rotate_around_active: BoolProperty(name="Rotate Around Selection, but only in Object Mode", default=False)
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
     focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
@@ -552,6 +554,17 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             row.prop(self, "matcap2_force_single")
 
 
+        # VIEWPORT PIE
+
+        if getattr(bpy.types, "MACHIN3_MT_viewport_pie", False):
+            bb = b.box()
+            bb.label(text="Views Pie: Custom views")
+
+            column = bb.column()
+            row = column.row()
+            row.prop(self, "custom_views_use_trackball")
+
+
         # TOOLS PIE
 
         if getattr(bpy.types, "MACHIN3_MT_tools_pie", False):
@@ -567,7 +580,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         # NO SETTINGS
 
-        if not any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_focus", "OT_customize", "MT_modes_pie", "MT_save_pie", "MT_shading_pie", "MT_tools_pie"]]):
+        if not any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_focus", "OT_customize", "MT_modes_pie", "MT_save_pie", "MT_shading_pie", "MT_snapping_pie", "MT_tools_pie"]]):
             b.label(text="No tools or pie menus with settings have been activated.")
 
     def draw_keymaps(self, box):
