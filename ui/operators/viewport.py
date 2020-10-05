@@ -40,32 +40,34 @@ class ViewAxis(bpy.types.Operator):
             elif context.scene.M3.custom_view_type == 'LOCAL' and context.active_object:
                 mx = context.active_object.matrix_world
 
+            # fallback, when there is not active object: turn of custom views and align in world space
             else:
-                mx = None
                 context.scene.M3.custom_view = False
+                bpy.ops.view3d.view_axis(type=self.axis, align_active=False)
+                return {'FINISHED'}
 
-            if mx:
-                loc, rot, _ = mx.decompose()
-                rot = self.create_view_rotation(rot, self.axis)
+            loc, rot, _ = mx.decompose()
+            rot = self.create_view_rotation(rot, self.axis)
 
-                # in edit mesh mode, also change the viewport location if anything is selected
-                if context.mode == 'EDIT_MESH':
-                    bm = bmesh.from_edit_mesh(context.active_object.data)
+            # in edit mesh mode, also change the viewport location if anything is selected
+            if context.mode == 'EDIT_MESH':
+                bm = bmesh.from_edit_mesh(context.active_object.data)
 
-                    verts = [v for v in bm.verts if v.select]
+                verts = [v for v in bm.verts if v.select]
 
-                    if verts:
-                        loc = context.active_object.matrix_world @ average_locations([v.co for v in verts])
+                if verts:
+                    loc = context.active_object.matrix_world @ average_locations([v.co for v in verts])
 
-                r3d = context.space_data.region_3d
-                r3d.view_location = loc
-                r3d.view_rotation = rot
+            r3d = context.space_data.region_3d
+            r3d.view_location = loc
+            r3d.view_rotation = rot
 
-                r3d.view_perspective = 'ORTHO'
+            r3d.view_perspective = 'ORTHO'
 
-                # setting these props is required for prefs.inputs.use_auto_perspective to work
-                r3d.is_orthographic_side_view = True
-                r3d.is_perspective = True
+            # setting these props is required for prefs.inputs.use_auto_perspective to work
+            r3d.is_orthographic_side_view = True
+            r3d.is_perspective = True
+
 
         # align in world space
         else:
