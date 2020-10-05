@@ -237,6 +237,9 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
         context.scene.cycles.device = self.cycles_device
 
+    def update_custom_view(self, context):
+        context.space_data.overlay.show_ortho_grid = not self.custom_view
+
 
     # SHADING
 
@@ -253,7 +256,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     # VIEW
 
-    custom_view: BoolProperty(name="Custom View", default=False)
+    custom_view: BoolProperty(name="Custom View", description="Use Custom Views, based on either the active object or the cursor", default=False, update=update_custom_view)
     custom_view_type: EnumProperty(name="Custom View Type", items=custom_view_items, default='OBJECT')
 
     # ALIGN

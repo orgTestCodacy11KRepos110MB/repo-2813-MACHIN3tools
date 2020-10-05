@@ -67,8 +67,8 @@ view_axis_items = [("FRONT", "Front", ""),
                    ("BOTTOM", "Bottom", "")]
 
 
-custom_view_items = [('OBJECT', 'Object', ''),
-                     ('CURSOR', 'Cursor', '')]
+custom_view_items = [('OBJECT', 'Object', "Base the Custom Views on the Active Object's Orientation"),
+                     ('CURSOR', 'Cursor', "Base the Custom Views on the Cursor's Orientation")]
 
 # PIES
 
