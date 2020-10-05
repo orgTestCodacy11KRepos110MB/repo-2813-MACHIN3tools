@@ -43,13 +43,13 @@ class ViewAxis(bpy.types.Operator):
                 rot = self.create_view_rotation(rot, self.axis)
 
                 # in edit mesh mode, also change the viewport location if anything is selected
-                if context.scene.M3.custom_view_type == 'OBJECT' and context.mode == 'EDIT_MESH':
+                if context.mode == 'EDIT_MESH':
                     bm = bmesh.from_edit_mesh(context.active_object.data)
 
                     verts = [v for v in bm.verts if v.select]
 
                     if verts:
-                        loc = mx @ average_locations([v.co for v in verts])
+                        loc = context.active_object.matrix_world @ average_locations([v.co for v in verts])
 
                 r3d = context.space_data.region_3d
                 r3d.view_location = loc
