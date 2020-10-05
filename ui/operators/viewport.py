@@ -55,6 +55,12 @@ class ViewAxis(bpy.types.Operator):
                 r3d.view_location = loc
                 r3d.view_rotation = rot
 
+                r3d.view_perspective = 'ORTHO'
+
+                # setting these props is required for prefs.inputs.use_auto_perspective to work
+                r3d.is_orthographic_side_view = True
+                r3d.is_perspective = True
+
                 return {'FINISHED'}
 
         if event.alt:
