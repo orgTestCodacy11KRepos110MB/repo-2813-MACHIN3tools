@@ -1,6 +1,6 @@
 import bpy
 import bmesh
-from bpy.props import EnumProperty, BoolProperty
+from bpy.props import EnumProperty, BoolProperty, StringProperty
 from mathutils import Matrix, Euler, Quaternion
 from math import radians
 from ... utils.view import reset_viewport
@@ -267,7 +267,6 @@ class ToggleViewPerspOrtho(bpy.types.Operator):
     bl_description = "Toggle Viewport Perspective/Ortho"
     bl_options = {'REGISTER', 'UNDO'}
 
-
     def execute(self, context):
         global toggledprefs
 
@@ -283,6 +282,20 @@ class ToggleViewPerspOrtho(bpy.types.Operator):
             prefs.use_auto_perspective = True
 
         bpy.ops.view3d.view_persportho()
+
+        return {'FINISHED'}
+
+
+class ToggleOrbitMethod(bpy.types.Operator):
+    bl_idname = "machin3.toggle_orbit_method"
+    bl_label = "MACHIN3: Toggle Orbit Method"
+    bl_description = "Toggle Orbit Method"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    method: StringProperty(name='Orbit Method', default='TURNTABLE')
+
+    def execute(self, context):
+        context.preferences.inputs.view_rotate_method = self.method
 
         return {'FINISHED'}
 
