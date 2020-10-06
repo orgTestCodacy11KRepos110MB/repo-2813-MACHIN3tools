@@ -27,22 +27,19 @@ class ViewAxis(bpy.types.Operator):
         return context.space_data.type == 'VIEW_3D'
 
     def invoke(self, context, event):
+        m3 = context.scene.M3
 
         # align to the active selection
         if event.alt:
             bpy.ops.view3d.view_axis(type=self.axis, align_active=True)
 
         # align custom view in object or cursor space
-        elif context.scene.M3.custom_view:
-            if context.scene.M3.custom_view_type == 'CURSOR':
-                mx = context.scene.cursor.matrix
+        elif m3.custom_views_local or m3.custom_views_cursor:
+            mx = context.scene.cursor.matrix if m3.custom_views_cursor else context.active_object.matrix_world if m3.custom_views_local and context.active_object else None
 
-            elif context.scene.M3.custom_view_type == 'LOCAL' and context.active_object:
-                mx = context.active_object.matrix_world
-
-            # fallback, when there is not active object: turn of custom views and align in world space
-            else:
-                context.scene.M3.custom_view = False
+            # fallback, when there is no active object: turn of custom local views and align in world space
+            if not mx:
+                context.scene.M3.custom_views_local = False
                 bpy.ops.view3d.view_axis(type=self.axis, align_active=False)
                 return {'FINISHED'}
 

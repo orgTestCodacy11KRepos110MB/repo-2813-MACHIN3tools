@@ -6,7 +6,7 @@ from . utils.math import flatten_matrix
 from . utils.world import get_world_output
 from . utils.system import abspath
 from . utils.registration import get_prefs
-from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, custom_view_items
+from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items
 
 
 # COLLECTIONS
@@ -238,11 +238,39 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
         context.scene.cycles.device = self.cycles_device
 
-    def update_custom_view(self, context):
-        context.space_data.overlay.show_ortho_grid = not self.custom_view
+    def update_custom_views_local(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
 
+        # only one custom view can be active at a time
+        if self.custom_views_local and self.custom_views_cursor:
+            self.avoid_update = True
+            self.custom_views_cursor = False
+
+        # toggle orhto grid
+        context.space_data.overlay.show_ortho_grid = not self.custom_views_local
+
+        # toggle trackball orbiting
         if get_prefs().custom_views_use_trackball:
-            context.preferences.inputs.view_rotate_method = 'TRACKBALL' if self.custom_view else 'TURNTABLE'
+            context.preferences.inputs.view_rotate_method = 'TRACKBALL' if self.custom_views_local else 'TURNTABLE'
+
+    def update_custom_views_cursor(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        # only one custom view can be active at a tim
+        if self.custom_views_cursor and self.custom_views_local:
+            self.avoid_update = True
+            self.custom_views_local = False
+
+        # toggle orhto grid
+        context.space_data.overlay.show_ortho_grid = not self.custom_views_cursor
+
+        # toggle trackball orbiting
+        if get_prefs().custom_views_use_trackball:
+            context.preferences.inputs.view_rotate_method = 'TRACKBALL' if self.custom_views_cursor else 'TURNTABLE'
 
 
     # SHADING
@@ -260,8 +288,8 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     # VIEW
 
-    custom_view: BoolProperty(name="Custom View", description="Use Custom Views, based on either the active object or the cursor", default=False, update=update_custom_view)
-    custom_view_type: EnumProperty(name="Custom View Type", items=custom_view_items, default='LOCAL')
+    custom_views_local: BoolProperty(name="Custom Local Views", description="Use Custom Views, based on the active object's orientation", default=False, update=update_custom_views_local)
+    custom_views_cursor: BoolProperty(name="Custom Cursor Views", description="Use Custom Views, based on the cursor's orientation", default=False, update=update_custom_views_cursor)
 
 
     # ALIGN

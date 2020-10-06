@@ -1317,7 +1317,7 @@ class PieViewport(Menu):
         self.draw_other_views_box(b)
 
         b = column.box()
-        self.draw_custom_view_box(scene, b)
+        self.draw_custom_views_box(scene, b)
 
         b = box.box()
         self.draw_view_properties_box(context, view, r3d, b)
@@ -1376,16 +1376,14 @@ class PieViewport(Menu):
         op = row.operator("machin3.view_axis", text="Back")
         op.axis='BACK'
 
-    def draw_custom_view_box(self, scene, layout):
+    def draw_custom_views_box(self, scene, layout):
         column = layout.column(align=True)
 
-        row = column.row(align=True)
+        row = column.split(factor=0.33, align=True)
         row.scale_y = 1.25
-        row.prop(scene.M3, "custom_view")
-
-        r = row.row(align=True)
-        r. active = scene.M3.custom_view
-        r.prop(scene.M3, "custom_view_type", expand=True)
+        row.label(text="Custom Views")
+        row.prop(scene.M3, "custom_views_local", text='Local')
+        row.prop(scene.M3, "custom_views_cursor", text='Cursor')
 
     def draw_view_properties_box(self, context, view, r3d, layout):
         column = layout.column(align=True)
@@ -1884,6 +1882,7 @@ class PieTransform(Menu):
         pie = layout.menu_pie()
 
         scene = context.scene
+        m3 = context.scene.M3
         active = context.active_object
 
         # 4 - LEFT
@@ -1893,7 +1892,7 @@ class PieTransform(Menu):
 
         # 6 - RIGHT
 
-        orientation = 'VIEW' if scene.M3.custom_view else 'GLOBAL'
+        orientation = 'VIEW' if m3.custom_views_local or m3.custom_views_cursor else 'GLOBAL'
         op = pie.operator('machin3.set_transform_preset', text=orientation.capitalize())
         op.pivot = 'MEDIAN_POINT'
         op.orientation = orientation

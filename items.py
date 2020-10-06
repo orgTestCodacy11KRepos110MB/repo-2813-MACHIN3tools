@@ -66,10 +66,6 @@ view_axis_items = [("FRONT", "Front", ""),
                    ("TOP", "Top", ""),
                    ("BOTTOM", "Bottom", "")]
 
-
-custom_view_items = [('LOCAL', 'Local', "Base the Custom Views on the Active Object's Orientation"),
-                     ('CURSOR', 'Cursor', "Base the Custom Views on the Cursor's Orientation")]
-
 # PIES
 
 eevee_preset_items = [('NONE', 'None', ''),
@@ -82,4 +78,3 @@ render_engine_items = [('BLENDER_EEVEE', 'Eevee', ''),
 
 cycles_device_items = [('CPU', 'CPU', ''),
                        ('GPU', 'GPU', '')]
-
