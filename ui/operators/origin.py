@@ -89,7 +89,7 @@ class OriginToActive(bpy.types.Operator):
 
         elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
             faces = [f for f in bm.faces if f.select]
-            center = average_locations([f.calc_center_bounds() for f in faces])
+            center = average_locations([f.calc_center_median_weighted() for f in faces])
 
             # create face world matrix components
             if not only_rotation:

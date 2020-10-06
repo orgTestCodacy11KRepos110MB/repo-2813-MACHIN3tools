@@ -3,6 +3,7 @@ import bmesh
 from ... utils.math import get_center_between_verts, average_locations, create_rotation_matrix_from_vertex, create_rotation_matrix_from_edge, create_rotation_matrix_from_face
 from ... utils.scene import set_cursor
 from ... utils.ui import popup_message
+from ... utils.draw import draw_vector, draw_point
 
 
 class CursorToOrigin(bpy.types.Operator):
@@ -93,7 +94,8 @@ class CursorToSelected(bpy.types.Operator):
 
         elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
             faces = [f for f in bm.faces if f.select]
-            center = average_locations([f.calc_center_bounds() for f in faces])
+
+            center = average_locations([f.calc_center_median_weighted() for f in faces])
 
             # create face world matrix components
             if not only_rotation:
@@ -105,6 +107,9 @@ class CursorToSelected(bpy.types.Operator):
 
         # set the cursor location/rotation
         set_cursor(None if only_rotation else loc, None if only_location else rot.to_quaternion())
+
+        context.area.tag_redraw()
+
 
     def cursor_to_active_object(self, active, only_location, only_rotation):
         mx = active.matrix_world

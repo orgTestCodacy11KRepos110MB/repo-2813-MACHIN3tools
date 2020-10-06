@@ -187,7 +187,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     switchmatcap1: StringProperty(name="Matcap 1", update=update_switchmatcap1)
     switchmatcap2: StringProperty(name="Matcap 2", update=update_switchmatcap2)
-    matcap2_force_single: BoolProperty(name="Force Single Color for Matcap 2", default=True)
+    matcap2_force_single: BoolProperty(name="Force Single Color Shading for Matcap 2", default=True)
 
     show_orbit_method: BoolProperty(name="Show Orbit Method Selection", default=True)
     custom_views_use_trackball: BoolProperty(name="Force Trackball Navigation when using Custom Views", default=True)
