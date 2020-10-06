@@ -17,10 +17,21 @@ class ViewAxis(bpy.types.Operator):
 
     @classmethod
     def description(cls, context, properties):
-        if context.scene.M3.custom_view:
-            return "Align Custom View (%s)\nALT: Align View to Active" % (context.scene.M3.custom_view_type.capitalize())
+        m3 = context.scene.M3
+
+        if context.mode == 'OBJECT':
+            selection = 'Object'
+        elif context.mode == 'EDIT_MESH':
+            selection = 'Verts' if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) else 'Edges' if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False) else 'Faces' if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) else 'Elements'
         else:
-            return "Align View to World\nALT: Align View to Active"
+            selection = 'Elements'
+
+        if m3.custom_views_local:
+            return "Align Custom View to Active Object\nALT: Align View to Active %s" % (selection)
+        if m3.custom_views_cursor:
+            return "Align Custom View to Cursor\nALT: Align View to Active %s" % (selection)
+        else:
+            return "Align View to World\nALT: Align View to Active to Active %s" % (selection)
 
     @classmethod
     def poll(cls, context):
