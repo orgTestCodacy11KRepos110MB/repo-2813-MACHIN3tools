@@ -115,7 +115,8 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                                                             ('Select', 'select_collection')])],
            'WORKSPACE_PIE': [('ui.pies', [('PieWorkspace', 'workspace_pie')]),
                              ('ui.operators.workspace', [('SwitchWorkspace', 'switch_workspace')])],
-           'TOOLS_PIE': [('ui.pies', [('PieTools', 'tools_pie')])],
+           'TOOLS_PIE': [('ui.pies', [('PieTools', 'tools_pie')]),
+                         ('ui.operators.bc_preset', [('SetBCPreset', 'set_boxcutter_preset')])],
            'OBJECT_CONTEXT_MENU': [('ui.menus', [('MenuMACHIN3toolsObjectContextMenu', 'machin3tools_object_context_menu')])],
            }
 

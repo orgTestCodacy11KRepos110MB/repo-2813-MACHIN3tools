@@ -6,7 +6,7 @@ from .. utils.registration import get_prefs, get_addon
 from .. utils.ui import get_icon
 from .. utils.collection import get_scene_collections
 from .. utils.system import abspath
-from .. utils.tools import get_tools_from_context
+from .. utils.tools import get_tools_from_context, get_tool_options
 
 # TODO: snapping pie
 
@@ -2522,11 +2522,46 @@ class PieTools(Menu):
             else:
                 pie.separator()
 
+
             # 1 - BOTTOM - LEFT
-            pie.separator()
+            if get_prefs().tools_show_boxcutter_presets and 'BC' in tools:
+                box = pie.split()
+
+                column = box.column(align=True)
+
+                row = column.split(factor=0.25, align=True)
+                row.scale_y = 1.25
+                row.label(text='Box')
+                op = row.operator('machin3.set_boxcutter_preset', text='Add')
+                op.shape_type = 'BOX'
+                op.mode = 'MAKE'
+                op.set_origin = 'BBOX'
+                op = row.operator('machin3.set_boxcutter_preset', text='Cut')
+                op.shape_type = 'BOX'
+                op.mode = 'CUT'
+
+                row = column.split(factor=0.25, align=True)
+                row.scale_y = 1.25
+                row.label(text='Circle')
+                op = row.operator('machin3.set_boxcutter_preset', text='Add')
+                op.shape_type = 'CIRCLE'
+                op.mode = 'MAKE'
+                op.set_origin = 'BBOX'
+                op = row.operator('machin3.set_boxcutter_preset', text='Cut')
+                op.shape_type = 'CIRCLE'
+                op.mode = 'CUT'
+
+                column.separator()
+
+                row = column.split(factor=0.25)
+                row.separator()
+                row.operator('bc.smart_apply')
+
+            else:
+                pie.separator()
 
             # 3 - BOTTOM - RIGHT
-            if 'Hops' in tools and get_prefs().tools_show_hardops_menu:
+            if get_prefs().tools_show_hardops_menu and 'Hops' in tools:
                 HOps = importlib.import_module('HOps')
 
                 icon = HOps.icons.get('sm_logo_white')
