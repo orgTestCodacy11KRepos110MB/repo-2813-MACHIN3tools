@@ -2474,6 +2474,8 @@ class PieTools(Menu):
         layout = self.layout
         pie = layout.menu_pie()
 
+        m3 = context.scene.M3
+
         tools = get_tools_from_context(context)
 
         if context.mode in ['OBJECT', 'EDIT_MESH']:
@@ -2529,6 +2531,13 @@ class PieTools(Menu):
 
                 column = box.column(align=True)
 
+                column.separator()
+                column.separator()
+                column.separator()
+                column.separator()
+                column.separator()
+                column.separator()
+
                 row = column.split(factor=0.25, align=True)
                 row.scale_y = 1.25
                 row.label(text='Box')
@@ -2551,11 +2560,26 @@ class PieTools(Menu):
                 op.shape_type = 'CIRCLE'
                 op.mode = 'CUT'
 
+                row = column.split(factor=0.25, align=True)
+                row.scale_y = 1.25
+                row.label(text='NGon')
+                op = row.operator('machin3.set_boxcutter_preset', text='Add')
+                op.shape_type = 'NGON'
+                op.mode = 'MAKE'
+                op.set_origin = 'BBOX'
+                op = row.operator('machin3.set_boxcutter_preset', text='Cut')
+                op.shape_type = 'NGON'
+                op.mode = 'CUT'
+
+                column.separator()
+                row = column.row(align=True)
+                row.prop(m3, 'bcorientation', expand=True)
+
                 column.separator()
 
-                row = column.split(factor=0.25)
-                row.separator()
-                row.operator('bc.smart_apply')
+                row = column.row(align=True)
+                row.scale_y = 1.25
+                row.operator('bc.smart_apply', icon='IMPORT')
 
             else:
                 pie.separator()

@@ -576,6 +576,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             column = bb.column()
             row = column.row()
+
+            row.prop(self, "tools_show_boxcutter_presets")
             row.prop(self, "tools_show_hardops_menu")
             row.prop(self, "tools_show_quick_favorites")
             row.prop(self, "tools_show_tool_bar")

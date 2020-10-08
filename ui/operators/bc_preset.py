@@ -7,7 +7,7 @@ from ... utils.registration import get_addon_prefs
 class SetBCPreset(bpy.types.Operator):
     bl_idname = "machin3.set_boxcutter_preset"
     bl_label = "MACHIN3: Set BoxCutter Preset"
-    bl_description = ""
+    bl_description = "Quickly enable/switch BC tool in/to various modes"
     bl_options = {'REGISTER', 'UNDO'}
 
     mode: StringProperty()

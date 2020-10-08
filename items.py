@@ -78,3 +78,8 @@ render_engine_items = [('BLENDER_EEVEE', 'Eevee', ''),
 
 cycles_device_items = [('CPU', 'CPU', ''),
                        ('GPU', 'GPU', '')]
+
+
+bc_orientation_items = [('LOCAL', 'Local', ''),
+                        ('NEAREST', 'Nearest', ''),
+                        ('LONGEST', 'Longest', '')]

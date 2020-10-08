@@ -5,8 +5,8 @@ import bmesh
 from . utils.math import flatten_matrix
 from . utils.world import get_world_output
 from . utils.system import abspath
-from . utils.registration import get_prefs
-from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items
+from . utils.registration import get_prefs, get_addon_prefs
+from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, bc_orientation_items
 
 
 # COLLECTIONS
@@ -272,6 +272,16 @@ class M3SceneProperties(bpy.types.PropertyGroup):
         if get_prefs().custom_views_use_trackball:
             context.preferences.inputs.view_rotate_method = 'TRACKBALL' if self.custom_views_cursor else 'TURNTABLE'
 
+    def update_bcorientation(self, context):
+        bcprefs = get_addon_prefs('BoxCutter')
+
+        if self.bcorientation == 'LOCAL':
+            bcprefs.behavior.orient_method = 'LOCAL'
+        elif self.bcorientation == 'NEAREST':
+            bcprefs.behavior.orient_method = 'NEAREST'
+        elif self.bcorientation == 'LONGEST':
+            bcprefs.behavior.orient_method = 'TANGENT'
+
 
     # SHADING
 
@@ -335,6 +345,11 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     unity_export: BoolProperty(name="Export to Unity", description="Enable to do the actual FBX export\nLeave it off to only prepare the Model")
     unity_export_path: StringProperty(name="Unity Export Path", subtype='FILE_PATH', update=update_unity_export_path)
     unity_triangulate: BoolProperty(name="Triangulate before exporting", description="Add Triangulate Modifier to the end of every object's stack", default=False)
+
+
+    # BoxCutter
+
+    bcorientation: EnumProperty(name="BoxCutter Orientation", items=bc_orientation_items, default='LOCAL', update=update_bcorientation)
 
     # hidden
 
