@@ -39,10 +39,18 @@ class ViewAxis(bpy.types.Operator):
 
     def invoke(self, context, event):
         m3 = context.scene.M3
+        r3d = context.space_data.region_3d
 
         # align to the active selection
         if event.alt:
             bpy.ops.view3d.view_axis(type=self.axis, align_active=True)
+
+            # always use ortho for aligned views like this
+            r3d.view_perspective = 'ORTHO'
+
+            # setting these props is required for prefs.inputs.use_auto_perspective to work
+            r3d.is_orthographic_side_view = True
+            r3d.is_perspective = True
 
         # align custom view in object or cursor space
         elif m3.custom_views_local or m3.custom_views_cursor:
@@ -66,7 +74,6 @@ class ViewAxis(bpy.types.Operator):
                 if verts:
                     loc = context.active_object.matrix_world @ average_locations([v.co for v in verts])
 
-            r3d = context.space_data.region_3d
             r3d.view_location = loc
             r3d.view_rotation = rot
 
