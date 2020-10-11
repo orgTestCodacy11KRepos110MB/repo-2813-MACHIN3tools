@@ -145,20 +145,20 @@ class OriginToActive(bpy.types.Operator):
                         backup = child.DM.decalbackup
                         backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
 
-        # adjust stashes and stash matrices, the following immitates stash retrieval and then re-creation, it just chains both events together. setting the new stash.obj.matrix_world is optional
+        # adjust stashes and stash matrices
         if meshmachine:
+
+            # the following originally immitated stash retrieval and then re-creation, it just chained both events together. this could then be simplifed further and further. setting stash.obj.matrix_world is optional
             for stash in active.MM.stashes:
 
                 # stashmx in stashtargetmx's local space, aka the stash difference matrix(which is all that's actually needed for stashes, just like for decal backups)
                 stashdeltamx = stash.obj.MM.stashtargetmx.inverted() @ stash.obj.MM.stashmx
-                newstashmx = mx @ stashdeltamx
 
-                stash.obj.data.transform(selmx.inverted_safe() @ newstashmx @ stashdeltamx.inverted())
+                stash.obj.data.transform(deltamx)
                 stash.obj.matrix_world = selmx
 
-                stash.obj.MM.stashmx = flatten_matrix(newstashmx)
+                stash.obj.MM.stashmx = flatten_matrix(mx @ stashdeltamx)
                 stash.obj.MM.stashtargetmx = flatten_matrix(selmx)
-
 
     def origin_to_active_object(self, context, only_location, only_rotation, decalmachine, meshmachine):
         sel = [obj for obj in context.selected_objects if obj != context.active_object and obj.type not in ['EMPTY', 'FONT']]
@@ -210,18 +210,19 @@ class OriginToActive(bpy.types.Operator):
                             backup = child.DM.decalbackup
                             backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
 
-            # adjust stashes and stash matrices, the following immitates stash retrieval and then re-creation, it just chains both events together. setting the new stash.obj.matrix_world is optional
+            # adjust stashes and stash matrices
             if meshmachine:
+
+                # the following originally immitated stash retrieval and then re-creation, it just chained both events together. this could then be simplifed further and further. setting stash.obj.matrix_world is optional
                 for stash in obj.MM.stashes:
 
                     # stashmx in stashtargetmx's local space, aka the stash difference matrix(which is all that's actually needed for stashes, just like for decal backups)
                     stashdeltamx = stash.obj.MM.stashtargetmx.inverted() @ stash.obj.MM.stashmx
-                    newstashmx = omx @ stashdeltamx
 
-                    stash.obj.data.transform(mx.inverted_safe() @ newstashmx @ stashdeltamx.inverted_safe())
+                    stash.obj.data.transform(deltamx)
                     stash.obj.matrix_world = mx
 
-                    stash.obj.MM.stashmx = flatten_matrix(newstashmx)
+                    stash.obj.MM.stashmx = flatten_matrix(omx @ stashdeltamx)
                     stash.obj.MM.stashtargetmx = flatten_matrix(mx)
 
 
