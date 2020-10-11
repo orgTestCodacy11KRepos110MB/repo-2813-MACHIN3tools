@@ -56,6 +56,24 @@ def draw_object_axes(args):
                 coords.append(corigin + cmx.to_3x3() @ axis * size * 0.1 * 0.5)
                 coords.append(corigin + cmx.to_3x3() @ axis * size * 0.5)
 
+            """
+            # debugin stash + stashtargtmx for object origin changes
+            for stash in obj.MM.stashes:
+                if stash.obj:
+                    smx = stash.obj.MM.stashmx
+                    sorigin = smx.decompose()[0]
+
+                    coords.append(sorigin + smx.to_3x3() @ axis * size * 0.1)
+                    coords.append(sorigin + smx.to_3x3() @ axis * size)
+
+
+                    stmx = stash.obj.MM.stashtargetmx
+                    storigin = stmx.decompose()[0]
+
+                    coords.append(storigin + stmx.to_3x3() @ axis * size * 0.1)
+                    coords.append(storigin + stmx.to_3x3() @ axis * size)
+            """
+
             indices = [(i, i + 1) for i in range(0, len(coords), 2)]
 
             shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')

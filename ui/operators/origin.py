@@ -8,6 +8,7 @@ from ... utils.registration import get_addon
 
 
 decalmachine = None
+meshmachine = None
 
 
 class OriginToActive(bpy.types.Operator):
@@ -39,25 +40,47 @@ class OriginToActive(bpy.types.Operator):
             popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
             return {'CANCELLED'}
 
-        global decalmachine
+        global decalmachine, meshmachine
 
         if decalmachine is None:
             decalmachine = get_addon('DECALmachine')[0]
 
+        if meshmachine is None:
+            meshmachine = get_addon('MESHmachine')[0]
+
         active = context.active_object
 
         if context.mode == 'OBJECT':
-            self.origin_to_active_object(context, only_location=event.alt, only_rotation=event.ctrl, decalmachine=decalmachine)
+            self.origin_to_active_object(context, only_location=event.alt, only_rotation=event.ctrl, decalmachine=decalmachine, meshmachine=meshmachine)
 
         elif context.mode == 'EDIT_MESH':
-            self.origin_to_editmesh(active, only_location=event.alt, only_rotation=event.ctrl, decalmachine=decalmachine)
+            self.origin_to_editmesh(active, only_location=event.alt, only_rotation=event.ctrl, decalmachine=decalmachine, meshmachine=meshmachine)
 
         return {'FINISHED'}
 
-    def origin_to_editmesh(self, active, only_location, only_rotation, decalmachine):
+    def origin_to_editmesh(self, active, only_location, only_rotation, decalmachine, meshmachine):
         mx = active.matrix_world
 
+        # unparent all the children before changing the origin
         children = self.unparent_children(active.children)
+
+        # retrieve all the stashes too
+        # NOTE: I could not figure out how to change the stashmx and stashtargetmx to avoid having to do this, check back later. at least this works
+        if meshmachine:
+            from MESHmachine.utils.stash import retrieve_stash
+
+            stashobjs = []
+
+            for stash in active.MM.stashes:
+                if stash.obj:
+                    stashobjs.append(retrieve_stash(active, stash.obj))
+
+                    # remove the stored stashobj
+                    bpy.data.meshes.remove(stash.obj.data, do_unlink=True)
+
+            # clear stashes, they will be restashed after the origin change
+            if stashobjs:
+                active.MM.stashes.clear()
 
         bm = bmesh.from_edit_mesh(active.data)
         bm.normal_update()
@@ -110,9 +133,9 @@ class OriginToActive(bpy.types.Operator):
         sca = get_sca_matrix(mx.to_scale())
         selmx = loc @ rot @ sca
 
-        # selmx expressed in obj's local space used for decal backup matrices
-        if decalmachine:
-            deltamx = active.matrix_world.inverted_safe() @ selmx
+        # active's mx expresed in selmx's local space, used for decal backup matrices and stash objects
+        if decalmachine or meshmachine:
+            deltamx = selmx.inverted_safe() @ active.matrix_world
 
         # move the object and compensate on the meh level for it
         bmesh.ops.transform(bm, verts=bm.verts, matrix=selmx.inverted_safe() @ mx)
@@ -120,6 +143,7 @@ class OriginToActive(bpy.types.Operator):
 
         bmesh.update_edit_mesh(active.data)
 
+        # reparent children
         self.reparent_children(children, active)
 
         # update the backupmx to compensate for the change in parent object origin
@@ -128,14 +152,48 @@ class OriginToActive(bpy.types.Operator):
                 if child.DM.isdecal and child.DM.decalbackup:
                     backup = child.DM.decalbackup
 
-                    backup.DM.backupmx = flatten_matrix(deltamx.inverted_safe() @ backup.DM.backupmx)
+                    # backup.DM.backupmx = flatten_matrix(deltamx.inverted_safe() @ backup.DM.backupmx)
+                    backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
 
-    def origin_to_active_object(self, context, only_location, only_rotation, decalmachine):
+        # re-stash previously retrieved ones
+        if meshmachine and stashobjs:
+            from MESHmachine.utils.stash import create_stash
+
+            for stashobj in stashobjs:
+                create_stash(active, stashobj)
+
+                # remove the retrieved stash obj again
+                bpy.data.meshes.remove(stashobj.data, do_unlink=True)
+
+    def origin_to_active_object(self, context, only_location, only_rotation, decalmachine, meshmachine):
         sel = [obj for obj in context.selected_objects if obj != context.active_object and obj.type not in ['EMPTY', 'FONT']]
 
         aloc, arot, asca = context.active_object.matrix_world.decompose()
 
         for obj in sel:
+
+            # unparent all the children before changing the origin
+            children = self.unparent_children(obj.children)
+
+            # retrieve all the stashes too
+            # NOTE: I could not figure out how to change the stashmx and stashtargetmx to avoid having to do this, check back later. at least this works
+            if meshmachine:
+                from MESHmachine.utils.stash import retrieve_stash
+
+                stashobjs = []
+
+                for stash in obj.MM.stashes:
+                    if stash.obj:
+                        stashobjs.append(retrieve_stash(obj, stash.obj))
+
+                        # remove the stored stashobj
+                        bpy.data.meshes.remove(stash.obj.data, do_unlink=True)
+
+                # clear stashes, they will be restashed after the origin change
+                if stashobjs:
+                    obj.MM.stashes.clear()
+
+
             oloc, orot, osca = obj.matrix_world.decompose()
 
             if only_location:
@@ -147,11 +205,10 @@ class OriginToActive(bpy.types.Operator):
             else:
                 mx = context.active_object.matrix_world
 
-            # active mx expressed in obj's local space used for decal backup matrices
+            # obj mx expressed in active object's local space, used for decal backup matrices
             if decalmachine:
-                deltamx = obj.matrix_world.inverted_safe() @ mx
+                deltamx = mx.inverted_safe() @ obj.matrix_world
 
-            children = self.unparent_children(obj.children)
 
             obj.data.transform(mx.inverted_safe() @ obj.matrix_world)
             obj.matrix_world = mx
@@ -159,15 +216,28 @@ class OriginToActive(bpy.types.Operator):
             if obj.type == 'MESH':
                 obj.data.update()
 
+            # reparent children
             self.reparent_children(children, obj)
 
-            # update the backupmx to compensate for the change in parent object origin
-            if decalmachine:
+            # update the decal backupmx to compensate for the change in parent object origin
+            if decalmachine and children:
                 for child in children:
                     if child.DM.isdecal and child.DM.decalbackup:
                         backup = child.DM.decalbackup
 
-                        backup.DM.backupmx = flatten_matrix(deltamx.inverted_safe() @ backup.DM.backupmx)
+                        # backup.DM.backupmx = flatten_matrix(deltamx.inverted_safe() @ backup.DM.backupmx)
+                        backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
+
+            # re-stash previously retrieved ones
+            if meshmachine and stashobjs:
+                from MESHmachine.utils.stash import create_stash
+
+                for stashobj in stashobjs:
+                    create_stash(obj, stashobj)
+
+                    # remove the retrieved stash obj again
+                    bpy.data.meshes.remove(stashobj.data, do_unlink=True)
+
 
     def unparent_children(self, children):
         children = [o for o in children]
