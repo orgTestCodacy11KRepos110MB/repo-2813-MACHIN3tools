@@ -63,34 +63,10 @@ class OriginToActive(bpy.types.Operator):
         return {'FINISHED'}
 
     def origin_to_editmesh(self, active, only_location, only_rotation, decalmachine, meshmachine):
-        mx = active.matrix_world
+        mx = active.matrix_world.copy()
 
         # unparent all the children before changing the origin
         children = self.unparent_children(active.children)
-
-        # retrieve all the stashes too
-        # NOTE: I could not figure out how to change the stashmx and stashtargetmx to avoid having to do this, check back later. at least this works
-        if meshmachine:
-            from MESHmachine.utils.stash import retrieve_stash
-
-            stashobjs = []
-
-            for stash in active.MM.stashes:
-                if stash.obj:
-                    s = retrieve_stash(active, stash.obj)
-                    stashobjs.append(s)
-
-                    # if the stashobj was parented, remove it from the children list, as it will be delted, and add the newly retrieved one instead!
-                    if stash.obj in children:
-                        children.remove(stash.obj)
-                        children.append(s)
-
-                    # remove the stored stashobj
-                    bpy.data.meshes.remove(stash.obj.data, do_unlink=True)
-
-            # clear stashes, they will be restashed after the origin change
-            if stashobjs:
-                active.MM.stashes.clear()
 
         bm = bmesh.from_edit_mesh(active.data)
         bm.normal_update()
@@ -169,20 +145,22 @@ class OriginToActive(bpy.types.Operator):
                         backup = child.DM.decalbackup
                         backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
 
-        # re-stash previously retrieved ones
-        if meshmachine and stashobjs:
-            from MESHmachine.utils.stash import create_stash
+        # adjust stashes and stash matrices, the following immitates stash retrieval and then re-creation, it just chains both events together. setting the new stash.obj.matrix_world is optional
+        if meshmachine:
+            for stash in active.MM.stashes:
 
-            for stashobj in stashobjs:
-                create_stash(active, stashobj)
+                # stashmx in stashtargetmx's local space, aka the stash difference matrix(which is all that's actually needed for stashes, just like for decal backups)
+                stashdeltamx = stash.obj.MM.stashtargetmx.inverted() @ stash.obj.MM.stashmx
+                newstashmx = mx @ stashdeltamx
 
-                # remove the retrieved stash obj again
-                bpy.data.meshes.remove(stashobj.data, do_unlink=True)
+                stash.obj.data.transform(selmx.inverted_safe() @ newstashmx @ stashdeltamx.inverted())
+                stash.obj.matrix_world = selmx
+
+                stash.obj.MM.stashmx = flatten_matrix(newstashmx)
+                stash.obj.MM.stashtargetmx = flatten_matrix(selmx)
+
 
     def origin_to_active_object(self, context, only_location, only_rotation, decalmachine, meshmachine):
-        if meshmachine:
-            from MESHmachine.utils.stash import retrieve_stash, create_stash
-
         sel = [obj for obj in context.selected_objects if obj != context.active_object and obj.type not in ['EMPTY', 'FONT']]
 
         aloc, arot, asca = context.active_object.matrix_world.decompose()
@@ -192,30 +170,9 @@ class OriginToActive(bpy.types.Operator):
             # unparent all the children before changing the origin
             children = self.unparent_children(obj.children)
 
-            # retrieve all the stashes too
-            # NOTE: I could not figure out how to change the stashmx and stashtargetmx to avoid having to do this, check back later. at least this works
-            if meshmachine:
-                stashobjs = []
-
-                for stash in obj.MM.stashes:
-                    if stash.obj:
-                        s = retrieve_stash(obj, stash.obj)
-                        stashobjs.append(s)
-
-                        # if the stashobj was parented, remove it from the children list, as it will be delted, and add the newly retrieved one instead!
-                        if stash.obj in children:
-                            children.remove(stash.obj)
-                            children.append(s)
-
-                        # remove the stored stashobj
-                        bpy.data.meshes.remove(stash.obj.data, do_unlink=True)
-
-                # clear stashes, they will be restashed after the origin change
-                if stashobjs:
-                    obj.MM.stashes.clear()
-
-
-            oloc, orot, osca = obj.matrix_world.decompose()
+            # pre-origin adjusted object matrix
+            omx = obj.matrix_world.copy()
+            oloc, orot, osca = omx.decompose()
 
             if only_location:
                 mx = get_loc_matrix(aloc) @ get_rot_matrix(orot) @ get_sca_matrix(osca)
@@ -253,14 +210,20 @@ class OriginToActive(bpy.types.Operator):
                             backup = child.DM.decalbackup
                             backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
 
+            # adjust stashes and stash matrices, the following immitates stash retrieval and then re-creation, it just chains both events together. setting the new stash.obj.matrix_world is optional
+            if meshmachine:
+                for stash in obj.MM.stashes:
 
-            # re-stash previously retrieved ones
-            if meshmachine and stashobjs:
-                for stashobj in stashobjs:
-                    create_stash(obj, stashobj)
+                    # stashmx in stashtargetmx's local space, aka the stash difference matrix(which is all that's actually needed for stashes, just like for decal backups)
+                    stashdeltamx = stash.obj.MM.stashtargetmx.inverted() @ stash.obj.MM.stashmx
+                    newstashmx = omx @ stashdeltamx
 
-                    # remove the retrieved stash obj again
-                    bpy.data.meshes.remove(stashobj.data, do_unlink=True)
+                    stash.obj.data.transform(mx.inverted_safe() @ newstashmx @ stashdeltamx.inverted_safe())
+                    stash.obj.matrix_world = mx
+
+                    stash.obj.MM.stashmx = flatten_matrix(newstashmx)
+                    stash.obj.MM.stashtargetmx = flatten_matrix(mx)
+
 
     def unparent_children(self, children):
         children = [o for o in children]
