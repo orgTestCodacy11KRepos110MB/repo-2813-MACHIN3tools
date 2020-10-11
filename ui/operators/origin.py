@@ -180,6 +180,9 @@ class OriginToActive(bpy.types.Operator):
                 bpy.data.meshes.remove(stashobj.data, do_unlink=True)
 
     def origin_to_active_object(self, context, only_location, only_rotation, decalmachine, meshmachine):
+        if meshmachine:
+            from MESHmachine.utils.stash import retrieve_stash, create_stash
+
         sel = [obj for obj in context.selected_objects if obj != context.active_object and obj.type not in ['EMPTY', 'FONT']]
 
         aloc, arot, asca = context.active_object.matrix_world.decompose()
@@ -192,8 +195,6 @@ class OriginToActive(bpy.types.Operator):
             # retrieve all the stashes too
             # NOTE: I could not figure out how to change the stashmx and stashtargetmx to avoid having to do this, check back later. at least this works
             if meshmachine:
-                from MESHmachine.utils.stash import retrieve_stash
-
                 stashobjs = []
 
                 for stash in obj.MM.stashes:
@@ -255,14 +256,11 @@ class OriginToActive(bpy.types.Operator):
 
             # re-stash previously retrieved ones
             if meshmachine and stashobjs:
-                from MESHmachine.utils.stash import create_stash
-
                 for stashobj in stashobjs:
                     create_stash(obj, stashobj)
 
                     # remove the retrieved stash obj again
                     bpy.data.meshes.remove(stashobj.data, do_unlink=True)
-
 
     def unparent_children(self, children):
         children = [o for o in children]
