@@ -255,6 +255,10 @@ class M3SceneProperties(bpy.types.PropertyGroup):
         if get_prefs().custom_views_use_trackball:
             context.preferences.inputs.view_rotate_method = 'TRACKBALL' if self.custom_views_local else 'TURNTABLE'
 
+        # set transform preset
+        if get_prefs().activate_transform_pie and get_prefs().custom_views_set_transform_preset:
+            bpy.ops.machin3.set_transform_preset(pivot='MEDIAN_POINT', orientation='LOCAL' if self.custom_views_local else 'GLOBAL')
+
     def update_custom_views_cursor(self, context):
         if self.avoid_update:
             self.avoid_update = False
@@ -265,12 +269,17 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             self.avoid_update = True
             self.custom_views_local = False
 
-        # toggle orhto grid
+        # toggle ortho grid
         context.space_data.overlay.show_ortho_grid = not self.custom_views_cursor
 
         # toggle trackball orbiting
         if get_prefs().custom_views_use_trackball:
             context.preferences.inputs.view_rotate_method = 'TRACKBALL' if self.custom_views_cursor else 'TURNTABLE'
+
+        # set transform preset
+        if get_prefs().activate_transform_pie and get_prefs().custom_views_set_transform_preset:
+            bpy.ops.machin3.set_transform_preset(pivot='CURSOR' if self.custom_views_cursor else 'MEDIAN_POINT', orientation='CURSOR' if self.custom_views_cursor else 'GLOBAL')
+
 
     def update_bcorientation(self, context):
         bcprefs = get_addon_prefs('BoxCutter')

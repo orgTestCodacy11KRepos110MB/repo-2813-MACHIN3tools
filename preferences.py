@@ -189,12 +189,14 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     switchmatcap2: StringProperty(name="Matcap 2", update=update_switchmatcap2)
     matcap2_force_single: BoolProperty(name="Force Single Color Shading for Matcap 2", default=True)
 
-    show_orbit_method: BoolProperty(name="Show Orbit Method Selection", default=True)
-    custom_views_use_trackball: BoolProperty(name="Force Trackball Navigation when using Custom Views", default=True)
     obj_mode_rotate_around_active: BoolProperty(name="Rotate Around Selection, but only in Object Mode", default=False)
+    custom_views_use_trackball: BoolProperty(name="Force Trackball Navigation when using Custom Views", default=True)
+    custom_views_set_transform_preset: BoolProperty(name="Set Transform Preset when using Custom Views", default=True)
+    show_orbit_method: BoolProperty(name="Show Orbit Method Selection", default=True)
 
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
     focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
+
     tools_show_boxcutter_presets: BoolProperty(name="Show BoxCutter Presets", default=True)
     tools_show_hardops_menu: BoolProperty(name="Show Hard Ops Menu", default=True)
     tools_show_quick_favorites: BoolProperty(name="Show Quick Favorites", default=False)
@@ -563,9 +565,12 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             bb.label(text="Views Pie: Custom views")
 
             column = bb.column()
-            row = column.row()
-            row.prop(self, "custom_views_use_trackball")
-            row.prop(self, "show_orbit_method")
+            column.prop(self, "custom_views_use_trackball")
+
+            if self.activate_transform_pie:
+                column.prop(self, "custom_views_set_transform_preset")
+
+            column.prop(self, "show_orbit_method")
 
 
         # TOOLS PIE
@@ -574,13 +579,15 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             bb = b.box()
             bb.label(text="Tools Pie")
 
-            column = bb.column()
-            row = column.row()
+            split = bb.split(factor=0.5)
 
-            row.prop(self, "tools_show_boxcutter_presets")
-            row.prop(self, "tools_show_hardops_menu")
-            row.prop(self, "tools_show_quick_favorites")
-            row.prop(self, "tools_show_tool_bar")
+            col = split.column()
+            col.prop(self, "tools_show_boxcutter_presets")
+            col.prop(self, "tools_show_hardops_menu")
+
+            col = split.column()
+            col.prop(self, "tools_show_quick_favorites")
+            col.prop(self, "tools_show_tool_bar")
 
 
         # NO SETTINGS
