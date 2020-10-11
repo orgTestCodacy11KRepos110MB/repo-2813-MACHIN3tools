@@ -28,7 +28,8 @@ def get_tools_from_context(context):
 def get_tool_options(context, tool_idname, operator_idname):
     for tooldef in context.workspace.tools:
         if tooldef and tooldef.idname == tool_idname:
-            try:
-                return tooldef.operator_properties(operator_idname)
-            except:
-                return None
+            if tooldef.mode == context.mode:
+                try:
+                    return tooldef.operator_properties(operator_idname)
+                except:
+                    return None
