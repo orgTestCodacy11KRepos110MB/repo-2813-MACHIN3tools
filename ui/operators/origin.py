@@ -73,7 +73,13 @@ class OriginToActive(bpy.types.Operator):
 
             for stash in active.MM.stashes:
                 if stash.obj:
-                    stashobjs.append(retrieve_stash(active, stash.obj))
+                    s = retrieve_stash(active, stash.obj)
+                    stashobjs.append(s)
+
+                    # if the stashobj was parented, remove it from the children list, as it will be delted, and add the newly retrieved one instead!
+                    if stash.obj in children:
+                        children.remove(stash.obj)
+                        children.append(s)
 
                     # remove the stored stashobj
                     bpy.data.meshes.remove(stash.obj.data, do_unlink=True)
@@ -133,12 +139,11 @@ class OriginToActive(bpy.types.Operator):
         sca = get_sca_matrix(mx.to_scale())
         selmx = loc @ rot @ sca
 
-        # active's mx expresed in selmx's local space, used for decal backup matrices and stash objects
-        if decalmachine or meshmachine:
-            deltamx = selmx.inverted_safe() @ active.matrix_world
+        # active's mx expresed in selmx's local space, this is the "difference matrix" representing the origin change
+        deltamx = selmx.inverted_safe() @ active.matrix_world
 
         # move the object and compensate on the meh level for it
-        bmesh.ops.transform(bm, verts=bm.verts, matrix=selmx.inverted_safe() @ mx)
+        bmesh.ops.transform(bm, verts=bm.verts, matrix=deltamx)
         active.matrix_world = selmx
 
         bmesh.update_edit_mesh(active.data)
@@ -149,11 +154,16 @@ class OriginToActive(bpy.types.Operator):
         # update the backupmx to compensate for the change in parent object origin
         if decalmachine:
             for child in children:
+                # update decal origin and decal backup's backupmx, but only for projected/sliced decals!
                 if child.DM.isdecal and child.DM.decalbackup:
-                    backup = child.DM.decalbackup
+                    child.data.transform(deltamx)
+                    child.matrix_world = mx
+                    child.data.update()
 
-                    # backup.DM.backupmx = flatten_matrix(deltamx.inverted_safe() @ backup.DM.backupmx)
-                    backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
+                    # update the decal backup's backupmx
+                    if child.DM.decalbackup:
+                        backup = child.DM.decalbackup
+                        backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
 
         # re-stash previously retrieved ones
         if meshmachine and stashobjs:
@@ -184,7 +194,13 @@ class OriginToActive(bpy.types.Operator):
 
                 for stash in obj.MM.stashes:
                     if stash.obj:
-                        stashobjs.append(retrieve_stash(obj, stash.obj))
+                        s = retrieve_stash(obj, stash.obj)
+                        stashobjs.append(s)
+
+                        # if the stashobj was parented, remove it from the children list, as it will be delted, and add the newly retrieved one instead!
+                        if stash.obj in children:
+                            children.remove(stash.obj)
+                            children.append(s)
 
                         # remove the stored stashobj
                         bpy.data.meshes.remove(stash.obj.data, do_unlink=True)
@@ -205,12 +221,10 @@ class OriginToActive(bpy.types.Operator):
             else:
                 mx = context.active_object.matrix_world
 
-            # obj mx expressed in active object's local space, used for decal backup matrices
-            if decalmachine:
-                deltamx = mx.inverted_safe() @ obj.matrix_world
+            # obj mx expressed in active object's local space, this is the "difference matrix" representing the orignn change
+            deltamx = mx.inverted_safe() @ obj.matrix_world
 
-
-            obj.data.transform(mx.inverted_safe() @ obj.matrix_world)
+            obj.data.transform(deltamx)
             obj.matrix_world = mx
 
             if obj.type == 'MESH':
@@ -219,14 +233,21 @@ class OriginToActive(bpy.types.Operator):
             # reparent children
             self.reparent_children(children, obj)
 
-            # update the decal backupmx to compensate for the change in parent object origin
+            # the decal origin needs to be chanegd too and the backupmx needs to be compensated for the change in parent object origin
             if decalmachine and children:
                 for child in children:
-                    if child.DM.isdecal and child.DM.decalbackup:
-                        backup = child.DM.decalbackup
 
-                        # backup.DM.backupmx = flatten_matrix(deltamx.inverted_safe() @ backup.DM.backupmx)
-                        backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
+                    # update decal origin and decal backup's backupmx, but only for projected/sliced decals!
+                    if child.DM.isdecal and child.DM.decalbackup:
+                        child.data.transform(deltamx)
+                        child.matrix_world = mx
+                        child.data.update()
+
+                        # update the decal backup's backupmx
+                        if child.DM.decalbackup:
+                            backup = child.DM.decalbackup
+                            backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
+
 
             # re-stash previously retrieved ones
             if meshmachine and stashobjs:
