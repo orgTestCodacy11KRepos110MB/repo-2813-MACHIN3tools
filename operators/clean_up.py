@@ -124,7 +124,6 @@ class CleanUp(bpy.types.Operator):
             if self.flip_normals:
                 for f in bm.faces:
                     f.normal_flip()
-
         return bm
 
     def delete_loose_geometry(self, bm):
@@ -176,7 +175,11 @@ class CleanUp(bpy.types.Operator):
                 if angle < 180 - self.dissolve_redundant_angle:
                     redundant_edges.append(e)
 
-            bmesh.ops.dissolve_edges(bm, edges=redundant_edges, use_verts=True)
+            bmesh.ops.dissolve_edges(bm, edges=redundant_edges, use_verts=False)
+
+            # dissolving with use_verts enabled can cause problems in som cases, so it's better to check the left over edges for 2 edged verts, and remove those in a separate step
+            two_edged_verts = {v for e in redundant_edges if e.is_valid for v in e.verts if len(v.link_edges) == 2}
+            bmesh.ops.dissolve_verts(bm, verts=list(two_edged_verts))
 
     def select_geometry(self, bm):
         for f in bm.faces:
