@@ -145,6 +145,24 @@ class CleanUp(bpy.types.Operator):
         dissolve redundant edges on flat faces
         '''
 
+        if self.dissolve_redundant_edges:
+            manifold_edges = [e for e in bm.edges if e.is_manifold]
+
+            redundant_edges = []
+
+            for e in manifold_edges:
+                angle = math.degrees(e.calc_face_angle(0))
+
+                if angle < 180 - self.dissolve_redundant_angle:
+                    redundant_edges.append(e)
+
+            bmesh.ops.dissolve_edges(bm, edges=redundant_edges, use_verts=False)
+
+            # dissolving with use_verts enabled can cause problems in som cases, so it's better to check the left over edges for 2 edged verts, and remove those in a separate step
+            two_edged_verts = {v for e in redundant_edges if e.is_valid for v in e.verts if len(v.link_edges) == 2}
+            bmesh.ops.dissolve_verts(bm, verts=list(two_edged_verts))
+
+        # also run vert removal after edge removal to ensure verts from symmetry center lines get removed properly
         if self.dissolve_redundant_verts:
             two_edged_verts = [v for v in bm.verts if len(v.link_edges) == 2]
 
@@ -163,23 +181,6 @@ class CleanUp(bpy.types.Operator):
                     redundant_verts.append(v)
 
             bmesh.ops.dissolve_verts(bm, verts=redundant_verts)
-
-        if self.dissolve_redundant_edges:
-            manifold_edges = [e for e in bm.edges if e.is_manifold]
-
-            redundant_edges = []
-
-            for e in manifold_edges:
-                angle = math.degrees(e.calc_face_angle(0))
-
-                if angle < 180 - self.dissolve_redundant_angle:
-                    redundant_edges.append(e)
-
-            bmesh.ops.dissolve_edges(bm, edges=redundant_edges, use_verts=False)
-
-            # dissolving with use_verts enabled can cause problems in som cases, so it's better to check the left over edges for 2 edged verts, and remove those in a separate step
-            two_edged_verts = {v for e in redundant_edges if e.is_valid for v in e.verts if len(v.link_edges) == 2}
-            bmesh.ops.dissolve_verts(bm, verts=list(two_edged_verts))
 
     def select_geometry(self, bm):
         for f in bm.faces:

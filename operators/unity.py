@@ -2,7 +2,7 @@ import bpy
 from bpy.props import BoolProperty
 from math import radians
 from mathutils import Matrix
-from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, flatten_matrix
+from .. utils.math import flatten_matrix
 from .. utils.modifier import add_triangulate, remove_triangulate
 
 
@@ -11,7 +11,7 @@ class PrepareExport(bpy.types.Operator):
     bl_label = "MACHIN3: Prepare Unity Export"
     bl_options = {'REGISTER', 'UNDO'}
 
-    prepare_only: BoolProperty(name="Only Prepare, don't export", description="Used by DECALmachine skip Export even if the scene prop is set\nDECALmachine uses its own Export Operator Instead", default=False)
+    prepare_only: BoolProperty(name="Only Prepare, don't export", description="Used by DECALmachine to skip Export even if the scene prop is set\nDECALmachine uses its own Export Operator Instead", default=False)
 
     @classmethod
     def poll(cls, context):
@@ -31,7 +31,7 @@ class PrepareExport(bpy.types.Operator):
         triangulate = context.scene.M3.unity_triangulate
         export = context.scene.M3.unity_export
 
-        # force 'use_selection' mode, otherwise hidden, child objects will be exported too if nothing is selected
+        # force 'use_selection' mode, otherwise hidden child objects will be exported too if nothing is selected
         if not context.selected_objects:
             for obj in context.visible_objects:
                 obj.select_set(True)
@@ -63,7 +63,7 @@ class PrepareExport(bpy.types.Operator):
     def prepare_for_export(self, obj, sel, matrices, bone_children, triangulate=False, depth=0, child=False):
         '''
         recursively rotate an object and its children 90 degrees along X
-        for meshes, compensate by rotating -90 alog X
+        for meshes, compensate by rotating -90 along X
         also for meshes, store the original meshes for 2 reasons
         1. to easily restore the original mesh rotation
         2. to deal with instanced objects and also be able to restore these
