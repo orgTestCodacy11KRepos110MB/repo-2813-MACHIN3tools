@@ -304,9 +304,9 @@ class Align(bpy.types.Operator):
                 obj.parent_bone = bonename
 
             if self.align_z_to_y:
-                obj.matrix_world = bone.matrix @ Matrix.Rotation(radians(-90), 4, 'X') @ Matrix.Rotation(radians(self.roll_amount if self.roll else 0), 4, 'Z')
+                obj.matrix_world = armature.matrix_world @ bone.matrix @ Matrix.Rotation(radians(-90), 4, 'X') @ Matrix.Rotation(radians(self.roll_amount if self.roll else 0), 4, 'Z')
             else:
-                obj.matrix_world = bone.matrix @ Matrix.Rotation(radians(self.roll_amount if self.roll else 0), 4, 'Y')
+                obj.matrix_world = armature.matrix_world @ bone.matrix @ Matrix.Rotation(radians(self.roll_amount if self.roll else 0), 4, 'Y')
 
     def drop_to_floor(self, selection):
         for obj in selection:

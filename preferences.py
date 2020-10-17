@@ -242,7 +242,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     activate_shading_pie: BoolProperty(name="Shading Pie", default=False, update=update_activate_shading_pie)
     activate_views_pie: BoolProperty(name="Views Pie", default=False, update=update_activate_views_pie)
     activate_align_pie: BoolProperty(name="Align Pies", default=False, update=update_activate_align_pie)
-    activate_cursor_pie: BoolProperty(name="Cursor Pie", default=False, update=update_activate_cursor_pie)
+    activate_cursor_pie: BoolProperty(name="Cursor and Origin Pie", default=False, update=update_activate_cursor_pie)
     activate_transform_pie: BoolProperty(name="Transform Pie", default=False, update=update_activate_transform_pie)
     activate_snapping_pie: BoolProperty(name="Snapping Pie", default=False, update=update_activate_snapping_pie)
     activate_collections_pie: BoolProperty(name="Collections Pie", default=False, update=update_activate_collections_pie)
