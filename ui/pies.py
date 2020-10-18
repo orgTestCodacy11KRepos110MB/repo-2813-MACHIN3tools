@@ -19,6 +19,8 @@ from .. utils.tools import get_tools_from_context, get_tool_options
 
 grouppro = None
 decalmachine = None
+boxcutter = None
+hardops = None
 
 
 class PieModes(Menu):
@@ -2476,21 +2478,30 @@ class PieTools(Menu):
 
         m3 = context.scene.M3
 
+        global boxcutter, hardops
+
+        # NOTE: The BoxCutter tool will be named like the installation folder, but the HOps tool will aways be called 'Hops'
+        if boxcutter is None:
+            _, boxcutter, _, _ = get_addon("BoxCutter")
+
+        if hardops is None:
+            hardops, _, _, _ = get_addon("Hard Ops 9")
+
         tools = get_tools_from_context(context)
 
         if context.mode in ['OBJECT', 'EDIT_MESH']:
 
             # 4 - LEFT
-            if 'BC' in tools:
-                tool = tools['BC']
-                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='BC'
+            if boxcutter in tools:
+                tool = tools[boxcutter]
+                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name = boxcutter
             else:
                 pie.separator()
 
             # 6 - RIGHT
             if 'Hops' in tools:
                 tool = tools['Hops']
-                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='Hops'
+                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name = 'Hops'
             else:
                 pie.separator()
 
@@ -2526,7 +2537,7 @@ class PieTools(Menu):
 
 
             # 1 - BOTTOM - LEFT
-            if get_prefs().tools_show_boxcutter_presets and 'BC' in tools:
+            if get_prefs().tools_show_boxcutter_presets and boxcutter in tools:
                 box = pie.split()
 
                 column = box.column(align=True)
@@ -2585,7 +2596,7 @@ class PieTools(Menu):
                 pie.separator()
 
             # 3 - BOTTOM - RIGHT
-            if get_prefs().tools_show_hardops_menu and 'Hops' in tools:
+            if get_prefs().tools_show_hardops_menu and hardops:
                 HOps = importlib.import_module('HOps')
 
                 icon = HOps.icons.get('sm_logo_white')

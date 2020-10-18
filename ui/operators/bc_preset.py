@@ -1,7 +1,10 @@
 import bpy
 from bpy.props import StringProperty
 from ... utils.tools import get_tools_from_context, get_tool_options
-from ... utils.registration import get_addon_prefs
+from ... utils.registration import get_addon_prefs, get_addon
+
+
+boxcutter = None
 
 
 class SetBCPreset(bpy.types.Operator):
@@ -16,17 +19,27 @@ class SetBCPreset(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return 'BC' in get_tools_from_context(context)
+        global boxcutter
+
+        if boxcutter is None:
+            _, boxcutter, _, _ = get_addon("BoxCutter")
+
+        return boxcutter in get_tools_from_context(context)
 
     def execute(self, context):
+        global boxcutter
+
+        if boxcutter is None:
+            _, boxcutter, _, _ = get_addon("BoxCutter")
+
         tools = get_tools_from_context(context)
         bcprefs = get_addon_prefs('BoxCutter')
 
         # ensure the BC tool is active
-        if not tools['BC']['active']:
-            bpy.ops.wm.tool_set_by_id(name='BC')
+        if not tools[boxcutter]['active']:
+            bpy.ops.wm.tool_set_by_id(name=boxcutter)
 
-        options = get_tool_options(context, 'BC', 'bc.shape_draw')
+        options = get_tool_options(context, boxcutter, 'bc.shape_draw')
 
         if options:
             options.mode = self.mode
