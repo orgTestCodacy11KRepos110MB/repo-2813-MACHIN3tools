@@ -281,17 +281,6 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             bpy.ops.machin3.set_transform_preset(pivot='CURSOR' if self.custom_views_cursor else 'MEDIAN_POINT', orientation='CURSOR' if self.custom_views_cursor else 'GLOBAL')
 
 
-    def update_bcorientation(self, context):
-        bcprefs = get_addon_prefs('BoxCutter')
-
-        if self.bcorientation == 'LOCAL':
-            bcprefs.behavior.orient_method = 'LOCAL'
-        elif self.bcorientation == 'NEAREST':
-            bcprefs.behavior.orient_method = 'NEAREST'
-        elif self.bcorientation == 'LONGEST':
-            bcprefs.behavior.orient_method = 'TANGENT'
-
-
     # SHADING
 
     eevee_preset: EnumProperty(name="Eevee Preset", description="Eevee Quality Presets", items=eevee_preset_items, default='NONE', update=update_eevee_preset)
@@ -355,6 +344,18 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     unity_export_path: StringProperty(name="Unity Export Path", subtype='FILE_PATH', update=update_unity_export_path)
     unity_triangulate: BoolProperty(name="Triangulate before exporting", description="Add Triangulate Modifier to the end of every object's stack", default=False)
 
+
+    # BoxCutter
+
+    def update_bcorientation(self, context):
+        bcprefs = get_addon_prefs('BoxCutter')
+
+        if self.bcorientation == 'LOCAL':
+            bcprefs.behavior.orient_method = 'LOCAL'
+        elif self.bcorientation == 'NEAREST':
+            bcprefs.behavior.orient_method = 'NEAREST'
+        elif self.bcorientation == 'LONGEST':
+            bcprefs.behavior.orient_method = 'TANGENT'
 
     # BoxCutter
 

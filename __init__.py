@@ -1,7 +1,7 @@
 bl_info = {
     "name": "MACHIN3tools",
     "author": "MACHIN3",
-    "version": (0, 4, 1),
+    "version": (0, 4, 2),
     "blender": (2, 83, 0),
     "location": "",
     "description": "Streamlining Blender 2.80 and beyond.",
@@ -20,7 +20,15 @@ def reload_modules(name):
     import os
     import importlib
 
-    # first fetch and reload all utils modules
+
+    # first update the classes and keys dicts, the properties, items, colors
+    from . import registration, items, colors
+
+    for module in [registration, items, colors]:
+        print("reloading", module.__name__)
+        importlib.reload(module)
+
+    # then fetch and reload all utils modules
     utils_modules = sorted([name[:-3] for name in os.listdir(os.path.join(__path__[0], "utils")) if name.endswith('.py')])
 
     for module in utils_modules:
@@ -31,9 +39,10 @@ def reload_modules(name):
         exec(impline)
         importlib.reload(eval(module))
 
-    # then update the classes and keys dicts
-    from . import registration
-    importlib.reload(registration)
+
+    from . import handlers
+    print("reloading", handlers.__name__)
+    importlib.reload(handlers)
 
     # and based on that, reload the modules containing operator and menu classes
     modules = []
@@ -71,9 +80,6 @@ from . utils.registration import add_object_buttons
 from . handlers import update_object_axes_drawing, focus_HUD
 
 
-# TODO: support translation, see https://blendermarket.com/inbox/conversations/20371
-
-
 def register():
     global classes, keymaps, icons
 
@@ -86,6 +92,7 @@ def register():
 
     bpy.types.Scene.M3 = PointerProperty(type=M3SceneProperties)
     bpy.types.Object.M3 = PointerProperty(type=M3ObjectProperties)
+
 
     # TOOLS, PIE MENUS, KEYMAPS, MENUS
 
