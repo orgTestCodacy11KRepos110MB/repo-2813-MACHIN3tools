@@ -3,7 +3,6 @@ import bmesh
 from ... utils.math import get_center_between_verts, average_locations, create_rotation_matrix_from_vertex, create_rotation_matrix_from_edge, create_rotation_matrix_from_face
 from ... utils.scene import set_cursor
 from ... utils.ui import popup_message
-from ... utils.draw import draw_vector, draw_point
 from ... utils.registration import get_prefs
 from ... utils.draw import add_object_axes_drawing_handler, remove_object_axes_drawing_handler
 
@@ -166,8 +165,6 @@ class CursorToSelected(bpy.types.Operator):
 
         # set the cursor location/rotation
         set_cursor(None if only_rotation else loc, None if only_location else rot.to_quaternion())
-
-        context.area.tag_redraw()
 
     def cursor_to_active_object(self, active, only_location, only_rotation):
         mx = active.matrix_world

@@ -92,6 +92,8 @@ def create_rotation_matrix_from_vertex(obj, vert):
     rot[0].xyz = tangent
     rot[1].xyz = binormal
     rot[2].xyz = normal
+
+    # transpose, because blender is column major
     return rot.transposed()
 
 
@@ -108,7 +110,10 @@ def create_rotation_matrix_from_edge(obj, edge):
     # get normal from linked faces
     if edge.link_faces:
         normal = (mx.to_3x3() @ get_edge_normal(edge)).normalized()
-        tangent = binormal.cross(normal)
+        tangent = binormal.cross(normal).normalized()
+
+        # recalculate the normal, that's because the one calculated from the neighbouring faces may not actually be perpendicular to the binormal, if the faces are not planar
+        normal = tangent.cross(binormal).normalized()
 
     # without linked faces get a normal from the objects up vector
     else:
@@ -128,7 +133,7 @@ def create_rotation_matrix_from_edge(obj, edge):
     rotmx[1].xyz = binormal
     rotmx[2].xyz = normal
 
-    # transpose, because blender is column major?
+    # transpose, because blender is column major
     return rotmx.transposed()
 
 
@@ -151,6 +156,8 @@ def create_rotation_matrix_from_face(mx, face):
     rot[0].xyz = tangent
     rot[1].xyz = binormal
     rot[2].xyz = normal
+
+    # transpose, because blender is column major
     return rot.transposed()
 
 
