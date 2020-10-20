@@ -113,7 +113,13 @@ class CursorToSelected(bpy.types.Operator):
     def set_cursor_transform_preset(self, context):
         global cursor
 
-        cursor = (context.scene.tool_settings.transform_pivot_point, context.scene.transform_orientation_slots[0].type)
+        pivot = context.scene.tool_settings.transform_pivot_point
+        orientation = context.scene.transform_orientation_slots[0].type
+
+        # only store a new cursor pivot and orientation if the previous one isn't already CURSOR, CURSOR
+        if pivot != 'CURSOR' and orientation != 'CURSOR':
+            cursor = (context.scene.tool_settings.transform_pivot_point, context.scene.transform_orientation_slots[0].type)
+
         bpy.ops.machin3.set_transform_preset(pivot='CURSOR', orientation='CURSOR')
 
     def cursor_to_editmesh(self, context, active, only_location, only_rotation):
