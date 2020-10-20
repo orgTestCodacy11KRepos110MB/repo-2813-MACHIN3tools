@@ -100,8 +100,7 @@ class ToggleObjectAxes(bpy.types.Operator):
             objs = [obj for obj in context.selected_objects] if context.selected_objects else context.visible_objects
 
             if objs:
-                args = (context, objs)
-                add_object_axes_drawing_handler(dns, args)
+                add_object_axes_drawing_handler(dns, context, objs, True)
 
         context.area.tag_redraw()
         return {'FINISHED'}

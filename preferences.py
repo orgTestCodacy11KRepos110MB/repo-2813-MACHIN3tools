@@ -195,6 +195,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     show_orbit_method: BoolProperty(name="Show Orbit Method Selection", default=True)
 
     cursor_set_transform_preset: BoolProperty(name="Set Transform Preset when Setting Cursor", default=True)
+    cursor_toggle_axes_drawing: BoolProperty(name="Toggle Cursor Axes Drawing", default=True)
 
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
     focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
@@ -572,6 +573,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             if self.activate_transform_pie:
                 column.prop(self, "custom_views_set_transform_preset")
 
+            # TODO: toggle axes drawing?
+
+
             column.prop(self, "show_orbit_method")
 
 
@@ -583,6 +587,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             column = bb.column()
             column.prop(self, "cursor_set_transform_preset")
+            column.prop(self, "cursor_toggle_axes_drawing")
+
 
         # TOOLS PIE
 

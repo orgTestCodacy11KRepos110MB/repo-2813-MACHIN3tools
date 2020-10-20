@@ -5,6 +5,7 @@ from ... utils.scene import set_cursor
 from ... utils.ui import popup_message
 from ... utils.draw import draw_vector, draw_point
 from ... utils.registration import get_prefs
+from ... utils.draw import add_object_axes_drawing_handler, remove_object_axes_drawing_handler
 
 
 cursor = None
@@ -25,6 +26,13 @@ class CursorToOrigin(bpy.types.Operator):
             if cursor is not None:
                 bpy.ops.machin3.set_transform_preset(pivot=cursor[0], orientation=cursor[1])
                 cursor = None
+
+        if get_prefs().cursor_toggle_axes_drawing:
+            dns = bpy.app.driver_namespace
+            handler = dns.get('draw_object_axes')
+
+            if handler:
+                remove_object_axes_drawing_handler(handler)
 
         return {'FINISHED'}
 
@@ -50,8 +58,6 @@ class CursorToSelected(bpy.types.Operator):
         return context.active_object or context.selected_objects
 
     def invoke(self, context, event):
-        global cursor
-
         active = context.active_object
         sel = [obj for obj in context.selected_objects if obj != active]
 
@@ -69,20 +75,22 @@ class CursorToSelected(bpy.types.Operator):
         if context.mode == 'OBJECT' and active and not sel:
             self.cursor_to_active_object(active, only_location=event.alt, only_rotation=event.ctrl)
 
-            # set cursor
             if get_prefs().cursor_set_transform_preset:
-                cursor = (context.scene.tool_settings.transform_pivot_point, context.scene.transform_orientation_slots[0].type)
-                bpy.ops.machin3.set_transform_preset(pivot='CURSOR', orientation='CURSOR')
+                self.set_cursor_transform_preset(context)
+
+            if get_prefs().cursor_toggle_axes_drawing:
+                self.enable_cursor_axes_drawing(context)
 
             return {'FINISHED'}
 
         elif context.mode == 'EDIT_MESH':
             self.cursor_to_editmesh(context, active, only_location=event.alt, only_rotation=event.ctrl)
 
-            # set cursor
             if get_prefs().cursor_set_transform_preset:
-                cursor = (context.scene.tool_settings.transform_pivot_point, context.scene.transform_orientation_slots[0].type)
-                bpy.ops.machin3.set_transform_preset(pivot='CURSOR', orientation='CURSOR')
+                self.set_cursor_transform_preset(context)
+
+            if get_prefs().cursor_toggle_axes_drawing:
+                self.enable_cursor_axes_drawing(context)
 
             return {'FINISHED'}
 
@@ -90,6 +98,23 @@ class CursorToSelected(bpy.types.Operator):
         bpy.ops.view3d.snap_cursor_to_selected()
 
         return {'FINISHED'}
+
+    def enable_cursor_axes_drawing(self, context):
+        dns = bpy.app.driver_namespace
+        handler = dns.get('draw_object_axes')
+
+        if handler:
+            remove_object_axes_drawing_handler(handler)
+
+        add_object_axes_drawing_handler(dns, context, [], True)
+
+        context.area.tag_redraw()
+
+    def set_cursor_transform_preset(self, context):
+        global cursor
+
+        cursor = (context.scene.tool_settings.transform_pivot_point, context.scene.transform_orientation_slots[0].type)
+        bpy.ops.machin3.set_transform_preset(pivot='CURSOR', orientation='CURSOR')
 
     def cursor_to_editmesh(self, context, active, only_location, only_rotation):
         bm = bmesh.from_edit_mesh(active.data)
