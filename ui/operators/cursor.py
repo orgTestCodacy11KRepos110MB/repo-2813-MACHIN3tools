@@ -74,10 +74,10 @@ class CursorToSelected(bpy.types.Operator):
         if context.mode == 'OBJECT' and active and not sel:
             self.cursor_to_active_object(active, only_location=event.alt, only_rotation=event.ctrl)
 
-            if get_prefs().cursor_set_transform_preset:
+            if get_prefs().activate_transform_pie and get_prefs().cursor_set_transform_preset:
                 self.set_cursor_transform_preset(context)
 
-            if get_prefs().cursor_toggle_axes_drawing:
+            if get_prefs().activate_shading_pie and get_prefs().cursor_toggle_axes_drawing:
                 self.enable_cursor_axes_drawing(context)
 
             return {'FINISHED'}
@@ -85,10 +85,10 @@ class CursorToSelected(bpy.types.Operator):
         elif context.mode == 'EDIT_MESH':
             self.cursor_to_editmesh(context, active, only_location=event.alt, only_rotation=event.ctrl)
 
-            if get_prefs().cursor_set_transform_preset:
+            if get_prefs().activate_transform_pie and get_prefs().cursor_set_transform_preset:
                 self.set_cursor_transform_preset(context)
 
-            if get_prefs().cursor_toggle_axes_drawing:
+            if get_prefs().activate_shading_pie and get_prefs().cursor_toggle_axes_drawing:
                 self.enable_cursor_axes_drawing(context)
 
             return {'FINISHED'}

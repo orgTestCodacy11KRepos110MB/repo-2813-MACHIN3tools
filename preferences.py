@@ -192,6 +192,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     obj_mode_rotate_around_active: BoolProperty(name="Rotate Around Selection, but only in Object Mode", default=False)
     custom_views_use_trackball: BoolProperty(name="Force Trackball Navigation when using Custom Views", default=True)
     custom_views_set_transform_preset: BoolProperty(name="Set Transform Preset when using Custom Views", default=True)
+    custom_views_toggle_axes_drawing: BoolProperty(name="Toggle Custom View Axes Drawing", default=True)
     show_orbit_method: BoolProperty(name="Show Orbit Method Selection", default=True)
 
     cursor_set_transform_preset: BoolProperty(name="Set Transform Preset when Setting Cursor", default=True)
@@ -573,21 +574,26 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             if self.activate_transform_pie:
                 column.prop(self, "custom_views_set_transform_preset")
 
-            # TODO: toggle axes drawing?
-
+            if self.activate_shading_pie:
+                column.prop(self, "custom_views_toggle_axes_drawing")
 
             column.prop(self, "show_orbit_method")
 
 
         # CURSOR and ORIGIN PIE
 
-        if getattr(bpy.types, "MACHIN3_MT_cursor_pie", False):
-            bb = b.box()
-            bb.label(text="Cursor and Origin Pie")
+        if self.activate_transform_pie or self.activate_shading_pie:
+            if getattr(bpy.types, "MACHIN3_MT_cursor_pie", False):
+                bb = b.box()
+                bb.label(text="Cursor and Origin Pie")
 
-            column = bb.column()
-            column.prop(self, "cursor_set_transform_preset")
-            column.prop(self, "cursor_toggle_axes_drawing")
+                column = bb.column()
+
+                if self.activate_transform_pie:
+                    column.prop(self, "cursor_set_transform_preset")
+
+                if self.activate_shading_pie:
+                    column.prop(self, "cursor_toggle_axes_drawing")
 
 
         # TOOLS PIE
