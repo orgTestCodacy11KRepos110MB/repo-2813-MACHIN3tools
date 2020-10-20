@@ -194,6 +194,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     custom_views_set_transform_preset: BoolProperty(name="Set Transform Preset when using Custom Views", default=True)
     show_orbit_method: BoolProperty(name="Show Orbit Method Selection", default=True)
 
+    cursor_set_transform_preset: BoolProperty(name="Set Transform Preset when Setting Cursor", default=True)
+
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
     focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
 
@@ -572,6 +574,15 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             column.prop(self, "show_orbit_method")
 
+
+        # CURSOR and ORIGIN PIE
+
+        if getattr(bpy.types, "MACHIN3_MT_cursor_pie", False):
+            bb = b.box()
+            bb.label(text="Cursor and Origin Pie")
+
+            column = bb.column()
+            column.prop(self, "cursor_set_transform_preset")
 
         # TOOLS PIE
 

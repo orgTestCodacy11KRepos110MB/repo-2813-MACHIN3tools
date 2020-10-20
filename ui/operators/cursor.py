@@ -4,6 +4,10 @@ from ... utils.math import get_center_between_verts, average_locations, create_r
 from ... utils.scene import set_cursor
 from ... utils.ui import popup_message
 from ... utils.draw import draw_vector, draw_point
+from ... utils.registration import get_prefs
+
+
+cursor = None
 
 
 class CursorToOrigin(bpy.types.Operator):
@@ -14,6 +18,14 @@ class CursorToOrigin(bpy.types.Operator):
 
     def execute(self, context):
         set_cursor()
+
+        if get_prefs().cursor_set_transform_preset:
+            global cursor
+
+            if cursor is not None:
+                bpy.ops.machin3.set_transform_preset(pivot=cursor[0], orientation=cursor[1])
+                cursor = None
+
         return {'FINISHED'}
 
 
@@ -38,6 +50,8 @@ class CursorToSelected(bpy.types.Operator):
         return context.active_object or context.selected_objects
 
     def invoke(self, context, event):
+        global cursor
+
         active = context.active_object
         sel = [obj for obj in context.selected_objects if obj != active]
 
@@ -46,16 +60,30 @@ class CursorToSelected(bpy.types.Operator):
             context.view_layer.objects.active = sel[0]
             sel.remove(active)
 
+
+        if event.alt and event.ctrl:
+            popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
+            return {'CANCELLED'}
+
         # if in object mode with multiple selected ojects, pass it on to Blender's op
         if context.mode == 'OBJECT' and active and not sel:
             self.cursor_to_active_object(active, only_location=event.alt, only_rotation=event.ctrl)
+
+            # set cursor
+            if get_prefs().cursor_set_transform_preset:
+                cursor = (context.scene.tool_settings.transform_pivot_point, context.scene.transform_orientation_slots[0].type)
+                bpy.ops.machin3.set_transform_preset(pivot='CURSOR', orientation='CURSOR')
+
             return {'FINISHED'}
 
         elif context.mode == 'EDIT_MESH':
-            if event.alt and event.ctrl:
-                popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
-
             self.cursor_to_editmesh(context, active, only_location=event.alt, only_rotation=event.ctrl)
+
+            # set cursor
+            if get_prefs().cursor_set_transform_preset:
+                cursor = (context.scene.tool_settings.transform_pivot_point, context.scene.transform_orientation_slots[0].type)
+                bpy.ops.machin3.set_transform_preset(pivot='CURSOR', orientation='CURSOR')
+
             return {'FINISHED'}
 
         # fall back for cases not covered above
@@ -109,7 +137,6 @@ class CursorToSelected(bpy.types.Operator):
         set_cursor(None if only_rotation else loc, None if only_location else rot.to_quaternion())
 
         context.area.tag_redraw()
-
 
     def cursor_to_active_object(self, active, only_location, only_rotation):
         mx = active.matrix_world
