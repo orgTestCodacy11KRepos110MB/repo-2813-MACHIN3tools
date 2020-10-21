@@ -1,15 +1,16 @@
 import bpy
 import bmesh
+from mathutils.geometry import intersect_point_line, intersect_line_line
 from bpy.props import EnumProperty, BoolProperty
-import gpu
-from gpu_extras.batch import batch_for_shader
-import bgl
 from .. utils.graph import get_shortest_path
-from .. utils.ui import wrap_mouse
+from .. utils.ui import wrap_mouse, popup_message
+from .. utils.draw import draw_line, draw_lines, draw_point
+from .. utils.raycast import cast_bvh_ray_from_mouse
 
 
 modeitems = [("MERGE", "Merge", ""),
              ("CONNECT", "Connect Paths", "")]
+
 
 mergetypeitems = [("LAST", "Last", ""),
                   ("CENTER", "Center", ""),
@@ -32,6 +33,7 @@ class SmartVert(bpy.types.Operator):
 
     # hidden
     wrongselection = False
+    snapping = False
 
     @classmethod
     def poll(cls, context):
@@ -66,19 +68,12 @@ class SmartVert(bpy.types.Operator):
                     r = row.row()
                     r.prop(self, "pathtype", expand=True)
 
-    def draw_VIEW3D(self, args):
-        shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
-        shader.bind()
+    def draw_VIEW3D(self):
+        draw_lines(self.coords, self.edge_indices, color=(0.5, 1, 0.5), width=3, alpha=0.5)
 
-        bgl.glEnable(bgl.GL_BLEND)
-        bgl.glDepthFunc(bgl.GL_ALWAYS)
-
-        bgl.glLineWidth(3)
-        shader.uniform_float("color", (0.5, 1, 0.5, 0.5))
-        batch = batch_for_shader(shader, 'LINES', {"pos": self.coords}, indices=self.edge_indices)
-        batch.draw(shader)
-
-        bgl.glDisable(bgl.GL_BLEND)
+        # for some reason event.alt doesn't update when passed in
+        if self.snapping:
+            draw_lines(self.snap_coords, color=(1, 0, 0), width=3, alpha=0.75)
 
     def modal(self, context, event):
         context.area.tag_redraw()
@@ -100,8 +95,17 @@ class SmartVert(bpy.types.Operator):
             delta_x = offset_x / divisor
             self.distance += delta_x
 
+            if event.alt:
+                mousepos = (event.mouse_region_x, event.mouse_region_y)
+                hitobj, hitloc, _, hitindex, _ = cast_bvh_ray_from_mouse(mousepos, candidates=[self.active_copy], debug=False)
+
+                self.snapping = True
+                self.slide_to_edge(context, hitloc, hitindex)
+
             # modal slide
-            self.slide(context, self.distance)
+            else:
+                self.snapping = False
+                self.slide(context, self.distance)
 
 
         # VIEWPORT control
@@ -113,12 +117,14 @@ class SmartVert(bpy.types.Operator):
 
         elif event.type in {'LEFTMOUSE', 'SPACE'}:
             bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
+            bpy.data.meshes.remove(self.active_copy.data, do_unlink=True)
             return {'FINISHED'}
 
         # CANCEL
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
             self.cancel_modal()
+            bpy.data.meshes.remove(self.active_copy.data, do_unlink=True)
             return {'CANCELLED'}
 
         self.last_mouse_x = self.mouse_x
@@ -137,12 +143,25 @@ class SmartVert(bpy.types.Operator):
         if self.slideoverride:
             bm = bmesh.from_edit_mesh(context.active_object.data)
             verts = [v for v in bm.verts if v.select]
+            history = list(bm.select_history)
 
-            if len(verts) > 1:
+            if len(verts) == 1:
+                popup_message("Select more than 1 vertex.")
+                return {'CANCELLED'}
+
+            elif not history:
+                popup_message("Select the last vertex without Box or Circle Select.")
+                return {'CANCELLED'}
+
+            else:
                 self.active = context.active_object
 
                 # make sure the current edit mode state is saved to obj.data
                 self.active.update_from_editmode()
+
+                # create copy to raycast on, this prevents and issue where the raycased flips from one face to the other because moving a vert changes the topology
+                self.active_copy = self.active.copy()
+                self.active_copy.data = self.active.data.copy()
 
                 # save this initial mesh state, this will be used when canceling the modal and to reset it for each mousemove event
                 self.initbm = bmesh.new()
@@ -152,11 +171,13 @@ class SmartVert(bpy.types.Operator):
                 self.mouse_x = self.last_mouse_x = event.mouse_region_x
                 self.distance = 1
 
-                # initial run:
-                self.slide(context, self.distance)
+                # initialize
+                self.coords = []
+                self.edge_indices = []
+                self.snapping = False
+                self.snap_coords = []
 
-                args = (self, context)
-                self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (args, ), 'WINDOW', 'POST_VIEW')
+                self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
 
                 context.window_manager.modal_handler_add(self)
                 return {'RUNNING_MODAL'}
@@ -268,6 +289,7 @@ class SmartVert(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         bm = self.initbm.copy()
+        bm.normal_update()
 
         history = list(bm.select_history)
 
@@ -285,6 +307,44 @@ class SmartVert(bpy.types.Operator):
             self.coords.append(mx @ v.co)
             self.edge_indices.append((0, idx + 1))
 
+        bm.to_mesh(self.active.data)
+
+        bpy.ops.object.mode_set(mode='EDIT')
+
+    def slide_to_edge(self, context, location, index):
+        mx = self.active.matrix_world
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        bm = self.initbm.copy()
+        bm.normal_update()
+        bm.faces.ensure_lookup_table()
+
+        self.coords = []
+        self.edge_indices = []
+        self.snap_coords = []
+
+        if location and index is not None:
+            history = list(bm.select_history)
+            last = history[-1]
+
+            verts = [v for v in bm.verts if v.select and v != last]
+            face = bm.faces[index]
+
+            closest = min([((intersect_point_line(location, mx @ e.verts[0].co, mx @ e.verts[1].co)[0] - location).length, [mx @ e.verts[0].co, mx @ e.verts[1].co], e) for e in face.edges])
+            self.snap_coords = closest[1]
+
+            self.coords.append(mx @ last.co)
+
+            for idx, v in enumerate(verts):
+                intersect = intersect_line_line(mx @ last.co, mx @ v.co, *self.snap_coords)
+                i = intersect[1] if intersect else mx @ v.co
+                v.co = mx.inverted_safe() @ i
+
+                self.coords.append(i)
+                self.edge_indices.append((0, idx + 1))
+
+        bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=0.001)
 
         bm.to_mesh(self.active.data)
 
