@@ -46,7 +46,13 @@ class SmartVert(bpy.types.Operator):
 
         column = layout.column()
 
-        if not self.slideoverride:
+        if self.slideoverride:
+            row = column.split(factor=0.3)
+            row.label(text="Mode")
+            r = row.row()
+            r.label(text='Slide Extent')
+
+        else:
             row = column.split(factor=0.3)
             row.label(text="Mode")
             r = row.row()
