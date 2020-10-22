@@ -344,7 +344,7 @@ class SmartVert(bpy.types.Operator):
 
             for idx, v in enumerate(verts):
                 intersect = intersect_line_line(mx @ last.co, mx @ v.co, *self.snap_coords)
-                i = intersect[1] if intersect else mx @ v.co
+                i = intersect[0] if intersect else mx @ v.co
                 v.co = mx.inverted_safe() @ i
 
                 self.coords.append(i)
