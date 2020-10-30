@@ -50,7 +50,7 @@ class SmartVert(bpy.types.Operator):
             row = column.split(factor=0.3)
             row.label(text="Mode")
             r = row.row()
-            r.label(text='Slide Extent')
+            r.label(text='Slide Extend')
 
         else:
             row = column.split(factor=0.3)
