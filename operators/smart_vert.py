@@ -297,21 +297,34 @@ class SmartVert(bpy.types.Operator):
         bm = self.initbm.copy()
         bm.normal_update()
 
+        selected = [v for v in bm.verts if v.select]
         history = list(bm.select_history)
-
-        last = history[-1]
-        verts = [v for v in bm.verts if v.select and v != last]
 
         self.coords = []
         self.edge_indices = []
 
-        self.coords.append(mx @ last.co)
+        # multi target sliding
+        if len(selected) > 3 and len(selected) % 2 == 0 and set(history) == set(selected):
+            pairs = [(history[i], history[i + 1]) for i in range(0, len(history), 2)]
 
-        for idx, v in enumerate(verts):
-            v.co = last.co + (v.co - last.co) * distance
+            for v, target in pairs:
+                v.co = target.co + (v.co - target.co) * distance
 
-            self.coords.append(mx @ v.co)
-            self.edge_indices.append((0, idx + 1))
+                self.coords.append(mx @ v.co)
+                self.coords.append(mx @ target.co)
+
+        # single target sliding
+        else:
+            last = history[-1]
+            verts = [v for v in selected if v != last]
+
+            self.coords.append(mx @ last.co)
+
+            for idx, v in enumerate(verts):
+                v.co = last.co + (v.co - last.co) * distance
+
+                self.coords.append(mx @ v.co)
+                self.edge_indices.append((0, idx + 1))
 
         bm.to_mesh(self.active.data)
 
@@ -331,24 +344,41 @@ class SmartVert(bpy.types.Operator):
         self.snap_coords = []
 
         if location and index is not None:
+            selected = [v for v in bm.verts if v.select]
             history = list(bm.select_history)
-            last = history[-1]
 
-            verts = [v for v in bm.verts if v.select and v != last]
             face = bm.faces[index]
 
             closest = min([((intersect_point_line(location, mx @ e.verts[0].co, mx @ e.verts[1].co)[0] - location).length, [mx @ e.verts[0].co, mx @ e.verts[1].co], e) for e in face.edges])
             self.snap_coords = closest[1]
 
-            self.coords.append(mx @ last.co)
+            # multi target sliding
+            if len(selected) > 3 and len(selected) % 2 == 0 and set(history) == set(selected):
+                pairs = [(history[i], history[i + 1]) for i in range(0, len(history), 2)]
 
-            for idx, v in enumerate(verts):
-                intersect = intersect_line_line(mx @ last.co, mx @ v.co, *self.snap_coords)
-                i = intersect[0] if intersect else mx @ v.co
-                v.co = mx.inverted_safe() @ i
+                for v, target in pairs:
+                    intersect = intersect_line_line(mx @ target.co, mx @ v.co, *self.snap_coords)
+                    i = intersect[0] if intersect else mx @ v.co
+                    v.co = mx.inverted_safe() @ i
 
-                self.coords.append(i)
-                self.edge_indices.append((0, idx + 1))
+                    self.coords.append(i)
+                    self.coords.append(target.co)
+
+
+            # single target sliding
+            else:
+                last = history[-1]
+                verts = [v for v in bm.verts if v.select and v != last]
+
+                self.coords.append(mx @ last.co)
+
+                for idx, v in enumerate(verts):
+                    intersect = intersect_line_line(mx @ last.co, mx @ v.co, *self.snap_coords)
+                    i = intersect[0] if intersect else mx @ v.co
+                    v.co = mx.inverted_safe() @ i
+
+                    self.coords.append(i)
+                    self.edge_indices.append((0, idx + 1))
 
         bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=0.001)
 
