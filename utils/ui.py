@@ -14,8 +14,28 @@ def get_icon(name):
     return icons[name].icon_id
 
 
-def wrap_mouse(self, context, event, x=False, y=False):
+# CURSOR
+
+def init_cursor(self, event):
+    self.last_mouse_x = event.mouse_x
+    self.last_mouse_y = event.mouse_y
+
+    # region offsets
+    self.region_offset_x = event.mouse_x - event.mouse_region_x
+    self.region_offset_y = event.mouse_y - event.mouse_region_y
+
+
+def wrap_cursor(self, context, event, x=False, y=False):
     if x:
+
+        if event.mouse_region_x <= 0:
+            context.window.cursor_warp(context.region.width + self.region_offset_x - 10, event.mouse_y)
+
+        if event.mouse_region_x >= context.region.width - 1:  # the -1 is required for full screen, where the max region width is never passed
+            context.window.cursor_warp(self.region_offset_x + 10, event.mouse_y)
+
+
+        """
         if event.mouse_region_x > context.region.width - 2:
             context.window.cursor_warp(event.mouse_x - context.region.width + 2, event.mouse_y)
             self.last_mouse_x -= context.region.width
@@ -23,8 +43,16 @@ def wrap_mouse(self, context, event, x=False, y=False):
         elif event.mouse_region_x < 1:
             context.window.cursor_warp(event.mouse_x + context.region.width - 2, event.mouse_y)
             self.last_mouse_x += context.region.width
+        """
 
     if y:
+        if event.mouse_region_y <= 0:
+            context.window.cursor_warp(event.mouse_x, context.region.height + self.region_offset_y - 10)
+
+        if event.mouse_region_y >= context.region.height - 1:
+            context.window.cursor_warp(event.mouse_x, self.region_offset_y + 100)
+
+        """
         if event.mouse_region_y > context.region.height - 2:
             context.window.cursor_warp(event.mouse_x, event.mouse_y - context.region.height + 2)
             self.last_mouse_y -= context.region.height
@@ -32,7 +60,10 @@ def wrap_mouse(self, context, event, x=False, y=False):
         elif event.mouse_region_y < 1:
             context.window.cursor_warp(event.mouse_x, event.mouse_y + context.region.height - 2)
             self.last_mouse_y += context.region.height
+        """
 
+
+# POPUP
 
 def popup_message(message, title="Info", icon="INFO", terminal=True):
     def draw_message(self, context):

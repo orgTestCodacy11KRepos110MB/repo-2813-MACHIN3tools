@@ -3,7 +3,7 @@ import bmesh
 from mathutils.geometry import intersect_point_line, intersect_line_line
 from bpy.props import EnumProperty, BoolProperty
 from .. utils.graph import get_shortest_path
-from .. utils.ui import wrap_mouse, popup_message
+from .. utils.ui import init_cursor, wrap_cursor, popup_message
 from .. utils.draw import draw_line, draw_lines, draw_point
 from .. utils.raycast import cast_bvh_ray_from_mouse
 
@@ -34,6 +34,7 @@ class SmartVert(bpy.types.Operator):
     # hidden
     wrongselection = False
     snapping = False
+    passthrough = False
 
     @classmethod
     def poll(cls, context):
@@ -91,33 +92,42 @@ class SmartVert(bpy.types.Operator):
 
         events = ["MOUSEMOVE"]
 
+        # wrap mouse cursor
+        if event.type == "MOUSEMOVE":
+            wrap_cursor(self, context, event, x=True)
+
         if event.type in events:
-            wrap_mouse(self, context, event, x=True)
+            if event.type == 'MOUSEMOVE':
 
-            offset_x = self.mouse_x - self.last_mouse_x
+                if self.passthrough:
+                    self.passthrough = False
 
-            divisor = 5000 if event.shift else 50 if event.ctrl else 500
+                else:
+                    divisor = 5000 if event.shift else 50 if event.ctrl else 500
 
-            delta_x = offset_x / divisor
-            self.distance += delta_x
+                    delta_x = event.mouse_x - self.last_mouse_x
+                    delta_distance = delta_x / divisor
 
-            # modal slide to edge
-            if event.alt:
-                mousepos = (event.mouse_region_x, event.mouse_region_y)
-                hitobj, hitloc, _, hitindex, _ = cast_bvh_ray_from_mouse(mousepos, candidates=[self.active_copy], debug=False)
+                    self.distance += delta_distance
 
-                self.snapping = True
-                self.slide_to_edge(context, event, hitloc, hitindex)
+                    # modal slide to edge
+                    if event.alt:
+                        mousepos = (event.mouse_region_x, event.mouse_region_y)
+                        hitobj, hitloc, _, hitindex, _ = cast_bvh_ray_from_mouse(mousepos, candidates=[self.active_copy], debug=False)
 
-            # modal slide
-            else:
-                self.snapping = False
-                self.slide(context, self.distance)
+                        self.snapping = True
+                        self.slide_to_edge(context, event, hitloc, hitindex)
+
+                    # modal slide
+                    else:
+                        self.snapping = False
+                        self.slide(context, self.distance)
 
 
         # VIEWPORT control
 
         elif event.type in {'MIDDLEMOUSE'}:
+            self.passthrough = True
             return {'PASS_THROUGH'}
 
         # FINISH
@@ -134,7 +144,7 @@ class SmartVert(bpy.types.Operator):
             bpy.data.meshes.remove(self.active_copy.data, do_unlink=True)
             return {'CANCELLED'}
 
-        self.last_mouse_x = self.mouse_x
+        self.last_mouse_x = event.mouse_x
 
         return {'RUNNING_MODAL'}
 
@@ -175,7 +185,7 @@ class SmartVert(bpy.types.Operator):
                 self.initbm.from_mesh(self.active.data)
 
                 # mouse positions
-                self.mouse_x = self.last_mouse_x = event.mouse_region_x
+                self.last_mouse_x = event.mouse_region_x
                 self.distance = 1
 
                 # initialize
@@ -183,6 +193,9 @@ class SmartVert(bpy.types.Operator):
                 self.edge_indices = []
                 self.snapping = False
                 self.snap_coords = []
+
+                # initialize mouse
+                init_cursor(self, event)
 
                 self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
 
