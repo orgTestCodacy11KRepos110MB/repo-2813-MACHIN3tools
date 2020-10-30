@@ -362,7 +362,7 @@ class SmartVert(bpy.types.Operator):
                     v.co = mx.inverted_safe() @ i
 
                     self.coords.append(i)
-                    self.coords.append(target.co)
+                    self.coords.append(mx @ target.co)
 
 
             # single target sliding
