@@ -5,6 +5,8 @@ from .. items import bridge_interpolation_items
 from .. utils.ui import popup_message
 
 
+# TODO: why does bridging require custom props on this op, that are passe through, but bevel or offset edges doesn't???
+
 
 class SmartEdge(bpy.types.Operator):
     bl_idname = "machin3.smart_edge"
