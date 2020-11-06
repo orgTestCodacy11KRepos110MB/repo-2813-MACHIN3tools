@@ -135,6 +135,7 @@ class LoadMostRecent(bpy.types.Operator):
 
             if os.path.exists(most_recent):
                 bpy.ops.wm.open_mainfile(filepath=most_recent, load_ui=True)
+                self.report({'INFO'}, 'Loaded most recent "%s"' % (os.path.basename(most_recent)))
 
             else:
                 popup_message("File %s does not exist" % (most_recent), title="File not found")
@@ -332,20 +333,20 @@ class LoadPrevious(bpy.types.Operator):
                     self.execute(context)
 
             else:
-                self.report({'ERROR'}, "You've reached the first file in the current folder: %s." % (path))
+                popup_message("You've reached the first file in the current foler: %s." % (path), title="Info")
+
         return {'FINISHED'}
 
     def execute(self, context):
         path, files, idx = self.get_data(bpy.data.filepath)
 
-        previousblend = files[idx]
-        loadpath = os.path.join(path, previousblend)
+        loadpath = os.path.join(path, files[idx])
 
         # add the path to the recent files list, for some reason it's not done automatically
         add_path_to_recent_files(loadpath)
 
-        print("Loading blend file %d/%d: %s" % (idx + 1, len(files), previousblend))
         bpy.ops.wm.open_mainfile(filepath=loadpath, load_ui=self.load_ui)
+        self.report({'INFO'}, 'Loaded previous file "%s" (%d/%d)' % (os.path.basename(loadpath), idx + 1, len(files)))
 
         return {'FINISHED'}
 
@@ -388,20 +389,20 @@ class LoadNext(bpy.types.Operator):
                 else:
                     self.execute(context)
             else:
-                self.report({'ERROR'}, "You've reached the last file in the current foler: %s." % (path))
+                popup_message("You've reached the last file in the current foler: %s." % (path), title="Info")
+
         return {'FINISHED'}
 
     def execute(self, context):
         path, files, idx = self.get_data(bpy.data.filepath)
 
-        nextblend = files[idx]
-        loadpath = os.path.join(path, nextblend)
+        loadpath = os.path.join(path, files[idx])
 
         # add the path to the recent files list, for some reason it's not done automatically
         add_path_to_recent_files(loadpath)
 
-        print("Loading blend file %d/%d: %s" % (idx + 1, len(files), nextblend))
         bpy.ops.wm.open_mainfile(filepath=loadpath, load_ui=self.load_ui)
+        self.report({'INFO'}, 'Loaded next file "%s" (%d/%d)' % (os.path.basename(loadpath), idx + 1, len(files)))
 
         return {'FINISHED'}
 
