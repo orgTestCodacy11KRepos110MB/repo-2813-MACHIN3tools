@@ -45,8 +45,9 @@ class Save(bpy.types.Operator):
 
             t = time.time()
             localt = time.strftime('%H:%M:%S', time.localtime(t))
-
             print("%s | Saved blend: %s" % (localt, currentblend))
+            self.report({'INFO'}, 'Saved "%s"' % (os.path.basename(currentblend)))
+
         else:
             bpy.ops.wm.save_mainfile('INVOKE_DEFAULT')
 
@@ -64,21 +65,25 @@ class SaveIncremental(bpy.types.Operator):
         currentblend = bpy.data.filepath
 
         if currentblend:
-            save_path = self.get_incremented_path(currentblend)
+            savepath = self.get_incremented_path(currentblend)
 
             # add it to the recent files list
-            add_path_to_recent_files(save_path)
+            add_path_to_recent_files(savepath)
 
-            if os.path.exists(save_path):
-                self.report({'ERROR'}, "File '%s' exists already!\nBlend has NOT been saved incrementally!" % (save_path))
+            if os.path.exists(savepath):
+                self.report({'ERROR'}, "File '%s' exists already!\nBlend has NOT been saved incrementally!" % (savepath))
             else:
-                bpy.ops.wm.save_as_mainfile(filepath=save_path)
-                print("Saved blend incrementally:", save_path)
+                bpy.ops.wm.save_as_mainfile(filepath=savepath)
+
+                t = time.time()
+                localt = time.strftime('%H:%M:%S', time.localtime(t))
+                print("%s | Saved blend incrementally: %s" % (localt, savepath))
+                self.report({'INFO'}, 'Incrementally saved "%s"' % (os.path.basename(savepath)))
+
         else:
             bpy.ops.wm.save_mainfile('INVOKE_DEFAULT')
 
         return {'FINISHED'}
-
 
     def get_incremented_path(self, currentblend):
         path = os.path.dirname(currentblend)
