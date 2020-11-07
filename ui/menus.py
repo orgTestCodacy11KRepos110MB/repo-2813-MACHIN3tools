@@ -10,16 +10,16 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
 
-        if getattr(bpy.types, "MACHIN3_OT_unmirror", False):
+        if get_prefs().activate_mirror:
             layout.operator("machin3.unmirror", text="Un-Mirror")
 
-        if getattr(bpy.types, "MACHIN3_OT_select_center_objects", False):
+        if get_prefs().activate_select:
             layout.operator("machin3.select_center_objects", text="Select Center Objects")
 
-        if getattr(bpy.types, "MACHIN3_OT_apply_transformations", False):
+        if get_prefs().activate_apply:
             layout.operator("machin3.apply_transformations", text="Apply Transformations")
 
-        if getattr(bpy.types, "MACHIN3_OT_mesh_cut", False):
+        if get_prefs().activate_mesh_cut:
             layout.operator("machin3.mesh_cut", text="Mesh Cut")
 
 
