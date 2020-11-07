@@ -88,7 +88,7 @@ class Focus(bpy.types.Operator):
                 obj.select_set(False)
 
     def local_view(self, context, debug=False):
-        def focus(context, view, sel, history, init=False):
+        def focus(context, view, sel, history, init=False, invert=False):
             vis = context.visible_objects
             hidden = [obj for obj in vis if obj not in sel]
 
@@ -123,8 +123,14 @@ class Focus(bpy.types.Operator):
                             entry.obj = obj
                             entry.name = obj.name
 
-                # selection event to force a HUD drawing/handler update
-                sel[0].select_set(True)
+                if invert:
+                    for obj in sel:
+                        obj.select_set(False)
+
+                # generic selection event to force a HUD drawing/handler update
+                else:
+                    sel[0].select_set(True)
+
 
         def unfocus(context, view, history):
             last_epoch = history[-1]
@@ -195,7 +201,7 @@ class Focus(bpy.types.Operator):
 
                 # go deeper
                 if context.selected_objects and not vis == sel:
-                    focus(context, view, sel, history)
+                    focus(context, view, sel, history, invert=self.invert)
 
                 # go higher
                 else:
@@ -214,7 +220,7 @@ class Focus(bpy.types.Operator):
                     history.clear()
 
                 # self.show_tool_props = True
-                focus(context, view, sel, history, init=True)
+                focus(context, view, sel, history, init=True, invert=self.invert)
 
             if debug:
                 for epoch in history:
