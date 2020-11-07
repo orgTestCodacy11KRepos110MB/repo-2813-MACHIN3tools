@@ -146,6 +146,36 @@ def draw_focus_HUD(context, color=(1, 1, 1), alpha=1, width=2):
             blf.draw(font, title)
 
 
+def draw_surface_slide_HUD(context, color=(1, 1, 1), alpha=1, width=2):
+    if context.space_data.overlay.show_overlays:
+        region = context.region
+        view = context.space_data
+
+        # check if title needs to be offset down due to the header position
+        area = context.area
+        headers = [r for r in area.regions if r.type == 'HEADER']
+
+        scale = context.preferences.view.ui_scale
+        offset = 0
+
+        if headers:
+            header = headers[0]
+
+            # only offset when the header is on top and when show_region_tool_header is disabled
+            if not (area.y - header.y) and not view.show_region_tool_header:
+                offset += int(25 * scale)
+
+        title = "Surface Sliding"
+
+        font = 1
+        fontsize = int(12 * scale)
+
+        blf.size(font, fontsize, 72)
+        blf.color(font, *color, alpha)
+        blf.position(font, (region.width / 2) - int(60 * scale), 0 + offset + int(fontsize), 0)
+
+        blf.draw(font, title)
+
 
 # BASIC
 

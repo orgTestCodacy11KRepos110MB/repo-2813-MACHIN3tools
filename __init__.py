@@ -72,12 +72,12 @@ if 'bpy' in locals():
     reload_modules(bl_info['name'])
 
 import bpy
-from bpy.props import PointerProperty
+from bpy.props import PointerProperty, BoolProperty
 from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus, get_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, add_object_context_menu, remove_object_context_menu
 from . utils.registration import add_object_buttons
-from . handlers import update_object_axes_drawing, focus_HUD
+from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD
 
 
 def register():
@@ -120,6 +120,7 @@ def register():
     bpy.app.handlers.load_pre.append(update_object_axes_drawing)
 
     bpy.app.handlers.depsgraph_update_post.append(focus_HUD)
+    bpy.app.handlers.depsgraph_update_post.append(surface_slide_HUD)
 
 
     # REGISTRATION OUTPUT
@@ -136,12 +137,16 @@ def unregister():
     bpy.app.handlers.redo_pre.remove(update_object_axes_drawing)
     bpy.app.handlers.load_pre.remove(update_object_axes_drawing)
 
-    from . handlers import focusHUD
+    from . handlers import focusHUD, surfaceslideHUD
 
     if focusHUD and "RNA_HANDLE_REMOVED" not in str(focusHUD):
         bpy.types.SpaceView3D.draw_handler_remove(focusHUD, 'WINDOW')
 
+    if surfaceslideHUD and "RNA_HANDLE_REMOVED" not in str(surfaceslideHUD):
+        bpy.types.SpaceView3D.draw_handler_remove(surfaceslideHUD, 'WINDOW')
+
     bpy.app.handlers.depsgraph_update_post.remove(focus_HUD)
+    bpy.app.handlers.depsgraph_update_post.remove(surface_slide_HUD)
 
 
     # TOOLS, PIE MENUS, KEYMAPS, MENUS

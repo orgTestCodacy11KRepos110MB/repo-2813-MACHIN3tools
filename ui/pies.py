@@ -87,7 +87,35 @@ class PieModes(Menu):
                                 pie.separator()
 
                             # 1 - BOTTOM - LEFT
-                            pie.separator()
+                            if get_prefs().activate_surface_slide:
+                                hassurfaceslide = [mod for mod in active.modifiers if mod.type == 'SHRINKWRAP' and 'SurfaceSlide' in mod.name]
+
+                                if context.mode == 'EDIT_MESH':
+                                    box = pie.split()
+                                    column = box.column(align=True)
+
+                                    row = column.row(align=True)
+                                    row.scale_y = 1.2
+
+                                    if hassurfaceslide:
+                                        row.operator("machin3.finish_surface_slide", text='Finish Surface Slide', icon='OUTLINER_DATA_SURFACE')
+                                    else:
+                                        row.operator("machin3.surface_slide", text='Surface Slide', icon='OUTLINER_DATA_SURFACE')
+
+                                elif hassurfaceslide:
+                                    box = pie.split()
+                                    column = box.column(align=True)
+
+                                    row = column.row(align=True)
+                                    row.scale_y = 1.2
+                                    row.operator("machin3.finish_surface_slide", text='Finish Surface Slide', icon='OUTLINER_DATA_SURFACE')
+
+                                else:
+                                    pie.separator()
+
+                            else:
+                                pie.separator()
+
 
                             # 3 - BOTTOM - RIGHT
                             if context.mode == "EDIT_MESH":

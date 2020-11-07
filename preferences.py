@@ -122,6 +122,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_mesh_cut(self, context):
         activate(self, register=self.activate_mesh_cut, tool="mesh_cut")
 
+    def update_activate_surface_slide(self, context):
+        activate(self, register=self.activate_surface_slide, tool="surface_slide")
+
     def update_activate_filebrowser_tools(self, context):
         activate(self, register=self.activate_filebrowser_tools, tool="filebrowser")
 
@@ -133,6 +136,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     def update_activate_customize(self, context):
         activate(self, register=self.activate_customize, tool="customize")
+
 
     # RUNTIME PIE ACTIVATION
 
@@ -233,6 +237,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     activate_apply: BoolProperty(name="Apply", default=False, update=update_activate_apply)
     activate_select: BoolProperty(name="Select", default=False, update=update_activate_select)
     activate_mesh_cut: BoolProperty(name="Mesh Cut", default=False, update=update_activate_mesh_cut)
+    activate_surface_slide: BoolProperty(name="Surface Slide", default=False, update=update_activate_surface_slide)
     activate_filebrowser_tools: BoolProperty(name="Filebrowser Tools", default=False, update=update_activate_filebrowser_tools)
     activate_smart_drive: BoolProperty(name="Smart Drive", default=False, update=update_activate_smart_drive)
     activate_unity: BoolProperty(name="Unity", default=False, update=update_activate_unity)
@@ -345,6 +350,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row = column.split(factor=0.25)
         row.prop(self, "activate_mesh_cut", toggle=True)
         row.label(text="Knife intersect a mesh, using another object.")
+
+        row = column.split(factor=0.25)
+        row.prop(self, "activate_surface_slide", toggle=True)
+        row.label(text="Easily modify mesh topology, while maintaining form.")
 
         row = column.split(factor=0.25)
         row.prop(self, "activate_filebrowser_tools", toggle=True)
