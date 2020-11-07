@@ -19,6 +19,8 @@ class Focus(bpy.types.Operator):
     unmirror: BoolProperty(name="Un-Mirror", default=True)
     ignore_mirrors: BoolProperty(name="Ignore Mirrors", default=True)
 
+    invert: BoolProperty(name="Inverted Focus", default=False)
+
     def draw(self, context):
         layout = self.layout
 
@@ -41,6 +43,12 @@ class Focus(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         return context.space_data.type == 'VIEW_3D' and context.region.type == 'WINDOW'
+
+    def invoke(self, context, event):
+        self.invert = event.alt
+
+        self.execute(context)
+        return {'FINISHED'}
 
     def execute(self, context):
         if self.method == 'VIEW_SELECTED':
@@ -150,6 +158,14 @@ class Focus(bpy.types.Operator):
 
         sel = context.selected_objects
         vis = context.visible_objects
+
+        # opionally invert the selection
+        if self.invert:
+            for obj in vis:
+                obj.select_set(not obj.select_get())
+
+            sel = context.selected_objects
+
 
         # blender native local view
         if self.levels == "SINGLE":
