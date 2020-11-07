@@ -9,7 +9,7 @@ from .. utils.object import parent
 class SurfaceSlide(bpy.types.Operator):
     bl_idname = "machin3.surface_slide"
     bl_label = "MACHIN3: Surface Slide"
-    bl_description = ""
+    bl_description = "Start Surface Sliding: modifify the topology while keeping the inital form intact"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -44,8 +44,8 @@ class SurfaceSlide(bpy.types.Operator):
 
 class FinishSurfaceSlide(bpy.types.Operator):
     bl_idname = "machin3.finish_surface_slide"
-    bl_label = "MACHIN3: "
-    bl_description = ""
+    bl_label = "MACHIN3: Finish Surface Slide"
+    bl_description = "Stop Surface Sliding"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
