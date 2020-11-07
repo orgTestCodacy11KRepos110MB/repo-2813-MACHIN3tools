@@ -176,7 +176,7 @@ class SmartVert(bpy.types.Operator):
                 # make sure the current edit mode state is saved to obj.data
                 self.active.update_from_editmode()
 
-                # create copy to raycast on, this prevents and issue where the raycased flips from one face to the other because moving a vert changes the topology
+                # create copy to raycast on, this prevents an issue where the raycast flips from one face to the other because moving a vert changes the topology
                 self.active_copy = self.active.copy()
                 self.active_copy.data = self.active.data.copy()
 

@@ -1,5 +1,6 @@
 import bpy
 from .. utils.modifier import add_shrinkwrap
+from .. utils.object import parent
 
 
 # TODO: add to context menu? only if modes pie is not active?
@@ -18,6 +19,7 @@ class SurfaceSlide(bpy.types.Operator):
 
     def execute(self, context):
         active = context.active_object
+        active.update_from_editmode()
 
         # create copy of active object to serve as surface
         surface = active.copy()
@@ -33,6 +35,9 @@ class SurfaceSlide(bpy.types.Operator):
         # move it to the beginning of the stack
         if active.modifiers[0] != shrinkwrap:
             bpy.ops.object.modifier_move_to_index(modifier=shrinkwrap.name, index=0)
+
+        # parent surface to active, so you can actually move the active and surface slide will keep working as expected
+        parent(surface, active)
 
         return {'FINISHED'}
 
