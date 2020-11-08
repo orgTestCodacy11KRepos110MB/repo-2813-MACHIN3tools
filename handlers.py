@@ -47,10 +47,8 @@ def surface_slide_HUD(scene):
         surfaceslide = [mod for mod in active.modifiers if mod.type == 'SHRINKWRAP' and 'SurfaceSlide' in mod.name]
 
         if surfaceslide and not surfaceslideHUD:
-            print("adding HUD")
             surfaceslideHUD = bpy.types.SpaceView3D.draw_handler_add(draw_surface_slide_HUD, (bpy.context, (0, 1, 0), 1, 2), 'WINDOW', 'POST_PIXEL')
 
         elif surfaceslideHUD and not surfaceslide:
-            print("removing HUD")
             bpy.types.SpaceView3D.draw_handler_remove(surfaceslideHUD, 'WINDOW')
             surfaceslideHUD = None

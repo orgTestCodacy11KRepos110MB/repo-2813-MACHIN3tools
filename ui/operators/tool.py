@@ -10,10 +10,10 @@ from ... colors import white
 class SetToolByName(bpy.types.Operator):
     bl_idname = "machin3.set_tool_by_name"
     bl_label = "MACHIN3: Set Tool by Name"
+    bl_description = "Set Tool by Name"
     bl_options = {'INTERNAL'}
 
     name: StringProperty(name="Tool name/ID")
-
     alpha: FloatProperty(name="Alpha", default=0.5, min=0.1, max=1)
 
     def draw_HUD(self, args):
