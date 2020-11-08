@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import IntProperty, StringProperty, CollectionProperty, BoolProperty, EnumProperty
+from bpy.props import IntProperty, StringProperty, CollectionProperty, BoolProperty, EnumProperty, FloatProperty
 import os
 from . properties import AppendMatsCollection
 from . utils.ui import get_icon, draw_keymap_items
@@ -209,6 +209,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     tools_show_hardops_menu: BoolProperty(name="Show Hard Ops Menu", default=True)
     tools_show_quick_favorites: BoolProperty(name="Show Quick Favorites", default=False)
     tools_show_tool_bar: BoolProperty(name="Show Tool Bar", default=False)
+    tools_HUD_fade: FloatProperty(name="HUD Fade Time (seconds)", default=0.75, min=0.1, max=3)
 
     custom_startup: BoolProperty(name="Startup Scene", default=False)
     custom_theme: BoolProperty(name="Theme", default=True)
@@ -614,10 +615,12 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             split = bb.split(factor=0.5)
 
             col = split.column()
+            col.prop(self, "tools_HUD_fade", slider=True)
             col.prop(self, "tools_show_boxcutter_presets")
             col.prop(self, "tools_show_hardops_menu")
 
             col = split.column()
+            col.label(text='')
             col.prop(self, "tools_show_quick_favorites")
             col.prop(self, "tools_show_tool_bar")
 

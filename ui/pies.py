@@ -2522,14 +2522,17 @@ class PieTools(Menu):
             # 4 - LEFT
             if boxcutter in tools:
                 tool = tools[boxcutter]
-                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name = boxcutter
+                # NOTE: without adding the spaces, the icon will overlap the text, but only for my own op, not fr wm.tool_set_by_id
+                # pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name = boxcutter
+                pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name = boxcutter
             else:
                 pie.separator()
 
             # 6 - RIGHT
             if 'Hops' in tools:
                 tool = tools['Hops']
-                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name = 'Hops'
+                # pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name = 'Hops'
+                pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name = 'Hops'
             else:
                 pie.separator()
 
@@ -2547,7 +2550,8 @@ class PieTools(Menu):
             # 8 - TOP
             if 'builtin.select_box' in tools:
                 tool = tools['builtin.select_box']
-                pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='builtin.select_box'
+                # pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='builtin.select_box'
+                pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name='builtin.select_box'
             else:
                 pie.separator()
 

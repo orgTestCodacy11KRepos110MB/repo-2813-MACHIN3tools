@@ -177,6 +177,22 @@ def draw_surface_slide_HUD(context, color=(1, 1, 1), alpha=1, width=2):
         blf.draw(font, title)
 
 
+def draw_label(context, title='', color=(1, 1, 1), alpha=1):
+    region = context.region
+
+    scale = context.preferences.view.ui_scale
+
+    font = 1
+    fontsize = int(12 * scale)
+
+    blf.size(font, fontsize, 72)
+    blf.color(font, *color, alpha)
+    blf.position(font, (region.width / 2) - (int(len(title) * scale * 7) / 2), (region.height / 2) + int(fontsize), 0)
+    # blf.position(font, 10, 10, 0)
+
+    blf.draw(font, title)
+
+
 # BASIC
 
 def draw_point(co, mx=Matrix(), color=(1, 1, 1), size=6, alpha=1, xray=True, modal=True):

@@ -83,3 +83,8 @@ cycles_device_items = [('CPU', 'CPU', ''),
 bc_orientation_items = [('LOCAL', 'Local', ''),
                         ('NEAREST', 'Nearest', ''),
                         ('LONGEST', 'Longest', '')]
+
+
+tool_name_mapping_dict = {'BC': 'BoxCutter',
+                          'Hops': 'HardOps',
+                          'builtin.select_box': 'Select Box'}
