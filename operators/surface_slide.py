@@ -50,7 +50,9 @@ class FinishSurfaceSlide(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return [mod for mod in context.active_object.modifiers if mod.type == 'SHRINKWRAP' and 'SurfaceSlide' in mod.name]
+        active = context.active_object if context.active_object else None
+        if active:
+            return [mod for mod in context.active_object.modifiers if mod.type == 'SHRINKWRAP' and 'SurfaceSlide' in mod.name]
 
     def execute(self, context):
         active = context.active_object
