@@ -87,4 +87,5 @@ bc_orientation_items = [('LOCAL', 'Local', ''),
 
 tool_name_mapping_dict = {'BC': 'BoxCutter',
                           'Hops': 'HardOps',
-                          'builtin.select_box': 'Select Box'}
+                          'builtin.select_box': 'Select Box',
+                          'machin3.tool_hyper_cursor_transform': 'Hyper Cursor: Transform'}

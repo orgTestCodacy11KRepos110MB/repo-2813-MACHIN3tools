@@ -25,6 +25,14 @@ def get_tools_from_context(context):
     return tools
 
 
+def get_active_tool(context):
+    tools = get_tools_from_context(context)
+
+    for idname, tooldict in tools.items():
+        if tooldict['active']:
+            return idname
+
+
 def get_tool_options(context, tool_idname, operator_idname):
     for tooldef in context.workspace.tools:
         if tooldef and tooldef.idname == tool_idname:

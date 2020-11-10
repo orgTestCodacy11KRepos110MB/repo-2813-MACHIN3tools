@@ -6,7 +6,8 @@ from .. utils.registration import get_prefs, get_addon
 from .. utils.ui import get_icon
 from .. utils.collection import get_scene_collections
 from .. utils.system import abspath
-from .. utils.tools import get_tools_from_context, get_tool_options
+from .. utils.tools import get_tools_from_context, get_active_tool
+
 
 # TODO: snapping pie
 
@@ -2549,9 +2550,18 @@ class PieTools(Menu):
 
             # 8 - TOP
             if 'builtin.select_box' in tools:
-                tool = tools['builtin.select_box']
-                # pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='builtin.select_box'
-                pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name='builtin.select_box'
+                active_tool = get_active_tool(context)
+
+                if 'machin3.tool_hyper_cursor_transform' in tools and active_tool in ['builtin.select_box', 'machin3.tool_hyper_cursor_transform']:
+                    name = 'machin3.tool_hyper_cursor_transform' if active_tool == 'builtin.select_box' else 'builtin.select_box'
+                    tool = tools[name]
+                    pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name=name
+
+                else:
+                    tool = tools['builtin.select_box']
+                    # pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='builtin.select_box'
+                    pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name='builtin.select_box'
+
             else:
                 pie.separator()
 
