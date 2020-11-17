@@ -187,7 +187,7 @@ def draw_label(context, title='', color=(1, 1, 1), alpha=1):
 
     blf.size(font, fontsize, 72)
     blf.color(font, *color, alpha)
-    blf.position(font, (region.width / 2) - (int(len(title) * scale * 7) / 2), (region.height / 2) + int(fontsize), 0)
+    blf.position(font, (region.width / 2) - (int(len(title) * scale * 7) / 2), (region.height / 3) + int(fontsize), 0)
     # blf.position(font, 10, 10, 0)
 
     blf.draw(font, title)
