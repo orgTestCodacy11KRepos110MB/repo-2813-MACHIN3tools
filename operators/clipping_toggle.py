@@ -132,7 +132,7 @@ class ClippingToggle(bpy.types.Operator):
 
             view = bpy.context.space_data
 
-            coords = (context.region.width / 2, 100)
+            coords = ((context.region.width / 2) - (100 if self.state == 'MIN' else 0 if self.state == 'MED' else - 100), 100)
 
             if self.state == "MIN":
                 view.clip_start = self.minimum
