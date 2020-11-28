@@ -183,7 +183,7 @@ def draw_label(context, title='', coords=None, color=(1, 1, 1), alpha=1):
     if not coords:
         region = context.region
         width = region.width / 2
-        height = region.height / 3
+        height = region.height / 2
     else:
         width, height = coords
 
