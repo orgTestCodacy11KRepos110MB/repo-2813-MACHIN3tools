@@ -76,12 +76,10 @@ def create_rotation_matrix_from_vertex(obj, vert):
     else:
         objup = (mx.to_3x3() @ Vector((0, 0, 1))).normalized()
 
-
         # use the x axis if the edge is already pointing in z
         dot = normal.dot(objup)
         if abs(round(dot, 6)) == 1:
             objup = (mx.to_3x3() @ Vector((1, 0, 0))).normalized()
-
 
         tangent = normal.cross(objup).normalized()
         binormal = normal.cross(tangent).normalized()

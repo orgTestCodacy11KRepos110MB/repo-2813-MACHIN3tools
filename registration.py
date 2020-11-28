@@ -8,6 +8,7 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                                     ('M3ObjectProperties', '')]),
                     ('preferences', [('MACHIN3toolsPreferences', '')]),
                     ('ui.operators.call_pie', [('CallMACHIN3toolsPie', 'call_machin3tools_pie')]),
+                    ('ui.operators.draw', [('DrawLabel', 'draw_label')]),
                     ('ui.panels', [('PanelMACHIN3tools', 'machin3_tools')]),
                     ('operators.quadsphere', [('QuadSphere', 'quadsphere')])],
 

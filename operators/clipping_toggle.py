@@ -131,13 +131,19 @@ class ClippingToggle(bpy.types.Operator):
 
             view = bpy.context.space_data
 
+            color = (1, 1, 1)
+            coords = (context.region.width / 2, 100)
+
             if self.state == "MIN":
                 view.clip_start = self.minimum
+                bpy.ops.machin3.draw_label(text=f'Minimum: {round(self.minimum, 6)}', coords=coords, color=color)
 
             elif self.state == "MED":
                 view.clip_start = self.medium
+                bpy.ops.machin3.draw_label(text=f'Medium: {round(self.medium, 6)}', coords=coords, color=color)
 
             elif self.state == "MAX":
                 view.clip_start = self.maximum
+                bpy.ops.machin3.draw_label(text=f'Maximum: {round(self.maximum, 6)}', coords=coords, color=color)
 
         return {'FINISHED'}
