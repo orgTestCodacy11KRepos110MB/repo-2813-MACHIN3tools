@@ -10,8 +10,8 @@ class DrawLabel(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     text: StringProperty(name="Text to draw the HUD", default='Text')
-    coords = FloatVectorProperty(name='Screen Coordinates', size=2, default=(100, 100))
-    color = FloatVectorProperty(name='Screen Coordinates', size=3, default=(1, 1, 1))
+    coords: FloatVectorProperty(name='Screen Coordinates', size=2, default=(100, 100))
+    color: FloatVectorProperty(name='Screen Coordinates', size=3, default=(1, 1, 1))
 
     time: FloatProperty(name="", default=1, min=0.1)
     alpha: FloatProperty(name="Alpha", default=0.5, min=0.1, max=1)
