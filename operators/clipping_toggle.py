@@ -92,7 +92,7 @@ class ClippingToggle(bpy.types.Operator):
         self.avoid_execute = True
 
     maximum: FloatProperty(name="Maximum", default=1, min=0, precision=2, step=10, update=update_clip_start_maximum)
-    medium: FloatProperty(name="Medium", default=0.1, min=0, precision=3, step=1, update=update_clip_start_medium)
+    medium: FloatProperty(name="Medium", default=0.01, min=0, precision=3, step=1, update=update_clip_start_medium)
     minimum: FloatProperty(name="Minimum", default=0.001, min=0, precision=5, step=0.001, update=update_clip_start_minimum)
 
     state: EnumProperty(name="Current State", items=state_items, default="MED", update=update_state)

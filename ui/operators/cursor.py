@@ -3,8 +3,9 @@ import bmesh
 from ... utils.math import get_center_between_verts, average_locations, create_rotation_matrix_from_vertex, create_rotation_matrix_from_edge, create_rotation_matrix_from_face
 from ... utils.scene import set_cursor
 from ... utils.ui import popup_message
-from ... utils.registration import get_prefs
+from ... utils.registration import get_prefs, get_addon
 from ... utils.draw import add_object_axes_drawing_handler, remove_object_axes_drawing_handler
+from ... utils.tools import get_active_tool
 
 
 cursor = None
@@ -57,6 +58,10 @@ class CursorToSelected(bpy.types.Operator):
         return context.active_object or context.selected_objects
 
     def invoke(self, context, event):
+
+        # only actually set the presets and draw the axes if hyper cursor tools are not active
+        set_transform_preset_and_draw_cursor_axes = 'machin3.tool_hyper_cursor' not in get_active_tool(context)
+
         active = context.active_object
         sel = [obj for obj in context.selected_objects if obj != active]
 
@@ -74,22 +79,24 @@ class CursorToSelected(bpy.types.Operator):
         if context.mode == 'OBJECT' and active and not sel:
             self.cursor_to_active_object(active, only_location=event.alt, only_rotation=event.ctrl)
 
-            if get_prefs().activate_transform_pie and get_prefs().cursor_set_transform_preset:
-                self.set_cursor_transform_preset(context)
+            if set_transform_preset_and_draw_cursor_axes:
+                if get_prefs().activate_transform_pie and get_prefs().cursor_set_transform_preset:
+                    self.set_cursor_transform_preset(context)
 
-            if get_prefs().activate_shading_pie and get_prefs().cursor_toggle_axes_drawing:
-                self.enable_cursor_axes_drawing(context)
+                if get_prefs().activate_shading_pie and get_prefs().cursor_toggle_axes_drawing:
+                    self.enable_cursor_axes_drawing(context)
 
             return {'FINISHED'}
 
         elif context.mode == 'EDIT_MESH':
             self.cursor_to_editmesh(context, active, only_location=event.alt, only_rotation=event.ctrl)
 
-            if get_prefs().activate_transform_pie and get_prefs().cursor_set_transform_preset:
-                self.set_cursor_transform_preset(context)
+            if set_transform_preset_and_draw_cursor_axes:
+                if get_prefs().activate_transform_pie and get_prefs().cursor_set_transform_preset:
+                    self.set_cursor_transform_preset(context)
 
-            if get_prefs().activate_shading_pie and get_prefs().cursor_toggle_axes_drawing:
-                self.enable_cursor_axes_drawing(context)
+                if get_prefs().activate_shading_pie and get_prefs().cursor_toggle_axes_drawing:
+                    self.enable_cursor_axes_drawing(context)
 
             return {'FINISHED'}
 

@@ -7,6 +7,7 @@ from . utils.world import get_world_output
 from . utils.system import abspath
 from . utils.registration import get_prefs, get_addon_prefs
 from . utils.draw import remove_object_axes_drawing_handler, add_object_axes_drawing_handler
+from . utils.tools import get_active_tool
 from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, bc_orientation_items
 
 
@@ -290,22 +291,25 @@ class M3SceneProperties(bpy.types.PropertyGroup):
         if get_prefs().custom_views_use_trackball:
             context.preferences.inputs.view_rotate_method = 'TRACKBALL' if self.custom_views_cursor else 'TURNTABLE'
 
-        # set transform preset
-        if get_prefs().activate_transform_pie and get_prefs().custom_views_set_transform_preset:
-            bpy.ops.machin3.set_transform_preset(pivot='CURSOR' if self.custom_views_cursor else 'MEDIAN_POINT', orientation='CURSOR' if self.custom_views_cursor else 'GLOBAL')
+        # only actually set the transform preset and draw the cursor axis if hyper cursor tools aren't active
+        if 'machin3.tool_hyper_cursor' not in get_active_tool(context):
 
-        # toggle axes drawing
-        if get_prefs().activate_shading_pie and get_prefs().custom_views_toggle_axes_drawing:
-            dns = bpy.app.driver_namespace
-            handler = dns.get('draw_object_axes')
+            # set transform preset
+            if get_prefs().activate_transform_pie and get_prefs().custom_views_set_transform_preset:
+                bpy.ops.machin3.set_transform_preset(pivot='CURSOR' if self.custom_views_cursor else 'MEDIAN_POINT', orientation='CURSOR' if self.custom_views_cursor else 'GLOBAL')
 
-            if handler:
-                remove_object_axes_drawing_handler(handler)
+            # toggle axes drawing
+            if get_prefs().activate_shading_pie and get_prefs().custom_views_toggle_axes_drawing:
+                dns = bpy.app.driver_namespace
+                handler = dns.get('draw_object_axes')
 
-            if self.custom_views_cursor:
-                add_object_axes_drawing_handler(dns, context, [], True)
+                if handler:
+                    remove_object_axes_drawing_handler(handler)
 
-            context.area.tag_redraw()
+                if self.custom_views_cursor:
+                    add_object_axes_drawing_handler(dns, context, [], True)
+
+                context.area.tag_redraw()
 
 
     # SHADING

@@ -22,6 +22,7 @@ grouppro = None
 decalmachine = None
 boxcutter = None
 hardops = None
+hypercursor = None
 
 
 class PieModes(Menu):
@@ -1834,7 +1835,13 @@ class PieCursor(Menu):
         pie = layout.menu_pie()
 
         # 4 - LEFT
-        pie.operator("machin3.cursor_to_origin", text="to Origin", icon="PIVOT_CURSOR")
+
+        if context.mode == 'EDIT_MESH':
+            sel, icon = ('Vert', 'VERTEXSEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (True, False, False) else ('Edge', 'EDGESEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (False, True, False) else ('Face', 'FACESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) else (None, None)
+            pie.operator("machin3.cursor_to_selected", text="to %s" % (sel), icon="PIVOT_CURSOR")
+        else:
+            pie.operator("machin3.cursor_to_selected", text="to Selected", icon="PIVOT_CURSOR")
+
 
         # 6 - RIGHT
         pie.operator("view3d.snap_selected_to_cursor", text="to Cursor", icon="RESTRICT_SELECT_OFF").use_offset = False
@@ -1890,12 +1897,7 @@ class PieCursor(Menu):
         pie.separator()
 
         # 7 - TOP - LEFT
-
-        if context.mode == 'EDIT_MESH':
-            sel, icon = ('Vert', 'VERTEXSEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (True, False, False) else ('Edge', 'EDGESEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (False, True, False) else ('Face', 'FACESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) else (None, None)
-            pie.operator("machin3.cursor_to_selected", text="to %s" % (sel), icon="PIVOT_CURSOR")
-        else:
-            pie.operator("machin3.cursor_to_selected", text="to Selected", icon="PIVOT_CURSOR")
+        pie.operator("machin3.cursor_to_origin", text="to Origin", icon="PIVOT_CURSOR")
 
         # 9 - TOP - RIGHT
         pie.operator("view3d.snap_selected_to_cursor", text="to Cursor, Offset", icon="RESTRICT_SELECT_OFF").use_offset = True
@@ -2507,7 +2509,7 @@ class PieTools(Menu):
 
         m3 = context.scene.M3
 
-        global boxcutter, hardops
+        global boxcutter, hardops, hypercursor
 
         # NOTE: The BoxCutter tool will be named like the installation folder, but the HOps tool will aways be called 'Hops'
         if boxcutter is None:
@@ -2515,6 +2517,9 @@ class PieTools(Menu):
 
         if hardops is None:
             hardops, _, _, _ = get_addon("Hard Ops 9")
+
+        if hypercursor is None:
+            hypercursor, _, _, _ = get_addon("HyperCursor")
 
         tools = get_tools_from_context(context)
 
@@ -2552,14 +2557,13 @@ class PieTools(Menu):
             if 'builtin.select_box' in tools:
                 active_tool = get_active_tool(context)
 
-                if 'machin3.tool_hyper_cursor_transform' in tools and active_tool in ['builtin.select_box', 'machin3.tool_hyper_cursor_transform']:
+                if hypercursor:
                     name = 'machin3.tool_hyper_cursor_transform' if active_tool == 'builtin.select_box' else 'builtin.select_box'
                     tool = tools[name]
                     pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name=name
 
                 else:
                     tool = tools['builtin.select_box']
-                    # pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name='builtin.select_box'
                     pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name='builtin.select_box'
 
             else:
