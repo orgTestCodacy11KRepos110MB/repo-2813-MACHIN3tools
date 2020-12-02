@@ -2558,7 +2558,7 @@ class PieTools(Menu):
                 active_tool = get_active_tool(context)
 
                 if hypercursor:
-                    name = 'machin3.tool_hyper_cursor_transform' if active_tool == 'builtin.select_box' else 'builtin.select_box'
+                    name = 'machin3.tool_hyper_cursor' if active_tool == 'builtin.select_box' else 'builtin.select_box'
                     tool = tools[name]
                     pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name=name
 
