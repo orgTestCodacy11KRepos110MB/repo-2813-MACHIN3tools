@@ -8,8 +8,6 @@ from .. colors import red, green, blue
 
 
 def add_object_axes_drawing_handler(dns, context, objs, draw_cursor):
-    # print("adding object axes drawing handler")
-
     handler = bpy.types.SpaceView3D.draw_handler_add(draw_object_axes, ([context, objs, draw_cursor],), 'WINDOW', 'POST_VIEW')
     dns['draw_object_axes'] = handler
 
