@@ -111,7 +111,7 @@ class SmartVert(bpy.types.Operator):
                     self.distance += delta_distance
 
                     # modal slide to edge
-                    if event.alt:
+                    if event.ctrl:
                         mousepos = (event.mouse_region_x, event.mouse_region_y)
                         hitobj, hitloc, _, hitindex, _ = cast_bvh_ray_from_mouse(mousepos, candidates=[self.active_copy], debug=False)
 
@@ -372,7 +372,7 @@ class SmartVert(bpy.types.Operator):
 
                 for v, target in pairs:
                     intersect = intersect_line_line(mx @ target.co, mx @ v.co, *self.snap_coords)
-                    i = intersect[1 if event.ctrl else 0] if intersect else mx @ v.co
+                    i = intersect[1 if event.alt else 0] if intersect else mx @ v.co
                     v.co = mx.inverted_safe() @ i
 
                     self.coords.append(i)
@@ -388,7 +388,7 @@ class SmartVert(bpy.types.Operator):
 
                 for idx, v in enumerate(verts):
                     intersect = intersect_line_line(mx @ last.co, mx @ v.co, *self.snap_coords)
-                    i = intersect[1 if event.ctrl else 0] if intersect else mx @ v.co
+                    i = intersect[1 if event.alt else 0] if intersect else mx @ v.co
                     v.co = mx.inverted_safe() @ i
 
                     self.coords.append(i)
