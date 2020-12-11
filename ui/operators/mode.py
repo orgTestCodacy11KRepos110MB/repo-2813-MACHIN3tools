@@ -3,6 +3,7 @@ from bpy.props import StringProperty
 from ... utils.registration import get_prefs
 from ... utils.view import set_xray, reset_xray, update_local_view
 from ... utils.object import parent
+from ... utils.tools import get_active_tool, get_tools_from_context
 
 
 user_cavity = True
@@ -13,11 +14,19 @@ class EditMode(bpy.types.Operator):
     bl_label = "Edit Mode"
     bl_options = {'REGISTER', 'UNDO'}
 
+    @classmethod
+    def description(cls, context, properties):
+        return f"Switch to {'Object' if context.mode == 'EDIT_MESH' else 'Edit'} Mode"
+
     def execute(self, context):
         global user_cavity
 
         shading = context.space_data.shading
         toggle_cavity = get_prefs().toggle_cavity
+        sync_tools = get_prefs().sync_tools
+
+        if sync_tools:
+            active_tool = get_active_tool(context)
 
         if context.mode == "OBJECT":
             set_xray(context)
@@ -28,6 +37,9 @@ class EditMode(bpy.types.Operator):
                 user_cavity = shading.show_cavity
                 shading.show_cavity = False
 
+            if sync_tools and active_tool in get_tools_from_context(context):
+                bpy.ops.wm.tool_set_by_id(name=active_tool)
+
 
         elif context.mode == "EDIT_MESH":
             reset_xray(context)
@@ -37,6 +49,9 @@ class EditMode(bpy.types.Operator):
             if toggle_cavity and user_cavity:
                 shading.show_cavity = True
                 user_cavity = True
+
+            if sync_tools and active_tool in get_tools_from_context(context):
+                bpy.ops.wm.tool_set_by_id(name=active_tool)
 
         return {'FINISHED'}
 
@@ -54,17 +69,23 @@ class MeshMode(bpy.types.Operator):
 
     def invoke(self, context, event):
         global user_cavity
+
         shading = context.space_data.shading
         toggle_cavity = get_prefs().toggle_cavity
 
         if context.mode == "OBJECT":
             set_xray(context)
 
+            active_tool = get_active_tool(context) if get_prefs().sync_tools else None
+
             bpy.ops.object.mode_set(mode="EDIT")
 
             if toggle_cavity:
                 user_cavity = shading.show_cavity
                 shading.show_cavity = False
+
+            if active_tool and active_tool in get_tools_from_context(context):
+                bpy.ops.wm.tool_set_by_id(name=active_tool)
 
         bpy.ops.mesh.select_mode(use_extend=False, use_expand=event.ctrl, type=self.mode)
         return {'FINISHED'}

@@ -203,6 +203,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     cursor_toggle_axes_drawing: BoolProperty(name="Toggle Cursor Axes Drawing", default=True)
 
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
+    sync_tools: BoolProperty(name="Sync Tool if possible, when switching Modes", default=True)
     focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
 
     tools_show_boxcutter_presets: BoolProperty(name="Show BoxCutter Presets", default=True)
@@ -515,6 +516,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             column = bb.column()
 
             column.prop(self, "toggle_cavity")
+            column.prop(self, "sync_tools")
 
 
         # SAVE PIE
