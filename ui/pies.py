@@ -1834,6 +1834,12 @@ class PieCursor(Menu):
         layout = self.layout
         pie = layout.menu_pie()
 
+        global hypercursor
+
+        if hypercursor is None:
+            hypercursor = get_addon("HyperCursor")[0]
+
+
         # 4 - LEFT
 
         if context.mode == 'EDIT_MESH':
@@ -1894,7 +1900,10 @@ class PieCursor(Menu):
             pie.separator()
 
         # 8 - TOP
-        pie.separator()
+        if hypercursor:
+            pie.operator("machin3.transform_cursor", text="Drag Cursor", icon="PIVOT_CURSOR").mode = 'DRAG'
+        else:
+            pie.separator()
 
         # 7 - TOP - LEFT
         pie.operator("machin3.cursor_to_origin", text="to Origin", icon="PIVOT_CURSOR")
