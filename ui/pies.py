@@ -1903,7 +1903,8 @@ class PieCursor(Menu):
 
         # 8 - TOP
         if hypercursor:
-            pie.operator("machin3.transform_cursor", text="Drag Cursor", icon="PIVOT_CURSOR").mode = 'DRAG'
+            tools = get_tools_from_context(context)
+            pie.operator("machin3.transform_cursor", text="   Drag Hyper Cursor", icon_value=tools['machin3.tool_hyper_cursor']['icon_value']).mode = 'DRAG'
         else:
             pie.separator()
 

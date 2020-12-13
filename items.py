@@ -89,4 +89,4 @@ tool_name_mapping_dict = {'BC': 'BoxCutter',
                           'Hops': 'HardOps',
                           'builtin.select_box': 'Select Box',
                           'machin3.tool_hyper_cursor': 'Hyper Cursor',
-                          'machin3.tool_hyper_cursor_simple': 'Hyper Cursor: Simple'}
+                          'machin3.tool_hyper_cursor_simple': 'Simple Hyper Cursor'}
