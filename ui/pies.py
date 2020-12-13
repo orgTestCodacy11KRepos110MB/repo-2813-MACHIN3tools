@@ -23,6 +23,8 @@ decalmachine = None
 boxcutter = None
 hardops = None
 hypercursor = None
+hypercursorlast = None
+
 
 
 class PieModes(Menu):
@@ -2518,18 +2520,19 @@ class PieTools(Menu):
 
         m3 = context.scene.M3
 
-        global boxcutter, hardops, hypercursor
+        global boxcutter, hardops, hypercursor, hypercursorlast
 
         # NOTE: The BoxCutter tool will be named like the installation folder, but the HOps tool will aways be called 'Hops'
         if boxcutter is None:
-            _, boxcutter, _, _ = get_addon("BoxCutter")
+            boxcutter = get_addon("BoxCutter")[1]
 
         if hardops is None:
-            hardops, _, _, _ = get_addon("Hard Ops 9")
+            hardops = get_addon("Hard Ops 9")[0]
 
         if hypercursor is None:
-            hypercursor, _, _, _ = get_addon("HyperCursor")
+            hypercursor = get_addon("HyperCursor")[0]
 
+        # fetch all current tools
         tools = get_tools_from_context(context)
 
         if context.mode in ['OBJECT', 'EDIT_MESH']:
@@ -2564,10 +2567,17 @@ class PieTools(Menu):
 
             # 8 - TOP
             if 'builtin.select_box' in tools:
-                active_tool = get_active_tool(context)
-
                 if hypercursor:
-                    name = 'machin3.tool_hyper_cursor' if active_tool == 'builtin.select_box' else 'builtin.select_box'
+                    active_tool = get_active_tool(context)
+
+                    # set the last used hyper cursor tool
+                    if 'machin3.tool_hyper_cursor' in active_tool:
+                        hypercursorlast = active_tool
+
+                    # fetch the last used of the hyper cursor tools if one was set
+                    hc = hypercursorlast if hypercursorlast else 'machin3.tool_hyper_cursor'
+
+                    name = hc if active_tool == 'builtin.select_box' else 'builtin.select_box'
                     tool = tools[name]
                     pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name=name
 
