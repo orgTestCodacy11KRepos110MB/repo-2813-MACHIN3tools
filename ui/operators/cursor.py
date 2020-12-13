@@ -18,6 +18,11 @@ class CursorToOrigin(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+
+        # ensure cursor is actuall shown
+        if not context.space_data.overlay.show_cursor:
+            context.space_data.overlay.show_cursor = True
+
         set_cursor()
 
         if get_prefs().cursor_set_transform_preset:
@@ -58,6 +63,10 @@ class CursorToSelected(bpy.types.Operator):
         return context.active_object or context.selected_objects
 
     def invoke(self, context, event):
+
+        # ensure cursor is actuall shown
+        if not context.space_data.overlay.show_cursor:
+            context.space_data.overlay.show_cursor = True
 
         # only actually set the presets and draw the axes if hyper cursor tools are not active
         set_transform_preset_and_draw_cursor_axes = 'machin3.tool_hyper_cursor' not in get_active_tool(context)
@@ -102,6 +111,7 @@ class CursorToSelected(bpy.types.Operator):
 
         # fall back for cases not covered above
         bpy.ops.view3d.snap_cursor_to_selected()
+
 
         return {'FINISHED'}
 
