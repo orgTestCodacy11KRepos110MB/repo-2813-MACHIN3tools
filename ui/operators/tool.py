@@ -1,6 +1,6 @@
 import bpy
 from bpy.props import StringProperty, FloatProperty
-from ... utils.tools import get_tools_from_context, get_tool_options
+from ... utils.tools import get_tools_from_context, get_tool_options, get_active_tool
 from ... utils.registration import get_addon_prefs, get_addon, get_prefs
 from ... items import tool_name_mapping_dict
 from ... colors import white
@@ -16,8 +16,17 @@ class SetToolByName(bpy.types.Operator):
     alpha: FloatProperty(name="Alpha", default=0.5, min=0.1, max=1)
 
     def execute(self, context):
+
+        # re-enable the cursor if switching away from the simple hyper cursor
+        active_tool = get_active_tool(context)
+
+        if active_tool == 'machin3.tool_hyper_cursor_simple':
+            context.space_data.overlay.show_cursor = True
+
+        # switch to the passed in tool
         bpy.ops.wm.tool_set_by_id(name=self.name)
 
+        # draw a prettified version of the new tool in a fading HUD
         name = self.prettify(self.name)
 
         coords = (context.region.width / 2, 100)
