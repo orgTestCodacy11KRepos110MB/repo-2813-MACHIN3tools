@@ -8,6 +8,19 @@ uv_axis_items = [('U', 'U', ''),
 
 # OPERATORS
 
+
+smartvert_mode_items = [("MERGE", "Merge", ""),
+                        ("CONNECT", "Connect Paths", "")]
+
+
+smartvert_merge_type_items = [("LAST", "Last", ""),
+                              ("CENTER", "Center", ""),
+                              ("PATHS", "Paths", "")]
+
+smartvert_path_type_items = [("TOPO", "Topo", ""),
+                             ("LENGTH", "Length", "")]
+
+
 focus_method_items = [('VIEW_SELECTED', 'View Selected', ''),
                       ('LOCAL_VIEW', 'Local View', '')]
 

@@ -274,6 +274,9 @@ def draw_line(coords, indices=None, mx=Matrix(), color=(1, 1, 1), width=1, alpha
 
         bgl.glLineWidth(width)
 
+        if alpha < 1:
+            bgl.glEnable(bgl.GL_LINE_SMOOTH)
+
         batch = batch_for_shader(shader, 'LINES', {"pos": [mx @ co for co in coords]}, indices=indices)
         batch.draw(shader)
 
@@ -303,6 +306,9 @@ def draw_lines(coords, indices=None, mx=Matrix(), color=(1, 1, 1), width=1, alph
 
         bgl.glLineWidth(width)
 
+        if alpha < 1:
+            bgl.glEnable(bgl.GL_LINE_SMOOTH)
+
         if mx != Matrix():
             batch = batch_for_shader(shader, 'LINES', {"pos": [mx @ co for co in coords]}, indices=indices)
 
@@ -330,6 +336,9 @@ def draw_vector(vector, origin=Vector((0, 0, 0)), mx=Matrix(), color=(1, 1, 1), 
         bgl.glDisable(bgl.GL_DEPTH_TEST) if xray else bgl.glEnable(bgl.GL_DEPTH_TEST)
 
         bgl.glLineWidth(width)
+
+        if alpha < 1:
+            bgl.glEnable(bgl.GL_LINE_SMOOTH)
 
         batch = batch_for_shader(shader, 'LINES', {"pos": coords})
         batch.draw(shader)
@@ -360,6 +369,9 @@ def draw_vectors(vectors, origins, mx=Matrix(), color=(1, 1, 1), width=1, alpha=
         bgl.glDisable(bgl.GL_DEPTH_TEST) if xray else bgl.glEnable(bgl.GL_DEPTH_TEST)
 
         bgl.glLineWidth(width)
+
+        if alpha < 1:
+            bgl.glEnable(bgl.GL_LINE_SMOOTH)
 
         batch = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
         batch.draw(shader)

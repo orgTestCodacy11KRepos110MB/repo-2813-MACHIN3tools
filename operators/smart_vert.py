@@ -1,23 +1,15 @@
 import bpy
-import bmesh
-from mathutils.geometry import intersect_point_line, intersect_line_line
 from bpy.props import EnumProperty, BoolProperty
+from bpy_extras.view3d_utils import region_2d_to_origin_3d, region_2d_to_vector_3d
+import bmesh
+from mathutils import Vector
+from mathutils.geometry import intersect_point_line, intersect_line_line, intersect_line_plane
 from .. utils.graph import get_shortest_path
 from .. utils.ui import init_cursor, wrap_cursor, popup_message
 from .. utils.draw import draw_line, draw_lines, draw_point
 from .. utils.raycast import cast_bvh_ray_from_mouse
-
-
-modeitems = [("MERGE", "Merge", ""),
-             ("CONNECT", "Connect Paths", "")]
-
-
-mergetypeitems = [("LAST", "Last", ""),
-                  ("CENTER", "Center", ""),
-                  ("PATHS", "Paths", "")]
-
-pathtypeitems = [("TOPO", "Topo", ""),
-                 ("LENGTH", "Length", "")]
+from .. utils.math import average_locations
+from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items
 
 
 class SmartVert(bpy.types.Operator):
@@ -25,9 +17,9 @@ class SmartVert(bpy.types.Operator):
     bl_label = "MACHIN3: Smart Vert"
     bl_options = {'REGISTER', 'UNDO'}
 
-    mode: EnumProperty(name="Mode", items=modeitems, default="MERGE")
-    mergetype: EnumProperty(name="Merge Type", items=mergetypeitems, default="LAST")
-    pathtype: EnumProperty(name="Path Type", items=pathtypeitems, default="TOPO")
+    mode: EnumProperty(name="Mode", items=smartvert_mode_items, default="MERGE")
+    mergetype: EnumProperty(name="Merge Type", items=smartvert_merge_type_items, default="LAST")
+    pathtype: EnumProperty(name="Path Type", items=smartvert_path_type_items, default="TOPO")
 
     slideoverride: BoolProperty(name="Slide Override", default=False)
 
@@ -76,25 +68,29 @@ class SmartVert(bpy.types.Operator):
                     r.prop(self, "pathtype", expand=True)
 
     def draw_VIEW3D(self):
-        draw_lines(self.coords, self.edge_indices, color=(0.5, 1, 0.5), width=3, alpha=0.5)
+        # draw_point(self.target_avg, color=(1, 1, 0))
+        # draw_point(self.origin, color=(1, 0, 0))
 
+        # draw_point(self.init_loc, color=(1, 1, 1), alpha=0.5)
+        # draw_point(self.loc, color=(1, 1, 0), alpha=0.5)
+        # draw_line([self.init_loc, self.loc], width=2, alpha=0.2)
+
+        draw_lines(self.coords, mx=self.mx, color=(0.5, 1, 0.5), width=3, alpha=0.5)
+
+
+        """
         # for some reason event.alt doesn't update when passed in
         if self.snapping:
             draw_lines(self.snap_coords, color=(1, 0, 0), width=3, alpha=0.75)
+        """
 
     def modal(self, context, event):
         context.area.tag_redraw()
 
-        # update mouse postion for HUD
-        if event.type == "MOUSEMOVE":
-            self.mouse_x = event.mouse_region_x
-            self.mouse_y = event.mouse_region_y
+        # update mouse
+        self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
 
         events = ["MOUSEMOVE"]
-
-        # wrap mouse cursor
-        if event.type == "MOUSEMOVE":
-            wrap_cursor(self, context, event, x=True)
 
         if event.type in events:
             if event.type == 'MOUSEMOVE':
@@ -102,7 +98,21 @@ class SmartVert(bpy.types.Operator):
                 if self.passthrough:
                     self.passthrough = False
 
+                    # update the init_loc to compensate for the viewport change
+                    self.loc = self.get_slide_vector_intersection(context)
+                    self.init_loc = self.init_loc + self.loc - self.offset_loc
+
                 else:
+                    self.loc = self.get_slide_vector_intersection(context)
+
+                self.slide(context)
+
+                """
+                if self.passthrough:
+                    self.passthrough = False
+
+                else:
+
                     divisor = 5000 if event.shift else 50 if event.ctrl else 500
 
                     delta_x = event.mouse_x - self.last_mouse_x
@@ -122,11 +132,15 @@ class SmartVert(bpy.types.Operator):
                     else:
                         self.snapping = False
                         self.slide(context, self.distance)
+                """
 
 
         # VIEWPORT control
 
         elif event.type in {'MIDDLEMOUSE'}:
+            # store the current location, so the view change can be taken into account
+            self.offset_loc = self.get_slide_vector_intersection(context)
+
             self.passthrough = True
             return {'PASS_THROUGH'}
 
@@ -134,14 +148,14 @@ class SmartVert(bpy.types.Operator):
 
         elif event.type in {'LEFTMOUSE', 'SPACE'}:
             bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
-            bpy.data.meshes.remove(self.active_copy.data, do_unlink=True)
+            # bpy.data.meshes.remove(self.active_copy.data, do_unlink=True)
             return {'FINISHED'}
 
         # CANCEL
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
             self.cancel_modal()
-            bpy.data.meshes.remove(self.active_copy.data, do_unlink=True)
+            # bpy.data.meshes.remove(self.active_copy.data, do_unlink=True)
             return {'CANCELLED'}
 
         self.last_mouse_x = event.mouse_x
@@ -151,11 +165,12 @@ class SmartVert(bpy.types.Operator):
     def cancel_modal(self):
         bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
 
-        bpy.ops.object.mode_set(mode='OBJECT')
-        self.initbm.to_mesh(self.active.data)
-        bpy.ops.object.mode_set(mode='EDIT')
+        # bpy.ops.object.mode_set(mode='OBJECT')
+        # self.initbm.to_mesh(self.active.data)
+        # bpy.ops.object.mode_set(mode='EDIT')
 
     def invoke(self, context, event):
+
         # SLIDE EXTEND
         if self.slideoverride:
             bm = bmesh.from_edit_mesh(context.active_object.data)
@@ -172,7 +187,55 @@ class SmartVert(bpy.types.Operator):
 
             else:
                 self.active = context.active_object
+                self.mx = self.active.matrix_world
 
+                self.bm = bmesh.from_edit_mesh(self.active.data)
+                self.bm.normal_update()
+
+                # get selected verts
+                selected = [v for v in bm.verts if v.select]
+                history = list(self.bm.select_history)
+
+                # get each vert that is slid and the target it pushed away from or towards
+                # also store the initial location of the moved verts
+
+                # multi target sliding
+                if len(selected) > 3 and len(selected) % 2 == 0 and set(history) == set(selected):
+                    self.verts = {history[i]: {'co': history[i].co.copy(), 'target': history[i + 1]} for i in range(0, len(history), 2)}
+
+                # single target sliding
+                else:
+                    last = history[-1]
+                    self.verts = {v: {'co': v.co.copy(), 'target': last} for v in selected if v != last}
+
+                # get average target and slid vert locations in world space
+                self.target_avg = self.mx @ average_locations([data['target'].co for _, data in self.verts.items()])
+                self.origin = self.mx @ average_locations([v.co for v, _ in self.verts.items()])
+
+                # init mouse
+                self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
+
+                # create first intersection of the view dir with the origin-to-targetavg vector
+                self.init_loc = self.get_slide_vector_intersection(context)
+
+                if self.init_loc:
+
+                    # init
+                    self.loc = self.init_loc
+                    self.offset_loc = self.init_loc
+                    self.distance = 0
+                    self.coords = []
+
+                    # handlers
+                    self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
+
+                    context.window_manager.modal_handler_add(self)
+                    return {'RUNNING_MODAL'}
+
+                return {'CANCELLED'}
+
+
+                """
                 # make sure the current edit mode state is saved to obj.data
                 self.active.update_from_editmode()
 
@@ -197,10 +260,10 @@ class SmartVert(bpy.types.Operator):
                 # initialize mouse
                 init_cursor(self, event)
 
-                self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
 
                 context.window_manager.modal_handler_add(self)
                 return {'RUNNING_MODAL'}
+                """
 
         # MERGE and CONNECT
         else:
@@ -303,46 +366,34 @@ class SmartVert(bpy.types.Operator):
 
         bmesh.update_edit_mesh(active.data)
 
-    def slide(self, context, distance):
-        mx = self.active.matrix_world
+    def get_slide_vector_intersection(self, context):
+        view_origin = region_2d_to_origin_3d(context.region, context.region_data, self.mousepos)
+        view_dir = region_2d_to_vector_3d(context.region, context.region_data, self.mousepos)
 
-        bpy.ops.object.mode_set(mode='OBJECT')
+        i = intersect_line_line(view_origin, view_origin + view_dir, self.origin, self.target_avg)
 
-        bm = self.initbm.copy()
-        bm.normal_update()
+        return i[1]
 
-        selected = [v for v in bm.verts if v.select]
-        history = list(bm.select_history)
+    def slide(self, context):
+        origin_dir = (self.target_avg - self.origin).normalized()
+        move_dir = (self.loc - self.init_loc).normalized()
+
+        # get distance in local space
+        self.distance = (self.mx.to_3x3().inverted_safe() @ (self.init_loc - self.loc)).length * origin_dir.dot(move_dir)
 
         self.coords = []
-        self.edge_indices = []
 
-        # multi target sliding
-        if len(selected) > 3 and len(selected) % 2 == 0 and set(history) == set(selected):
-            pairs = [(history[i], history[i + 1]) for i in range(0, len(history), 2)]
+        for v, data in self.verts.items():
+            init_co = data['co']
+            target = data['target']
 
-            for v, target in pairs:
-                v.co = target.co + (v.co - target.co) * distance
+            slidedir = (target.co - init_co).normalized()
+            v.co = init_co + slidedir * self.distance
 
-                self.coords.append(mx @ v.co)
-                self.coords.append(mx @ target.co)
+            self.coords.extend([v.co, target.co])
 
-        # single target sliding
-        else:
-            last = history[-1]
-            verts = [v for v in selected if v != last]
+        bmesh.update_edit_mesh(self.active.data)
 
-            self.coords.append(mx @ last.co)
-
-            for idx, v in enumerate(verts):
-                v.co = last.co + (v.co - last.co) * distance
-
-                self.coords.append(mx @ v.co)
-                self.edge_indices.append((0, idx + 1))
-
-        bm.to_mesh(self.active.data)
-
-        bpy.ops.object.mode_set(mode='EDIT')
 
     def slide_to_edge(self, context, event, location, index):
         mx = self.active.matrix_world
