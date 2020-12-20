@@ -1,9 +1,12 @@
 import bpy
 from bpy.props import BoolProperty
 from .. utils.registration import get_addon
+from .. utils.tools import get_active_tool
+from .. utils.object import parent, unparent
 
 
 decalmachine = None
+hypercursor = None
 
 
 class Mirror(bpy.types.Operator):
@@ -26,11 +29,15 @@ class Mirror(bpy.types.Operator):
     DM_mirror_u: BoolProperty(name="U", default=True)
     DM_mirror_v: BoolProperty(name="V", default=False)
 
+    cursor: BoolProperty(name="Mirror across Cursor", default=False)
 
     def draw(self, context):
         layout = self.layout
 
         column = layout.column()
+
+        row = column.row(align=True)
+        row.prop(self, 'cursor', toggle=True)
 
         row = column.row(align=True)
         row.prop(self, "use_x", toggle=True)
@@ -73,14 +80,20 @@ class Mirror(bpy.types.Operator):
         return context.mode == "OBJECT"
 
     def invoke(self, context, event):
-        global decalmachine
+        global decalmachine, hypercursor
 
         if decalmachine is None:
             decalmachine = get_addon("DECALmachine")[0]
 
+        if hypercursor is None:
+            hypercursor = get_addon("HyperCursor")[0]
+
         self.dm = decalmachine
 
         active = context.active_object
+        active_tool = get_active_tool(context)
+        self.cursor = hypercursor and 'machin3.tool_hyper_cursor' in active_tool
+
         self.sel = context.selected_objects
         self.meshes_present = True if any([obj for obj in self.sel if obj.type == 'MESH']) else False
         self.decals_present = True if self.dm and any([obj for obj in self.sel if obj.DM.isdecal]) else False
@@ -102,88 +115,92 @@ class Mirror(bpy.types.Operator):
         return {'FINISHED'}
 
     def mirror(self, context, active, sel):
+
+        # create mirror empty
+        if self.cursor:
+            empty = bpy.data.objects.new(name=f"{active.name} Mirror", object_data=None)
+            context.collection.objects.link(empty)
+            empty.matrix_world = context.scene.cursor.matrix
+            empty.hide_set(True)
+
         if len(sel) == 1 and active in sel:
             if active.type in ["MESH", "CURVE"]:
-                self.mirror_mesh_obj(context, active)
+                self.mirror_mesh_obj(context, active, mirror_object=empty if self.cursor else None)
 
             elif active.type == "GPENCIL":
-                self.mirror_gpencil_obj(context, active)
+                self.mirror_gpencil_obj(context, active, mirror_object=empty if self.cursor else None)
 
             elif active.type == "EMPTY" and active.instance_collection:
-                self.mirror_grouppro(context, active)
-
+                self.mirror_instance_collection(context, active, mirror_object=empty if self.cursor else None)
 
         elif len(sel) > 1 and active in sel:
-            sel.remove(active)
+
+            # mirror across the active object, so remove it from the selection
+            if not self.cursor:
+                sel.remove(active)
 
             for obj in sel:
                 if obj.type in ["MESH", "CURVE"]:
-                    self.mirror_mesh_obj(context, obj, active)
+                    self.mirror_mesh_obj(context, obj, mirror_object=empty if self.cursor else active)
 
                 elif obj.type == "GPENCIL":
-                    self.mirror_gpencil_obj(context, obj, active)
+                    self.mirror_gpencil_obj(context, obj, mirror_object=empty if self.cursor else active)
 
                 elif obj.type == "EMPTY" and obj.instance_collection:
-                    self.mirror_grouppro(context, obj, active)
+                    self.mirror_instance_collection(context, obj, mirror_object=empty if self.cursor else active)
 
-
-            context.view_layer.objects.active = active
-
-    def mirror_mesh_obj(self, context, obj, active=None):
+    def mirror_mesh_obj(self, context, obj, mirror_object=None):
         mirror = obj.modifiers.new(name="Mirror", type="MIRROR")
         mirror.use_axis = (self.use_x, self.use_y, self.use_z)
         mirror.use_bisect_axis = (self.bisect_x, self.bisect_y, self.bisect_z)
         mirror.use_bisect_flip_axis = (self.flip_x, self.flip_y, self.flip_z)
 
-        if active:
-            mirror.mirror_object = active
+        if mirror_object:
+            mirror.mirror_object = mirror_object
+            parent(obj, mirror_object)
 
         if self.dm:
             if obj.DM.isdecal:
                 mirror.use_mirror_u = self.DM_mirror_u
                 mirror.use_mirror_v = self.DM_mirror_v
 
+                # move normal transfer mod to the end of the stack
                 nrmtransfer = obj.modifiers.get("NormalTransfer")
 
-                # make a copy of the nrmtransfer mod, add it to the end of the stack and remove the old one
                 if nrmtransfer:
-                    new = obj.modifiers.new("temp", "DATA_TRANSFER")
-                    new.object = nrmtransfer.object
-                    new.use_loop_data = True
-                    new.data_types_loops = {'CUSTOM_NORMAL'}
-                    new.loop_mapping = 'POLYINTERP_LNORPROJ'
-                    new.show_expanded = False
-                    new.show_render = nrmtransfer.show_render
-                    new.show_viewport = nrmtransfer.show_viewport
+                    bpy.ops.object.modifier_move_to_index({'object': obj}, modifier=nrmtransfer.name, index=len(obj.modifiers) - 1)
 
-                    obj.modifiers.remove(nrmtransfer)
-                    new.name = "NormalTransfer"
-
-    def mirror_gpencil_obj(self, context, obj, active=None):
+    def mirror_gpencil_obj(self, context, obj, mirror_object=None):
         mirror = obj.grease_pencil_modifiers.new(name="Mirror", type="GP_MIRROR")
-        mirror.x_axis = self.use_x
-        mirror.y_axis = self.use_y
-        mirror.z_axis = self.use_z
+        mirror.use_axis_x = self.use_x
+        mirror.use_axis_y = self.use_y
+        mirror.use_axis_z = self.use_z
 
-        if active:
-            mirror.object = active
+        if mirror_object:
+            mirror.object = mirror_object
+            parent(obj, mirror_object)
 
-    def mirror_grouppro(self, context, obj, active=None):
-        mirrorempty = bpy.data.objects.new("mirror_empty", None)
+    def mirror_instance_collection(self, context, obj, mirror_object=None):
+        '''
+        for instance collections, don't mirror the collection empty itself, even if it were possible
+        instead create a new empty and mirror the collection objects themselves across the empty empty
+        '''
+
+        mirror_empty = bpy.data.objects.new("mirror_empty", object_data=None)
 
         col = obj.instance_collection
 
-        if active:
-            mirrorempty.matrix_world = active.matrix_world
+        if mirror_object:
+            mirror_empty.matrix_world = mirror_object.matrix_world
 
-        mirrorempty.matrix_world = obj.matrix_world.inverted() @ mirrorempty.matrix_world
+        mirror_empty.matrix_world = obj.matrix_world.inverted() @ mirror_empty.matrix_world
 
-        col.objects.link(mirrorempty)
+        col.objects.link(mirror_empty)
 
         meshes = [obj for obj in col.objects if obj.type == "MESH"]
 
         for obj in meshes:
-            self.mirror_mesh_obj(context, obj, mirrorempty)
+            self.mirror_mesh_obj(context, obj, mirror_empty)
 
 
 class Unmirror(bpy.types.Operator):
@@ -212,26 +229,39 @@ class Unmirror(bpy.types.Operator):
             return [empty for empty in groups if any(obj for obj in empty.instance_collection.objects if any(mod.type == "MIRROR" for mod in obj.modifiers))]
 
     def execute(self, context):
+        targets = set()
+
         for obj in context.selected_objects:
             if obj.type in ["MESH", "CURVE"]:
-                self.unmirror_mesh_obj(obj)
+                target = self.unmirror_mesh_obj(obj)
+
+                if target and target.type == "EMPTY":
+                    targets.add(target)
 
             elif obj.type == "GPENCIL":
                 self.unmirror_gpencil_obj(obj)
 
             elif obj.type == "EMPTY" and obj.instance_collection:
                 col = obj.instance_collection
-
-                targets = set()
+                instance_col_targets = set()
 
                 for obj in col.objects:
                     target = self.unmirror_mesh_obj(obj)
 
                     if target and target.type == "EMPTY":
-                        targets.add(target)
+                        instance_col_targets.add(target)
 
-                if len(targets) == 1:
+                if len(instance_col_targets) == 1:
                     bpy.data.objects.remove(list(targets)[0], do_unlink=True)
+
+        if targets:
+
+            # check if the targets are used in any other mirror mods, unfortunately obj.users is of no use here, so we need to check all objects in the file
+            targets_in_use = {mod.mirror_object for obj in bpy.data.objects for mod in obj.modifiers if mod.type =='MIRROR' and mod.mirror_object and mod.mirror_object.type == 'EMPTY'}
+
+            for target in targets:
+                if target not in targets_in_use:
+                    bpy.data.objects.remove(target, do_unlink=True)
 
         return {'FINISHED'}
 
@@ -241,6 +271,10 @@ class Unmirror(bpy.types.Operator):
         if mirrors:
             target = mirrors[-1].mirror_object
             obj.modifiers.remove(mirrors[-1])
+
+            if target and target == obj.parent:
+                unparent(obj)
+
             return target
 
     def unmirror_gpencil_obj(self, obj):
