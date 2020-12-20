@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 from bpy.props import BoolProperty, EnumProperty, IntProperty
 from .. utils.registration import get_prefs, get_addon
 from .. utils.view import update_local_view
@@ -64,7 +65,9 @@ class Focus(bpy.types.Operator):
 
         nothing_selected = False
 
-        if context.mode == 'OBJECT':
+        mode = context.mode
+
+        if mode == 'OBJECT':
             sel = context.selected_objects
 
             if not sel:
@@ -77,6 +80,17 @@ class Focus(bpy.types.Operator):
                 for mod in mirrors:
                     mod.show_viewport = False
 
+        elif mode == 'EDIT_MESH':
+            bm = bmesh.from_edit_mesh(context.active_object.data)
+            bm.normal_update()
+
+            nothing_selected = not [v for v in bm.verts if v.select]
+
+            if nothing_selected:
+                for v in bm.verts:
+                    v.select_set(True)
+
+                bm.select_flush(True)
 
         bpy.ops.view3d.view_selected('INVOKE_DEFAULT') if get_prefs().focus_view_transition else bpy.ops.view3d.view_selected()
 
@@ -84,8 +98,15 @@ class Focus(bpy.types.Operator):
             mod.show_viewport = True
 
         if nothing_selected:
-            for obj in context.visible_objects:
-                obj.select_set(False)
+            if mode == 'OBJECT':
+                for obj in context.visible_objects:
+                    obj.select_set(False)
+
+            elif mode == 'EDIT_MESH':
+                for f in bm.faces:
+                    f.select_set(False)
+
+                bm.select_flush(False)
 
     def local_view(self, context, debug=False):
         def focus(context, view, sel, history, init=False, invert=False):
