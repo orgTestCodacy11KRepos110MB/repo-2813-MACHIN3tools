@@ -105,7 +105,6 @@ class Mirror(bpy.types.Operator):
         self.mirror(context, active, self.sel)
         return {'FINISHED'}
 
-
     def execute(self, context):
         active = context.active_object
         self.sel = context.selected_objects
@@ -115,12 +114,18 @@ class Mirror(bpy.types.Operator):
         return {'FINISHED'}
 
     def mirror(self, context, active, sel):
+        '''
+        mirror one or multiple objects, optionally across an cursor empty
+        '''
 
         # create mirror empty
         if self.cursor:
             empty = bpy.data.objects.new(name=f"{active.name} Mirror", object_data=None)
             context.collection.objects.link(empty)
             empty.matrix_world = context.scene.cursor.matrix
+            empty.show_in_front = True
+            empty.empty_display_type = 'ARROWS'
+            empty.empty_display_size = (context.scene.cursor.location - sel[0].matrix_world.to_translation()).length / 10
             empty.hide_set(True)
 
         if len(sel) == 1 and active in sel:

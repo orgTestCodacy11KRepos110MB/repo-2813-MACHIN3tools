@@ -394,7 +394,6 @@ class SmartVert(bpy.types.Operator):
 
         bmesh.update_edit_mesh(self.active.data)
 
-
     def slide_to_edge(self, context, event, location, index):
         mx = self.active.matrix_world
 
