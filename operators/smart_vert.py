@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
 from bpy_extras.view3d_utils import region_2d_to_origin_3d, region_2d_to_vector_3d
+from bl_ui.space_statusbar import STATUSBAR_HT_header as statusbar
 import bmesh
 from mathutils import Vector
 from mathutils.geometry import intersect_point_line, intersect_line_line, intersect_line_plane
@@ -12,7 +13,32 @@ from .. utils.math import average_locations, get_center_between_verts
 from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items
 
 
-# TODO: draw statusbar
+# TODO: prevent snapping to almost parallel edges too
+
+def draw_slide_status(op):
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row(align=True)
+        row.label(text=f"Slide Extend")
+
+        row.label(text="", icon='MOUSE_LMB')
+        row.label(text="Confirm")
+
+        row.label(text="", icon='MOUSE_RMB')
+        row.label(text="Cancel")
+
+        row.separator(factor=10)
+
+        if not op.is_snapping:
+            row.label(text="", icon='EVENT_CTRL')
+            row.label(text="Snap")
+
+        if op.is_snapping and not op.is_diverging:
+            row.label(text="", icon='EVENT_ALT')
+            row.label(text="Diverge")
+
+    return draw
 
 
 class SmartVert(bpy.types.Operator):
@@ -83,7 +109,7 @@ class SmartVert(bpy.types.Operator):
             draw_lines(self.coords, mx=self.mx, color=(0.5, 1, 0.5), width=3, alpha=0.5)
 
         # draw snap coords
-        if self.snapping:
+        if self.is_snapping:
             if self.snap_coords:
                 draw_lines(self.snap_coords, color=(1, 0, 0), width=3, alpha=0.75)
 
@@ -100,54 +126,63 @@ class SmartVert(bpy.types.Operator):
         # update mouse
         self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
 
-        events = ["MOUSEMOVE"]
+        # set snapping
+        self.is_snapping = event.ctrl
+        self.is_diverging = self.is_snapping and event.alt
 
-        if event.type in events or event.alt or event.ctrl:
-            if event.type == 'MOUSEMOVE' or event.alt or event.ctrl:
+        if not self.is_snapping:
+            self.snap_coords = []
+            self.snap_proximity_coords = []
+            self.snap_ortho_coords = []
 
-                if self.passthrough:
-                    self.passthrough = False
+        events = ['MOUSEMOVE', 'LEFT_CTRL', 'LEFT_ALT', 'RIGHT_CTRL', 'RIGHT_ALT']
 
-                    # update the init_loc to compensate for the viewport change
-                    self.loc = self.get_slide_vector_intersection(context)
-                    self.init_loc = self.init_loc + self.loc - self.offset_loc
+        if event.type in events:
+            if self.passthrough:
+                self.passthrough = False
 
-                # modal slide to edge
-                elif event.ctrl:
-                    hitobj, hitlocation, hitnormal, hitindex, hitdistance, cache = cast_bvh_ray_from_mouse(self.mousepos, candidates=self.snappable, bmeshes=self.snap_bms, bvhs=self.snap_bvhs, debug=False)
+                # update the init_loc to compensate for the viewport change
+                self.loc = self.get_slide_vector_intersection(context)
+                self.init_loc = self.init_loc + self.loc - self.offset_loc
 
-                    # cache bmeshes
-                    if cache['bmesh']:
-                        for name, bm in cache['bmesh'].items():
-                            if name not in self.snap_bms:
-                                bm.faces.ensure_lookup_table()
+            # snap to edge
+            elif event.ctrl:
+                hitobj, hitlocation, hitnormal, hitindex, hitdistance, cache = cast_bvh_ray_from_mouse(self.mousepos, candidates=self.snappable, bmeshes=self.snap_bms, bvhs=self.snap_bvhs, debug=False)
 
-                                self.snap_bms[name] = bm
+                # cache bmeshes
+                if cache['bmesh']:
+                    for name, bm in cache['bmesh'].items():
+                        if name not in self.snap_bms:
+                            bm.faces.ensure_lookup_table()
 
-                    # cache bvhs
-                    if cache['bvh']:
-                        for name, bvh in cache['bvh'].items():
-                            if name not in self.snap_bvhs:
-                                self.snap_bvhs[name] = bvh
+                            self.snap_bms[name] = bm
 
-                    # snap to geometry
-                    if hitobj:
-                        self.snapping = True
-                        self.slide_to_edge(context, hitobj, hitlocation, hitindex, leap=event.alt)
+                # cache bvhs
+                if cache['bvh']:
+                    for name, bvh in cache['bvh'].items():
+                        if name not in self.snap_bvhs:
+                            self.snap_bvhs[name] = bvh
 
-                    # side normally if nothing is hit
-                    else:
-                        self.snapping = False
-                        self.loc = self.get_slide_vector_intersection(context)
+                # snap to geometry
+                if hitobj:
+                    self.slide_snap(context, hitobj, hitlocation, hitindex)
 
-                        self.slide(context)
-
-                # modal slide
+                # side normally if nothing is hit
                 else:
-                    self.snapping = False
+                    self.snap_coords = []
+                    self.snap_proximity_coords = []
+                    self.snap_ortho_coords = []
+
                     self.loc = self.get_slide_vector_intersection(context)
 
                     self.slide(context)
+
+            # slide
+            else:
+                self.is_snapping = False
+                self.loc = self.get_slide_vector_intersection(context)
+
+                self.slide(context)
 
 
         # VIEWPORT control
@@ -164,7 +199,7 @@ class SmartVert(bpy.types.Operator):
         elif event.type in {'LEFTMOUSE', 'SPACE'}:
 
             # dissolve edges when snapping
-            if self.snapping:
+            if self.is_snapping:
 
                 # get the average distance that was moved
                 avg_dist = sum((v.co - data['co']).length for v, data in self.verts.items()) / len(self.verts)
@@ -181,6 +216,14 @@ class SmartVert(bpy.types.Operator):
         # CANCEL
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
+
+            # reset original vert locations
+            for v, data in self.verts.items():
+                v.co = data['co']
+
+            self.bm.normal_update()
+            bmesh.update_edit_mesh(self.active.data)
+
             self.finish()
 
             return {'CANCELLED'}
@@ -189,6 +232,9 @@ class SmartVert(bpy.types.Operator):
 
     def finish(self):
         bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
+
+        # reset the statusbar
+        statusbar.draw = self.bar_orig
 
         # remove snap copy of active
         bpy.data.meshes.remove(self.snap_copy.data, do_unlink=True)
@@ -254,7 +300,8 @@ class SmartVert(bpy.types.Operator):
                     self.coords = []
 
                     # init snapping
-                    self.snapping = False
+                    self.is_snapping = False
+                    self.is_diverging = False
                     self.snap_bms = {}
                     self.snap_bvhs = {}
                     self.snap_coords = []
@@ -272,6 +319,10 @@ class SmartVert(bpy.types.Operator):
 
                     # handlers
                     self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
+
+                    # draw statusbar info
+                    self.bar_orig = statusbar.draw
+                    statusbar.draw = draw_slide_status(self)
 
                     context.window_manager.modal_handler_add(self)
                     return {'RUNNING_MODAL'}
@@ -408,7 +459,7 @@ class SmartVert(bpy.types.Operator):
         self.bm.normal_update()
         bmesh.update_edit_mesh(self.active.data)
 
-    def slide_to_edge(self, context, hitobj, hitlocation, hitindex, leap=False):
+    def slide_snap(self, context, hitobj, hitlocation, hitindex):
         '''
         slide snap to edges of all edit mode objects
         '''
@@ -442,7 +493,7 @@ class SmartVert(bpy.types.Operator):
             i = intersect_line_line(init_co, target.co, *snap_coords)
 
             if i:
-                v.co = i[1 if leap else 0] if i else init_co
+                v.co = i[1 if self.is_diverging else 0] if i else init_co
 
                 # add coords to draw the slide 'edges'
                 if v.co != target.co:
