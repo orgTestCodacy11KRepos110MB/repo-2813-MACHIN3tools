@@ -491,8 +491,8 @@ class SmartVert(bpy.types.Operator):
             snap_dir = (snap_coords[0] - snap_coords[1]).normalized()
             slide_dir = (init_co - target.co).normalized()
 
-            # check for parallell and almost parallel snap edges, do nothing in this case
-            if abs(slide_dir.dot(snap_dir)) > 0.99:
+            # check for parallel and almost parallel snap edges, do nothing in this case
+            if abs(slide_dir.dot(snap_dir)) > 0.999:
                 v.co = init_co
 
             # with a smaller dot product, interseect_line_line will produce a guaranteed hit
