@@ -12,14 +12,7 @@ from .. utils.math import average_locations, get_center_between_verts
 from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items
 
 
-
-# TODO: dissovle degenerates but only when finishing!
-# ####: do it based on some average distance
-# bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=0.001)
-
-# TODO: remove cached bmeshes and bvhs
-# TODO: remove active copy
-
+# TODO: draw statusbar
 
 
 class SmartVert(bpy.types.Operator):
@@ -169,23 +162,39 @@ class SmartVert(bpy.types.Operator):
         # FINISH
 
         elif event.type in {'LEFTMOUSE', 'SPACE'}:
-            bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
-            # bpy.data.meshes.remove(self.active_copy.data, do_unlink=True)
+
+            # dissolve edges when snapping
+            if self.snapping:
+
+                # get the average distance that was moved
+                avg_dist = sum((v.co - data['co']).length for v, data in self.verts.items()) / len(self.verts)
+
+                # use it for dissolveing to ensure it works on very small scales as you'd expect
+                bmesh.ops.dissolve_degenerate(self.bm, edges=self.bm.edges, dist=avg_dist / 100)
+                self.bm.normal_update()
+                bmesh.update_edit_mesh(self.active.data)
+
+            self.finish()
+
             return {'FINISHED'}
 
         # CANCEL
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            self.cancel_modal()
-            # bpy.data.meshes.remove(self.active_copy.data, do_unlink=True)
-            return {'CANCELLED'}
+            self.finish()
 
-        self.last_mouse_x = event.mouse_x
+            return {'CANCELLED'}
 
         return {'RUNNING_MODAL'}
 
-    def cancel_modal(self):
+    def finish(self):
         bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
+
+        # remove snap copy of active
+        bpy.data.meshes.remove(self.snap_copy.data, do_unlink=True)
+
+        # remove snap bmeshes and bhs
+        del self.snap_bms, self.snap_bvhs
 
     def invoke(self, context, event):
 
@@ -256,7 +265,6 @@ class SmartVert(bpy.types.Operator):
                     self.active.update_from_editmode()
                     self.snap_copy = self.active.copy()
                     self.snap_copy.data = self.active.data.copy()
-                    self.snap_copy.name = "this is a copy"
 
                     # snappable objects are all edit mesh object nicluding the the active's copy
                     edit_mesh_objects = [obj for obj in context.visible_objects if obj.mode == 'EDIT' and obj != self.active]
