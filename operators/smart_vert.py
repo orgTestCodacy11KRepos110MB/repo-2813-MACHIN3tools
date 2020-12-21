@@ -4,16 +4,14 @@ from bpy_extras.view3d_utils import region_2d_to_origin_3d, region_2d_to_vector_
 from bl_ui.space_statusbar import STATUSBAR_HT_header as statusbar
 import bmesh
 from mathutils import Vector
-from mathutils.geometry import intersect_point_line, intersect_line_line, intersect_line_plane
+from mathutils.geometry import intersect_point_line, intersect_line_line
 from .. utils.graph import get_shortest_path
-from .. utils.ui import init_cursor, wrap_cursor, popup_message
+from .. utils.ui import popup_message
 from .. utils.draw import draw_line, draw_lines, draw_point
 from .. utils.raycast import cast_bvh_ray_from_mouse
 from .. utils.math import average_locations, get_center_between_verts
 from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items
 
-
-# TODO: prevent snapping to almost parallel edges too
 
 def draw_slide_status(op):
     def draw(self, context):
@@ -490,9 +488,17 @@ class SmartVert(bpy.types.Operator):
             init_co = data['co']
             target = data['target']
 
-            i = intersect_line_line(init_co, target.co, *snap_coords)
+            snap_dir = (snap_coords[0] - snap_coords[1]).normalized()
+            slide_dir = (init_co - target.co).normalized()
 
-            if i:
+            # check for parallell and almost parallel snap edges, do nothing in this case
+            if abs(slide_dir.dot(snap_dir)) > 0.99:
+                v.co = init_co
+
+            # with a smaller dot product, interseect_line_line will produce a guaranteed hit
+            else:
+                i = intersect_line_line(init_co, target.co, *snap_coords)
+
                 v.co = i[1 if self.is_diverging else 0] if i else init_co
 
                 # add coords to draw the slide 'edges'
@@ -506,6 +512,7 @@ class SmartVert(bpy.types.Operator):
                 # add ortho coords
                 if v.co != i[1]:
                     self.snap_ortho_coords.extend([v.co, i[1]])
+
 
         self.bm.normal_update()
         bmesh.update_edit_mesh(self.active.data)
