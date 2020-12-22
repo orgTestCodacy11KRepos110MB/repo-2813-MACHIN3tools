@@ -1364,12 +1364,15 @@ class PieViewport(Menu):
 
         # 1 - BOTTOM - LEFT
         if get_prefs().show_orbit_method:
-            pie.operator("machin3.toggle_orbit_method", text="Turntable", depress=context.preferences.inputs.view_rotate_method=='TURNTABLE').method = 'TURNTABLE'
+            box = pie.split()
+            box.scale_y = 1.2
+            box.operator("machin3.toggle_orbit_method", text="Turntable", depress=context.preferences.inputs.view_rotate_method=='TURNTABLE').method = 'TURNTABLE'
 
         # 3 - BOTTOM - RIGHT
         if get_prefs().show_orbit_method:
-            pie.operator("machin3.toggle_orbit_method", text="Trackball", depress=context.preferences.inputs.view_rotate_method=='TRACKBALL').method = 'TRACKBALL'
-
+            box = pie.split()
+            box.scale_y = 1.2
+            box.operator("machin3.toggle_orbit_method", text="Trackball", depress=context.preferences.inputs.view_rotate_method=='TRACKBALL').method = 'TRACKBALL'
 
     def draw_camera_box(self, scene, view, layout):
         column = layout.column(align=True)
