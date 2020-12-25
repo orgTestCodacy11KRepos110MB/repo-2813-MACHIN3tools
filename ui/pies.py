@@ -1905,7 +1905,7 @@ class PieCursor(Menu):
             pie.separator()
 
         # 8 - TOP
-        if hypercursor:
+        if hypercursor and context.mode in ['OBJECT', 'EDIT_MESH']:
             tools = get_tools_from_context(context)
             pie.operator("machin3.transform_cursor", text="   Drag Hyper Cursor", icon_value=tools['machin3.tool_hyper_cursor']['icon_value']).mode = 'DRAG'
         else:
