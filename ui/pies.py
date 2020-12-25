@@ -1863,10 +1863,11 @@ class PieCursor(Menu):
             box = pie.split()
             column = box.column(align=True)
 
-            if context.mode == 'OBJECT':
+            if get_prefs().cursor_show_to_grid:
                 column.separator()
                 column.separator()
 
+            if context.mode == 'OBJECT':
                 row = column.split(factor=0.25)
                 row.separator()
                 row.label(text="Object Origin")
@@ -1875,7 +1876,8 @@ class PieCursor(Menu):
 
                 row = column.split(factor=0.5, align=True)
                 row.scale_y = 1.5
-                row.operator("object.origin_set", text="to Cursor", icon="LAYER_ACTIVE").type = "ORIGIN_CURSOR"
+                # row.operator("object.origin_set", text="to Cursor", icon="LAYER_ACTIVE").type = "ORIGIN_CURSOR"
+                row.operator("machin3.origin_to_cursor", text="to Cursor", icon="LAYER_ACTIVE")
                 row.operator("object.origin_set", text="to Geometry", icon="OBJECT_ORIGIN").type = "ORIGIN_GEOMETRY"
 
                 row = column.split(factor=0.20, align=True)
@@ -1884,22 +1886,28 @@ class PieCursor(Menu):
                 r = row.split(factor=0.7, align=True)
                 r.operator("machin3.origin_to_active", text="to Active", icon="TRANSFORM_ORIGINS")
 
-            elif context.mode == 'EDIT_MESH' and tuple(context.scene.tool_settings.mesh_select_mode) in [(True, False, False), (False, True, False), (False, False, True)]:
-                column.separator()
-                column.separator()
-
+            elif context.mode == 'EDIT_MESH':
                 row = column.split(factor=0.25)
                 row.separator()
                 row.label(text="Object Origin")
+
                 column.scale_x = 1.1
 
-                row = column.split(factor=0.25)
-                row.scale_y = 1.5
-                row.separator()
+                if tuple(context.scene.tool_settings.mesh_select_mode) in [(True, False, False), (False, True, False), (False, False, True)]:
 
-                sel, icon = ('Vert', 'VERTEXSEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (True, False, False) else ('Edge', 'EDGESEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (False, True, False) else ('Face', 'FACESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) else (None, None)
-                if sel:
+                    sel, icon = ('Vert', 'VERTEXSEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (True, False, False) else ('Edge', 'EDGESEL') if tuple(context.scene.tool_settings.mesh_select_mode) == (False, True, False) else ('Face', 'FACESEL') if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) else (None, None)
+
+                    row = column.row(align=True)
+                    row.scale_y = 1.5
+                    row.operator("machin3.origin_to_cursor", text="to Cursor", icon='LAYER_ACTIVE')
                     row.operator("machin3.origin_to_active", text="to %s" % (sel), icon=icon)
+
+                else:
+
+                    row = column.split(factor=0.25, align=True)
+                    row.scale_y = 1.5
+                    row.separator()
+                    row.operator("machin3.origin_to_cursor", text="to Cursor", icon='LAYER_ACTIVE')
 
         else:
             pie.separator()
@@ -1918,10 +1926,16 @@ class PieCursor(Menu):
         pie.operator("view3d.snap_selected_to_cursor", text="to Cursor, Offset", icon="RESTRICT_SELECT_OFF").use_offset = True
 
         # 1 - BOTTOM - LEFT
-        pie.operator("view3d.snap_cursor_to_grid", text="to Grid", icon="PIVOT_CURSOR")
+        if get_prefs().cursor_show_to_grid:
+            pie.operator("view3d.snap_cursor_to_grid", text="to Grid", icon="PIVOT_CURSOR")
+        else:
+            pie.separator()
 
         # 3 - BOTTOM - RIGHT
-        pie.operator("view3d.snap_selected_to_grid", text="to Grid", icon="RESTRICT_SELECT_OFF")
+        if get_prefs().cursor_show_to_grid:
+            pie.operator("view3d.snap_selected_to_grid", text="to Grid", icon="RESTRICT_SELECT_OFF")
+        else:
+            pie.separator()
 
 
 class PieTransform(Menu):

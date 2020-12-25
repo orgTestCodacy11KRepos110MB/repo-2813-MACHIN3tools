@@ -15,7 +15,7 @@ cursor = None
 class CursorToOrigin(bpy.types.Operator):
     bl_idname = "machin3.cursor_to_origin"
     bl_label = "MACHIN3: Cursor to Origin"
-    bl_description = "Reset Cursor Location and/or Rotation to World Origin\nALT: Only reset Cursor Location\nCTRL: Only reset Cursor Rotation"
+    bl_description = "Reset Cursor to World Origin\nALT: Only reset Cursor Location\nCTRL: Only reset Cursor Rotation"
     bl_options = {'REGISTER', 'UNDO'}
 
     def invoke(self, context, event):
