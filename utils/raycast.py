@@ -73,3 +73,51 @@ def cast_bvh_ray_from_mouse(mousepos, candidates=None, bmeshes={}, bvhs={}, debu
 
     # the cache is always returned!
     return None, None, None, None, None, cache
+
+
+# RAYCASTING OBJ
+
+def cast_obj_ray_from_mouse(mousepos, depsgraph=None, candidates=None, debug=False):
+    region = bpy.context.region
+    region_data = bpy.context.region_data
+
+    origin_3d = region_2d_to_origin_3d(region, region_data, mousepos)
+    vector_3d = region_2d_to_vector_3d(region, region_data, mousepos)
+
+    # get candidate objects, that could be hit
+    if not candidates:
+        candidates = bpy.context.visible_objects
+
+    objects = [obj for obj in candidates if obj.type == "MESH"]
+
+    hitobj = None
+    hitobj_eval = None
+    hitlocation = None
+    hitnormal = None
+    hitindex = None
+    hitdistance = sys.maxsize
+
+    for obj in objects:
+        mx = obj.matrix_world
+        mxi = mx.inverted_safe()
+
+        ray_origin = mxi @ origin_3d
+        ray_direction = mxi.to_3x3() @ vector_3d
+
+        success, location, normal, index = obj.ray_cast(origin=ray_origin, direction=ray_direction, depsgraph=depsgraph)
+        distance = (mx @ location - origin_3d).length
+
+        if debug:
+            print("candidate:", success, obj.name, location, normal, index, distance)
+
+        if success and distance < hitdistance:
+            hitobj, hitobj_eval, hitlocation, hitnormal, hitindex, hitdistance = obj, obj.evaluated_get(depsgraph) if depsgraph else None, mx @ location, mx.to_3x3() @ normal, index, distance
+
+    if debug:
+        print("best hit:", hitobj.name if hitobj else None, hitlocation, hitnormal, hitindex, hitdistance if hitobj else None)
+        print()
+
+    if hitobj:
+        return hitobj, hitobj_eval, hitlocation, hitnormal, hitindex, hitdistance
+
+    return None, None, None, None, None, None

@@ -1,6 +1,5 @@
 import bpy
 from .. utils.registration import get_prefs
-
 from .. import bl_info
 
 

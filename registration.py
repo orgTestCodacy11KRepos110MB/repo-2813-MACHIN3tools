@@ -34,6 +34,7 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                                                       ('SetValue', 'set_driver_value')])],
            'UNITY': [('operators.unity', [('PrepareExport', 'prepare_unity_export'),
                                           ('RestoreExport', 'restore_unity_export')])],
+           'MATERIAL_PICKER': [('operators.material_picker', [('MaterialPicker', 'material_picker')])],
            'CUSTOMIZE': [('operators.customize', [('Customize', 'customize'),
                                                   ('RestoreKeymaps', 'restore_keymaps')])],
 

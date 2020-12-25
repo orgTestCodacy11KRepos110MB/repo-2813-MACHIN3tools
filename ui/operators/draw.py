@@ -24,6 +24,7 @@ class DrawLabel(bpy.types.Operator):
         alpha = self.countdown / self.time * self.alpha
         draw_label(context, title=self.text, coords=self.coords, color=self.color, alpha=alpha)
 
+
     def modal(self, context, event):
         context.area.tag_redraw()
 

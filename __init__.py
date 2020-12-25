@@ -76,7 +76,7 @@ from bpy.props import PointerProperty, BoolProperty
 from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus, get_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, add_object_context_menu, remove_object_context_menu
-from . utils.registration import add_object_buttons
+from . utils.registration import add_object_buttons, material_pick_button
 from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD
 
 
@@ -106,6 +106,7 @@ def register():
     add_object_context_menu()
 
     bpy.types.VIEW3D_MT_mesh_add.prepend(add_object_buttons)
+    bpy.types.VIEW3D_MT_editor_menus.append(material_pick_button)
 
 
     # ICONS
@@ -152,6 +153,7 @@ def unregister():
     # TOOLS, PIE MENUS, KEYMAPS, MENUS
 
     bpy.types.VIEW3D_MT_mesh_add.remove(add_object_buttons)
+    bpy.types.VIEW3D_MT_editor_menus.remove(material_pick_button)
 
     remove_object_context_menu()
 

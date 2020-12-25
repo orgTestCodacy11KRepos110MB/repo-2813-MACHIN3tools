@@ -220,6 +220,18 @@ def add_object_buttons(self, context):
     self.layout.operator("machin3.quadsphere", text="Quad Sphere", icon='SPHERE')
 
 
+# MATERIAL PICKER
+
+def material_pick_button(self, context):
+    if any([s in context.workspace.name.lower() for s in ['material', 'shading']]):
+        if getattr(bpy.types, 'MACHIN3_OT_material_picker', False):
+            row = self.layout.row()
+            row.scale_x = 1.25
+            row.scale_y = 1.1
+            row.separator(factor=20)
+            row.operator("machin3.material_picker", text="", icon="EYEDROPPER")
+
+
 # RUNTIME TOOL (DE)ACTIVATION
 
 def activate(self, register, tool):
@@ -387,8 +399,14 @@ def get_tools():
     # SMART DRIVE
     classlists, keylists, count = get_smart_drive(classlists, keylists, count)
 
+
     # UNITY TOOLS
     classlists, keylists, count = get_unity(classlists, keylists, count)
+
+
+    # MATERIAL PICKER
+    classlists, keylists, count = get_material_picker(classlists, keylists, count)
+
 
     # CUSTOMIZE
     classlists, keylists, count = get_customize(classlists, keylists, count)
@@ -603,6 +621,14 @@ def get_smart_drive(classlists=[], keylists=[], count=0):
 def get_unity(classlists=[], keylists=[], count=0):
     if get_prefs().activate_unity:
         classlists.append(classesdict["UNITY"])
+        count +=1
+
+    return classlists, keylists, count
+
+
+def get_material_picker(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_material_picker:
+        classlists.append(classesdict["MATERIAL_PICKER"])
         count +=1
 
     return classlists, keylists, count
