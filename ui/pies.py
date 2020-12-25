@@ -1855,7 +1855,11 @@ class PieCursor(Menu):
 
 
         # 6 - RIGHT
-        pie.operator("view3d.snap_selected_to_cursor", text="to Cursor", icon="RESTRICT_SELECT_OFF").use_offset = False
+        if context.mode == 'OBJECT':
+            pie.operator("machin3.selected_to_cursor", text="to Cursor", icon="RESTRICT_SELECT_OFF")
+
+        else:
+            pie.operator("view3d.snap_selected_to_cursor", text="to Cursor", icon="RESTRICT_SELECT_OFF").use_offset = False
 
         # 2 - BOTTOM
 
@@ -1876,7 +1880,6 @@ class PieCursor(Menu):
 
                 row = column.split(factor=0.5, align=True)
                 row.scale_y = 1.5
-                # row.operator("object.origin_set", text="to Cursor", icon="LAYER_ACTIVE").type = "ORIGIN_CURSOR"
                 row.operator("machin3.origin_to_cursor", text="to Cursor", icon="LAYER_ACTIVE")
                 row.operator("object.origin_set", text="to Geometry", icon="OBJECT_ORIGIN").type = "ORIGIN_GEOMETRY"
 

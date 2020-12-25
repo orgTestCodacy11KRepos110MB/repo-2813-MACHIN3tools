@@ -2,6 +2,7 @@ import bpy
 import bmesh
 from mathutils import Vector, Quaternion
 from ... utils.math import get_center_between_verts, average_locations, create_rotation_matrix_from_vertex, create_rotation_matrix_from_edge, create_rotation_matrix_from_face
+from ... utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix
 from ... utils.scene import set_cursor
 from ... utils.ui import popup_message
 from ... utils.registration import get_prefs, get_addon
@@ -189,3 +190,40 @@ class CursorToSelected(bpy.types.Operator):
         loc, rot, _ = mx.decompose()
 
         set_cursor(location=cmx.to_translation() if only_rotation else loc, rotation=cmx.to_quaternion() if only_location else rot)
+
+
+class SelectedToCursor(bpy.types.Operator):
+    bl_idname = "machin3.selected_to_cursor"
+    bl_label = "MACHIN3: Selected To Cursor"
+    bl_description = "Transform Selected Objects to Cursor\nALT: Only set Location\nCTRL: Only set Rotation"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            return context.selected_objects or context.active_object
+
+    def invoke(self, context, event):
+        sel = context.selected_objects
+
+        # add active to selection if if isn't part of it
+        if context.active_object and context.active_object not in sel:
+            sel.append(context.active_object)
+
+        cmx = context.scene.cursor.matrix
+
+        for obj in sel:
+            loc, rot, sca = obj.matrix_world.decompose()
+
+            if event.alt:
+                mx = get_loc_matrix(cmx.to_translation()) @ get_rot_matrix(rot) @ get_sca_matrix(sca)
+
+            elif event.ctrl:
+                mx = get_loc_matrix(loc) @ get_rot_matrix(cmx.to_quaternion()) @ get_sca_matrix(sca)
+
+            else:
+                mx = get_loc_matrix(cmx.to_translation()) @ get_rot_matrix(cmx.to_quaternion()) @ get_sca_matrix(sca)
+
+            obj.matrix_world = mx
+
+        return {'FINISHED'}
