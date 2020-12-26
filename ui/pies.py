@@ -938,7 +938,7 @@ class PieShading(Menu):
         else:
             row.prop(active, "display_type", text="")
 
-        if overlay.show_overlays and shading.type == 'SOLID':
+        if overlay.show_overlays and shading.type in ['SOLID', 'WIREFRAME']:
             row = column.split(factor=0.6)
             r = row.row(align=True)
             r.prop(active, "show_name", text="Name")
@@ -962,7 +962,7 @@ class PieShading(Menu):
             else:
                 row.prop(active, "show_axis", text="Axis")
 
-        elif shading.type == 'SOLID':
+        elif shading.type in ['SOLID', 'WIREFRAME']:
             if shading.color_type == 'OBJECT':
                 row = column.split(factor=0.5)
                 row.prop(active, "show_in_front", text="In Front")
@@ -971,6 +971,7 @@ class PieShading(Menu):
             else:
                 row = column.row()
                 row.prop(active, "show_in_front", text="In Front")
+
 
 
         if active.type == "MESH":
