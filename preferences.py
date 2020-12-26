@@ -475,8 +475,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             bb = b.box()
             bb.label(text="Material Picker")
 
-            bbb = bb.box()
-            column = bbb.column()
+            column = bb.column()
 
             row = column.row()
             r = row.split(factor=0.2)
