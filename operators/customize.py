@@ -244,6 +244,11 @@ class Customize(bpy.types.Operator):
                     kmi.properties.value = 1
                     print("       to", kmi_to_string(kmi))
 
+                if kmi.idname == "transform.translate":
+                    if kmi.properties.texture_space:
+                        print("  Deactivated", kmi_to_string(kmi))
+                        kmi.active = False
+
 
             # 3D VIEW TOOLS
 
