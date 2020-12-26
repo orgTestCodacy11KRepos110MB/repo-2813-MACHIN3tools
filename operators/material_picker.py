@@ -12,6 +12,9 @@ def draw_material_pick_status(self, context):
     row.label(text="", icon='MOUSE_LMB')
     row.label(text="Pick Material")
 
+    row.label(text="", icon='MOUSE_MMB')
+    row.label(text="Viewport")
+
     row.label(text="", icon='MOUSE_RMB')
     row.label(text="Cancel")
 
@@ -59,6 +62,9 @@ class MaterialPicker(bpy.types.Operator):
             self.finish(context)
             return {'FINISHED'}
 
+        elif event.type == 'MIDDLEMOUSE':
+            return {'PASS_THROUGH'}
+
         elif event.type in ['RIGHTMOUSE', 'ESC']:
             self.finish(context)
             return {'CANCELLED'}
@@ -74,11 +80,8 @@ class MaterialPicker(bpy.types.Operator):
             context.visible_objects[0].select_set(context.visible_objects[0].select_get())
 
     def invoke(self, context, event):
-
-        # change mouse cursor
         context.window.cursor_set("EYEDROPPER")
 
-        # draw statusbar info
         self.bar_orig = statusbar.draw
         statusbar.draw = draw_material_pick_status
 

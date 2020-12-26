@@ -216,6 +216,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     tools_show_tool_bar: BoolProperty(name="Show Tool Bar", default=False)
     tools_HUD_fade: FloatProperty(name="HUD Fade Time (seconds)", default=0.75, min=0.1, max=3)
 
+    matpick_spacing_obj: FloatProperty(name="Object Mode Spacing", min=0, default=20)
+    matpick_spacing_edit: FloatProperty(name="Edit Mode Spacing", min=0, default=5)
+
     custom_startup: BoolProperty(name="Startup Scene", default=False)
     custom_theme: BoolProperty(name="Theme", default=True)
     custom_matcaps: BoolProperty(name="Matcaps", default=True)
@@ -464,6 +467,27 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             column = bb.column()
             column.prop(self, "focus_view_transition")
+
+
+        # MATERIAL PICKER
+
+        if getattr(bpy.types, "MACHIN3_OT_material_picker", False):
+            bb = b.box()
+            bb.label(text="Material Picker")
+
+            bbb = bb.box()
+            column = bbb.column()
+
+            row = column.row()
+            r = row.split(factor=0.2)
+            r.prop(self, "matpick_spacing_obj", text="")
+            r.label(text="Object Mode Spacing")
+
+            row = column.row()
+            r = row.split(factor=0.2)
+            r.prop(self, "matpick_spacing_edit", text="")
+            r.label(text="Edit Mode Spacing")
+
 
 
         # CUSTOMIZE

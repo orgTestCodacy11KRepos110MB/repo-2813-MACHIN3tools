@@ -228,7 +228,7 @@ def material_pick_button(self, context):
             row = self.layout.row()
             row.scale_x = 1.25
             row.scale_y = 1.1
-            row.separator(factor=20)
+            row.separator(factor=get_prefs().matpick_spacing_obj if context.mode == 'OBJECT' else get_prefs().matpick_spacing_edit)
             row.operator("machin3.material_picker", text="", icon="EYEDROPPER")
 
 
