@@ -15,6 +15,7 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
 
         if get_prefs().activate_select:
             layout.operator("machin3.select_center_objects", text="Select Center Objects")
+            layout.operator("machin3.select_wire_objects", text="Select Wire Objects")
 
         if get_prefs().activate_apply:
             layout.operator("machin3.apply_transformations", text="Apply Transformations")

@@ -44,3 +44,31 @@ class SelectCenterObjects(bpy.types.Operator):
                     obj.select_set(True)
 
         return {'FINISHED'}
+
+
+class SelectWireObjects(bpy.types.Operator):
+    bl_idname = "machin3.select_wire_objects"
+    bl_label = "MACHIN3: Select Wire Objects"
+    bl_description = "Select Objects set to WIRE display type\nALT: Hide Objects"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            return [obj for obj in context.visible_objects if obj.display_type == 'WIRE']
+
+    def invoke(self, context, event):
+        bpy.ops.object.select_all(action='DESELECT')
+
+        # fix objects without proper display_type
+        for obj in context.visible_objects:
+            if obj.display_type == '':
+                obj.display_type = 'WIRE'
+
+        for obj in [obj for obj in context.visible_objects if obj.display_type == 'WIRE']:
+            if event.alt:
+                obj.hide_set(True)
+            else:
+                obj.select_set(True)
+
+        return {'FINISHED'}
