@@ -889,6 +889,9 @@ class Customize(bpy.types.Operator):
             print(" Changed overlay.vertex_opacity to 1")
             overlay.vertex_opacity = 1
 
+            print(" Disabled overlay.show_fade_inactive")
+            overlay.show_fade_inactive = False
+
     def outliner(self, context):
         print("\n» Modifying Outliner")
 
