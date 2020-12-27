@@ -223,7 +223,9 @@ def add_object_buttons(self, context):
 # MATERIAL PICKER
 
 def material_pick_button(self, context):
-    if any([s in context.workspace.name.lower() for s in ['material', 'shading']]):
+    workspaces = [ws.strip() for ws in get_prefs().matpick_workspace_names.split(',')]
+
+    if any([s in context.workspace.name for s in workspaces]):
         if getattr(bpy.types, 'MACHIN3_OT_material_picker', False):
             row = self.layout.row()
             row.scale_x = 1.25

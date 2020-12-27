@@ -216,6 +216,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     tools_show_tool_bar: BoolProperty(name="Show Tool Bar", default=False)
     tools_HUD_fade: FloatProperty(name="HUD Fade Time (seconds)", default=0.75, min=0.1, max=3)
 
+    matpick_workspace_names: StringProperty(name="Workspaces the Material Picker should appear on", default="Shading, Material")
     matpick_spacing_obj: FloatProperty(name="Object Mode Spacing", min=0, default=20)
     matpick_spacing_edit: FloatProperty(name="Edit Mode Spacing", min=0, default=5)
 
@@ -476,6 +477,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             bb.label(text="Material Picker")
 
             column = bb.column()
+            row = column.row()
+            r = row.split(factor=0.2)
+            r.prop(self, "matpick_workspace_names", text="")
+            r.label(text="Workspace Names")
 
             row = column.row()
             r = row.split(factor=0.2)
@@ -486,7 +491,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             r = row.split(factor=0.2)
             r.prop(self, "matpick_spacing_edit", text="")
             r.label(text="Edit Mode Spacing")
-
 
 
         # CUSTOMIZE
