@@ -49,13 +49,13 @@ class SelectCenterObjects(bpy.types.Operator):
 class SelectWireObjects(bpy.types.Operator):
     bl_idname = "machin3.select_wire_objects"
     bl_label = "MACHIN3: Select Wire Objects"
-    bl_description = "Select Objects set to WIRE display type\nALT: Hide Objects"
+    bl_description = "Select Objects set to WIRE display type\nALT: Hide Objects\nCLTR: Include Empties"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         if context.mode == 'OBJECT':
-            return [obj for obj in context.visible_objects if obj.display_type == 'WIRE']
+            return [obj for obj in context.visible_objects if obj.display_type == 'WIRE' or obj.type == 'EMPTY']
 
     def invoke(self, context, event):
         bpy.ops.object.select_all(action='DESELECT')
@@ -65,7 +65,14 @@ class SelectWireObjects(bpy.types.Operator):
             if obj.display_type == '':
                 obj.display_type = 'WIRE'
 
-        for obj in [obj for obj in context.visible_objects if obj.display_type == 'WIRE']:
+
+        # get all wire objects, optionally including empties
+        if event.ctrl:
+            objects = [obj for obj in context.visible_objects if obj.display_type == 'WIRE' or obj.type == 'EMPTY']
+        else:
+            objects = [obj for obj in context.visible_objects if obj.display_type == 'WIRE']
+
+        for obj in objects:
             if event.alt:
                 obj.hide_set(True)
             else:
