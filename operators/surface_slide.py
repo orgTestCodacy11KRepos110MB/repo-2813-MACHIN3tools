@@ -21,12 +21,10 @@ class SurfaceSlide(bpy.types.Operator):
         active = context.active_object
         active.update_from_editmode()
 
-        # create copy of active object to serve as surface
-        surface = active.copy()
-        surface.data = active.data.copy()
-        surface.name = '%s_SURFACE' % (active.name)
+        surface = bpy.data.objects.new(name=f"{active.name}_SURFACE", object_data=active.data.copy())
         surface.data.name = '%s_SURFACE' % (active.data.name)
         surface.use_fake_user = True
+        surface.matrix_world = active.matrix_world
 
         # add shrinkwrap mod
         shrinkwrap = add_shrinkwrap(active, surface)
