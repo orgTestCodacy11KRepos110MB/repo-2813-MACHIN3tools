@@ -45,12 +45,6 @@ class Focus(bpy.types.Operator):
     def poll(cls, context):
         return context.space_data.type == 'VIEW_3D' and context.region.type == 'WINDOW'
 
-    def invoke(self, context, event):
-        self.invert = event.alt
-
-        self.execute(context)
-        return {'FINISHED'}
-
     def execute(self, context):
         if self.method == 'VIEW_SELECTED':
             self.view_selected(context)
