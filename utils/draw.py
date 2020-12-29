@@ -175,7 +175,7 @@ def draw_surface_slide_HUD(context, color=(1, 1, 1), alpha=1, width=2):
         blf.draw(font, title)
 
 
-def draw_label(context, title='', coords=None, color=(1, 1, 1), alpha=1):
+def draw_label(context, title='', coords=None, center=True, color=(1, 1, 1), alpha=1):
 
     # centered, but slighly below
     if not coords:
@@ -192,7 +192,12 @@ def draw_label(context, title='', coords=None, color=(1, 1, 1), alpha=1):
 
     blf.size(font, fontsize, 72)
     blf.color(font, *color, alpha)
-    blf.position(font, width - (int(len(title) * scale * 7) / 2), height + int(fontsize), 0)
+
+    if center:
+        blf.position(font, width - (int(len(title) * scale * 7) / 2), height + int(fontsize), 0)
+    else:
+        blf.position(font, *(coords), 1)
+
     # blf.position(font, 10, 10, 0)
 
     blf.draw(font, title)

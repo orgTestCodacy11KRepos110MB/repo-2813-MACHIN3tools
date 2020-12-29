@@ -23,6 +23,9 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
         if get_prefs().activate_mesh_cut:
             layout.operator("machin3.mesh_cut", text="Mesh Cut")
 
+        if get_prefs().activate_material_picker:
+            layout.operator("machin3.material_picker", text="Material Picker")
+
 
 class MenuAppendMaterials(bpy.types.Menu):
     bl_idname = "MACHIN3_MT_append_materials"
