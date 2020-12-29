@@ -443,7 +443,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         # MACHIN3menus
 
-        if any([self.activate_mirror, self.activate_mesh_cut, self.activate_apply, self.activate_select]):
+        if any([self.activate_mirror, self.activate_mesh_cut, self.activate_apply, self.activate_select, self.activate_material_picker]):
 
             bb = b.box()
             bb.label(text="Menus")
