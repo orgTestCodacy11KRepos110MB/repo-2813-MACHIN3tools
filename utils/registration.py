@@ -197,64 +197,6 @@ def unregister_icons(icons):
     previews.remove(icons)
 
 
-# CONTEXT MENU ADDITION
-
-def object_context_menu(self, context):
-    layout = self.layout
-
-    if get_prefs().activate_object_context_menu:
-        layout.menu("MACHIN3_MT_machin3tools_object_context_menu")
-        layout.separator()
-
-    if get_prefs().activate_group:
-        group_empties = [obj for obj in context.visible_objects if obj.M3.is_group_empty]
-        groupable = len([obj for obj in context.selected_objects if not obj.parent]) > 1
-
-        if group_empties:
-            layout.prop(context.scene.M3, "group_select")
-
-        if groupable:
-            layout.operator("machin3.group", text="Group")
-
-
-        if group_empties:
-            ungroupable = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
-
-            if ungroupable:
-                # set op context
-                # NOTE: why the the op context necessary here, and not in the MACHIN3tools sub menu?
-                # ####: looks like the menue is automatically INVOKE_REGION_WIN for some reason
-                layout.operator_context = "INVOKE_REGION_WIN"
-
-                layout.operator("machin3.ungroup", text="Un-Group")
-
-                # reset op context just to be sure
-                layout.operator_context = "EXEC_REGION_WIN"
-
-        if group_empties or groupable:
-            layout.separator()
-
-
-# ADD OBJECTS ADDITION
-
-def add_object_buttons(self, context):
-    self.layout.operator("machin3.quadsphere", text="Quad Sphere", icon='SPHERE')
-
-
-# MATERIAL PICKER
-
-def material_pick_button(self, context):
-    workspaces = [ws.strip() for ws in get_prefs().matpick_workspace_names.split(',')]
-
-    if any([s in context.workspace.name for s in workspaces]):
-        if getattr(bpy.types, 'MACHIN3_OT_material_picker', False):
-            row = self.layout.row()
-            row.scale_x = 1.25
-            row.scale_y = 1.1
-            row.separator(factor=get_prefs().matpick_spacing_obj if context.mode == 'OBJECT' else get_prefs().matpick_spacing_edit)
-            row.operator("machin3.material_picker", text="", icon="EYEDROPPER")
-
-
 # RUNTIME TOOL (DE)ACTIVATION
 
 def activate(self, register, tool):

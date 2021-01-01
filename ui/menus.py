@@ -57,3 +57,86 @@ class MenuAppendMaterials(bpy.types.Menu):
                 icon_val = layout.icon(mat) if mat else 0
 
                 layout.operator("machin3.append_material", text=name, icon_value=icon_val).name = name
+
+
+# OBJECT CONTEXT MENU
+
+def object_context_menu(self, context):
+    layout = self.layout
+
+    if get_prefs().activate_object_context_menu:
+        layout.menu("MACHIN3_MT_machin3tools_object_context_menu")
+        layout.separator()
+
+    if get_prefs().activate_group:
+        active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
+        group_empties = [obj for obj in context.visible_objects if obj.M3.is_group_empty]
+        groupable = len([obj for obj in context.selected_objects if not obj.parent]) > 1
+        addable = [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group]
+        removable = [obj for obj in context.selected_objects if obj.M3.is_group_object]
+
+
+        # AUTO SELECT GROUPS
+
+        if group_empties:
+            layout.prop(context.scene.M3, "group_select")
+
+        # GROUP
+
+        if groupable:
+            layout.operator("machin3.group", text="Group")
+
+        # UN-GROUP
+
+        if group_empties:
+            ungroupable = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+
+            if ungroupable:
+                # set op context
+                # NOTE: why the the op context necessary here, and not in the MACHIN3tools sub menu?
+                # ####: looks like the menue is automatically INVOKE_REGION_WIN for some reason
+                layout.operator_context = "INVOKE_REGION_WIN"
+
+                layout.operator("machin3.ungroup", text="Un-Group")
+
+                # reset op context just to be sure
+                layout.operator_context = "EXEC_REGION_WIN"
+
+
+        # ADD and REMOVE
+
+        if (addable and active_group) or removable:
+            # custom spacer
+            row = layout.row()
+            row.scale_y = 0.3
+            row.label(text="")
+
+            if addable and active_group:
+                layout.operator("machin3.add_to_group", text="Add to Group")
+
+            if removable:
+                layout.operator("machin3.remove_from_group", text="Remove from Group")
+
+        if group_empties or groupable or (addable and active_group) or removable:
+            layout.separator()
+
+
+# ADD OBJECTS MENU
+
+def add_object_buttons(self, context):
+    self.layout.operator("machin3.quadsphere", text="Quad Sphere", icon='SPHERE')
+
+
+# MATERIAL PICKER HEADER
+
+def material_pick_button(self, context):
+    workspaces = [ws.strip() for ws in get_prefs().matpick_workspace_names.split(',')]
+
+    if any([s in context.workspace.name for s in workspaces]):
+        if getattr(bpy.types, 'MACHIN3_OT_material_picker', False):
+            row = self.layout.row()
+            row.scale_x = 1.25
+            row.scale_y = 1.1
+            # row.separator_spacer()
+            row.separator(factor=get_prefs().matpick_spacing_obj if context.mode == 'OBJECT' else get_prefs().matpick_spacing_edit)
+            row.operator("machin3.material_picker", text="", icon="EYEDROPPER")

@@ -395,7 +395,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     # GROUP
 
-    group_select: BoolProperty(name="Auto Select Group", default=True)
+    group_select: BoolProperty(name="Auto Select Groups", default=True)
 
 
     # hidden

@@ -76,7 +76,7 @@ from bpy.props import PointerProperty, BoolProperty
 from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus, get_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons
-from . utils.registration import object_context_menu, add_object_buttons, material_pick_button
+from . ui.menus import object_context_menu, add_object_buttons, material_pick_button
 from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD, update_group
 
 
