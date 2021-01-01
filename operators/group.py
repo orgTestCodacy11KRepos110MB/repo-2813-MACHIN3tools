@@ -95,7 +95,7 @@ class UnGroup(bpy.types.Operator):
 class Add(bpy.types.Operator):
     bl_idname = "machin3.add_to_group"
     bl_label = "MACHIN3: add_to_group"
-    bl_description = ""
+    bl_description = "Add Selection to Group"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -119,7 +119,7 @@ class Add(bpy.types.Operator):
 class Remove(bpy.types.Operator):
     bl_idname = "machin3.remove_from_group"
     bl_label = "MACHIN3: remove_from_group"
-    bl_description = ""
+    bl_description = "Remove Selection from Group"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
