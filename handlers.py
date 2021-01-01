@@ -13,6 +13,25 @@ def update_object_axes_drawing(none):
 
 
 @persistent
+def update_group(none):
+    context = bpy.context
+
+    if context.mode == 'OBJECT' and context.scene.M3.group_select:
+        active = context.active_object
+
+        if active and active.M3.is_group_empty:
+            if active.select_get():
+                for obj in active.children:
+                    if not obj.select_get():
+                        obj.select_set(True)
+
+            else:
+                for obj in active.children:
+                    if obj.select_get():
+                        obj.select_set(False)
+
+
+@persistent
 def focus_HUD(scene):
     global focusHUD
 

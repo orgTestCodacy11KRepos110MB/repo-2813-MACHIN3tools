@@ -200,18 +200,39 @@ def unregister_icons(icons):
 # CONTEXT MENU ADDITION
 
 def object_context_menu(self, context):
-    self.layout.menu("MACHIN3_MT_machin3tools_object_context_menu")
-    self.layout.separator()
+    layout = self.layout
+
+    if get_prefs().activate_object_context_menu:
+        layout.menu("MACHIN3_MT_machin3tools_object_context_menu")
+        layout.separator()
+
+    if get_prefs().activate_group:
+        group_empties = [obj for obj in context.visible_objects if obj.M3.is_group_empty]
+        groupable = len([obj for obj in context.selected_objects if not obj.parent]) > 1
+
+        if group_empties:
+            layout.prop(context.scene.M3, "group_select")
+
+        if groupable:
+            layout.operator("machin3.group", text="Group")
 
 
-def add_object_context_menu(runtime=False):
-    if get_prefs().activate_object_context_menu or runtime:
-        bpy.types.VIEW3D_MT_object_context_menu.prepend(object_context_menu)
+        if group_empties:
+            ungroupable = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
 
+            if ungroupable:
+                # set op context
+                # NOTE: why the the op context necessary here, and not in the MACHIN3tools sub menu?
+                # ####: looks like the menue is automatically INVOKE_REGION_WIN for some reason
+                layout.operator_context = "INVOKE_REGION_WIN"
 
-def remove_object_context_menu(runtime=False):
-    # if get_prefs().activate_object_context_menu or runtime:
-    bpy.types.VIEW3D_MT_object_context_menu.remove(object_context_menu)
+                layout.operator("machin3.ungroup", text="Un-Group")
+
+                # reset op context just to be sure
+                layout.operator_context = "EXEC_REGION_WIN"
+
+        if group_empties or groupable:
+            layout.separator()
 
 
 # ADD OBJECTS ADDITION
@@ -279,11 +300,6 @@ def activate(self, register, tool):
         classlist.clear()
         keylist.clear()
 
-        # MENU ADDITION
-
-        if tool == "object_context_menu":
-            add_object_context_menu(runtime=True)
-
 
     # UN-REGISTER
 
@@ -326,12 +342,6 @@ def activate(self, register, tool):
 
         if classes:
             print("Unregistered MACHIN3tools' %s" % (name))
-
-
-        # MENU REMOVAL
-
-        if tool == "object_context_menu":
-            remove_object_context_menu(runtime=True)
 
 
 # GET CORE, TOOLS and PIES - CLASSES and KEYMAPS - for startup registration
@@ -408,6 +418,10 @@ def get_tools():
 
     # MATERIAL PICKER
     classlists, keylists, count = get_material_picker(classlists, keylists, count)
+
+
+    # GROUP
+    classlists, keylists, count = get_group(classlists, keylists, count)
 
 
     # CUSTOMIZE
@@ -631,6 +645,14 @@ def get_unity(classlists=[], keylists=[], count=0):
 def get_material_picker(classlists=[], keylists=[], count=0):
     if get_prefs().activate_material_picker:
         classlists.append(classesdict["MATERIAL_PICKER"])
+        count +=1
+
+    return classlists, keylists, count
+
+
+def get_group(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_group:
+        classlists.append(classesdict["GROUP"])
         count +=1
 
     return classlists, keylists, count

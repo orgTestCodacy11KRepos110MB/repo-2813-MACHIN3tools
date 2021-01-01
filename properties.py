@@ -392,6 +392,12 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     bcorientation: EnumProperty(name="BoxCutter Orientation", items=bc_orientation_items, default='LOCAL', update=update_bcorientation)
 
+
+    # GROUP
+
+    group_select: BoolProperty(name="Auto Select Group", default=True)
+
+
     # hidden
 
     avoid_update: BoolProperty()
@@ -403,6 +409,9 @@ class M3ObjectProperties(bpy.types.PropertyGroup):
     pre_unity_export_mx: FloatVectorProperty(name="Pre-Unity-Export Matrix", subtype="MATRIX", size=16, default=flatten_matrix(Matrix()))
     pre_unity_export_mesh: PointerProperty(name="Pre-Unity-Export Mesh", type=bpy.types.Mesh)
     pre_unity_export_armature: PointerProperty(name="Pre-Unity-Export Armature", type=bpy.types.Armature)
+
+    is_group_empty: BoolProperty()
+    is_group_object: BoolProperty()
 
     # hidden
 

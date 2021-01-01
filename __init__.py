@@ -75,9 +75,9 @@ import bpy
 from bpy.props import PointerProperty, BoolProperty
 from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus, get_menus
-from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, add_object_context_menu, remove_object_context_menu
-from . utils.registration import add_object_buttons, material_pick_button
-from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD
+from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons
+from . utils.registration import object_context_menu, add_object_buttons, material_pick_button
+from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD, update_group
 
 
 def register():
@@ -103,8 +103,7 @@ def register():
     classes = register_classes(tool_classlists + pie_classlists + menu_classlists) + core_classes
     keymaps = register_keymaps(tool_keylists + pie_keylists + menu_keylists)
 
-    add_object_context_menu()
-
+    bpy.types.VIEW3D_MT_object_context_menu.prepend(object_context_menu)
     bpy.types.VIEW3D_MT_mesh_add.prepend(add_object_buttons)
     bpy.types.VIEW3D_MT_editor_menus.append(material_pick_button)
 
@@ -122,6 +121,7 @@ def register():
 
     bpy.app.handlers.depsgraph_update_post.append(focus_HUD)
     bpy.app.handlers.depsgraph_update_post.append(surface_slide_HUD)
+    bpy.app.handlers.depsgraph_update_post.append(update_group)
 
 
     # REGISTRATION OUTPUT
@@ -148,14 +148,14 @@ def unregister():
 
     bpy.app.handlers.depsgraph_update_post.remove(focus_HUD)
     bpy.app.handlers.depsgraph_update_post.remove(surface_slide_HUD)
+    bpy.app.handlers.depsgraph_update_post.remove(update_group)
 
 
     # TOOLS, PIE MENUS, KEYMAPS, MENUS
 
+    bpy.types.VIEW3D_MT_object_context_menu.remove(object_context_menu)
     bpy.types.VIEW3D_MT_mesh_add.remove(add_object_buttons)
     bpy.types.VIEW3D_MT_editor_menus.remove(material_pick_button)
-
-    remove_object_context_menu()
 
     unregister_keymaps(keymaps)
     unregister_classes(classes)
