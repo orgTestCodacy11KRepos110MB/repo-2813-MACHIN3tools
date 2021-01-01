@@ -3,10 +3,6 @@ from .. utils.math import average_locations, get_loc_matrix
 from .. utils.object import parent, unparent
 
 
-# TODO: remove from group
-# TODO: add to group
-
-
 
 def ungroup(empty):
     for obj in empty.children:
@@ -30,6 +26,9 @@ class Group(bpy.types.Operator):
     def execute(self, context):
         sel = [obj for obj in context.selected_objects if not obj.parent]
 
+        # get collection
+        col = self.get_collection(context, sel)
+
         avg_location = average_locations([obj.matrix_world.to_translation() for obj in sel])
 
         empty = bpy.data.objects.new(name="GROUP", object_data=None)
@@ -39,7 +38,7 @@ class Group(bpy.types.Operator):
         empty.empty_display_size = 0.1
 
         empty.matrix_world = get_loc_matrix(avg_location)
-        context.scene.collection.objects.link(empty)
+        col.objects.link(empty)
         empty.select_set(True)
 
         empty.M3.is_group_empty = True
@@ -49,6 +48,24 @@ class Group(bpy.types.Operator):
             obj.M3.is_group_object = True
 
         return {'FINISHED'}
+
+    def get_collection(self, context, sel):
+        '''
+        if all the objects in sel are in the same collection, return it
+        otherwise return the master collection
+        '''
+
+        collections = set()
+
+        for obj in sel:
+            for col in obj.users_collection:
+                collections.add(col)
+
+        if len(collections) == 1:
+            return collections.pop()
+
+        else:
+            return context.scene.collection
 
 
 class UnGroup(bpy.types.Operator):
