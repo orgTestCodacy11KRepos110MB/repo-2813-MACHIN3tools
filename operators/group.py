@@ -62,27 +62,31 @@ class Group(bpy.types.Operator):
     def execute(self, context):
         sel = [obj for obj in context.selected_objects if not obj.parent]
 
-        # get collection
-        col = self.get_collection(context, sel)
+        if sel:
 
-        empty = bpy.data.objects.new(name="GROUP", object_data=None)
-        empty.show_name = True
-        empty.show_in_front = True
-        empty.empty_display_type = 'CUBE'
-        empty.empty_display_size = 0.1
+            # get collection
+            col = self.get_collection(context, sel)
 
-        empty.matrix_world = get_group_matrix(context, self.location, sel)
-        col.objects.link(empty)
-        context.view_layer.objects.active = empty
-        empty.select_set(True)
+            empty = bpy.data.objects.new(name="GROUP", object_data=None)
+            empty.show_name = True
+            empty.show_in_front = True
+            empty.empty_display_type = 'CUBE'
+            empty.empty_display_size = 0.1
 
-        empty.M3.is_group_empty = True
+            empty.matrix_world = get_group_matrix(context, self.location, sel)
+            col.objects.link(empty)
+            context.view_layer.objects.active = empty
+            empty.select_set(True)
 
-        for obj in sel:
-            parent(obj, empty)
-            obj.M3.is_group_object = True
+            empty.M3.is_group_empty = True
 
-        return {'FINISHED'}
+            for obj in sel:
+                parent(obj, empty)
+                obj.M3.is_group_object = True
+
+            return {'FINISHED'}
+        else:
+            return {'CANCELLED'}
 
     def get_collection(self, context, sel):
         '''
