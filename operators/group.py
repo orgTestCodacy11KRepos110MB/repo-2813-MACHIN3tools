@@ -109,7 +109,7 @@ class UnGroup(bpy.types.Operator):
     bl_description = "Un-Group selected top-level Groups\nALT: Un-Group all selected Groups"
     bl_options = {'REGISTER', 'UNDO'}
 
-    only_ungroup_top_level: BoolProperty(name="Ungroup top Level only", default=True)
+    only_ungroup_top_level: BoolProperty(name="Un-Group Top Level only", default=True)
 
     @classmethod
     def poll(cls, context):
