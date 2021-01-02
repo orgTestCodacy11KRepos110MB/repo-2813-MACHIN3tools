@@ -79,6 +79,11 @@ view_axis_items = [("FRONT", "Front", ""),
                    ("TOP", "Top", ""),
                    ("BOTTOM", "Bottom", "")]
 
+group_location_items = [('AVERAGE', 'Average', ''),
+                        ('ACTIVE', 'Active', ''),
+                        ('CURSOR', 'Cursor', ''),
+                        ('WORLD', 'World', '')]
+
 # PIES
 
 eevee_preset_items = [('NONE', 'None', ''),

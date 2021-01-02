@@ -1,6 +1,9 @@
 import bpy
+from bpy.props import EnumProperty
+from mathutils import Vector
 from .. utils.math import average_locations, get_loc_matrix
 from .. utils.object import parent, unparent
+from .. items import group_location_items
 
 
 
@@ -18,10 +21,22 @@ class Group(bpy.types.Operator):
     bl_description = "Group Objects by Parenting them to an Empty"
     bl_options = {'REGISTER', 'UNDO'}
 
+    location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
+
     @classmethod
     def poll(cls, context):
         if context.mode == 'OBJECT':
-            return len([obj for obj in context.selected_objects if not obj.parent]) > 1
+            # return len([obj for obj in context.selected_objects if not obj.parent]) > 1
+            return True
+
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column()
+
+        row = column.row()
+        row.label(text="Location")
+        row.prop(self, 'location', expand=True)
 
     def execute(self, context):
         sel = [obj for obj in context.selected_objects if not obj.parent]
@@ -29,7 +44,22 @@ class Group(bpy.types.Operator):
         # get collection
         col = self.get_collection(context, sel)
 
-        avg_location = average_locations([obj.matrix_world.to_translation() for obj in sel])
+        if self.location == 'AVERAGE':
+            location = average_locations([obj.matrix_world.to_translation() for obj in sel])
+
+        elif self.location == 'ACTIVE':
+            if context.active_object:
+                location = context.active_object.matrix_world.to_translation()
+
+            # fallback to average if no active object is present
+            else:
+                location = average_locations([obj.matrix_world.to_translation() for obj in sel])
+
+        elif self.location == 'CURSOR':
+            location = context.scene.cursor.location
+
+        elif self.location == 'WORLD':
+            location = Vector()
 
         empty = bpy.data.objects.new(name="GROUP", object_data=None)
         empty.show_name = True
@@ -37,8 +67,9 @@ class Group(bpy.types.Operator):
         empty.empty_display_type = 'CUBE'
         empty.empty_display_size = 0.1
 
-        empty.matrix_world = get_loc_matrix(avg_location)
+        empty.matrix_world = get_loc_matrix(location)
         col.objects.link(empty)
+        context.view_layer.objects.active = empty
         empty.select_set(True)
 
         empty.M3.is_group_empty = True
@@ -67,6 +98,9 @@ class Group(bpy.types.Operator):
         else:
             return context.scene.collection
 
+
+# TODO: allow it to be used in redo panel
+# TODO: add CTRL + ALT + G keymap
 
 class UnGroup(bpy.types.Operator):
     bl_idname = "machin3.ungroup"
@@ -132,6 +166,8 @@ class Add(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+# TODO: optionally (ALT) adjust the emptie, allow it to be used in redo panel too
 
 class Remove(bpy.types.Operator):
     bl_idname = "machin3.remove_from_group"

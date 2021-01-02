@@ -156,6 +156,7 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
                         {'label': 'Toggle Sorting', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'ONE', 'value': 'PRESS', 'properties': [('type', 'SORT')]},
                         {'label': 'Toggle Display', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'TWO', 'value': 'PRESS', 'properties': [('type', 'DISPLAY_TYPE')]},
                         {'label': 'Toggle Hidden', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'THREE', 'value': 'PRESS', 'properties': [('type', 'HIDDEN')]}],
+        'GROUP': [{'keymap': 'Object Mode', 'idname': 'machin3.group', 'type': 'G', 'value': 'PRESS', 'ctrl': True}],
 
         'MODES_PIE': [{'label': '3D View', 'keymap': 'Object Non-modal', 'idname': 'wm.call_menu_pie', 'type': 'TAB', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_modes_pie')]},
                       {'label': 'Image Editor', 'keymap': 'Image', 'space_type': 'IMAGE_EDITOR', 'idname': 'wm.call_menu_pie', 'type': 'TAB', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_modes_pie')]}],

@@ -595,6 +595,7 @@ def get_material_picker(classlists=[], keylists=[], count=0):
 def get_group(classlists=[], keylists=[], count=0):
     if get_prefs().activate_group:
         classlists.append(classesdict["GROUP"])
+        keylists.append(keysdict["GROUP"])
         count +=1
 
     return classlists, keylists, count
