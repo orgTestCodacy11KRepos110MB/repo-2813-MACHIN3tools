@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import EnumProperty
+from bpy.props import EnumProperty, BoolProperty
 from mathutils import Vector
 from .. utils.math import average_locations, get_loc_matrix
 from .. utils.object import parent, unparent
@@ -13,6 +13,27 @@ def ungroup(empty):
         obj.M3.is_group_object = False
 
     bpy.data.objects.remove(empty, do_unlink=True)
+
+
+def get_group_matrix(context, location_type, objects):
+    if location_type == 'AVERAGE':
+        location = average_locations([obj.matrix_world.to_translation() for obj in objects])
+
+    elif location_type == 'ACTIVE':
+        if context.active_object:
+            return context.active_object.matrix_world
+
+        # fallback to average if no active object is present
+        else:
+            location = average_locations([obj.matrix_world.to_translation() for obj in objects])
+
+    elif location_type == 'CURSOR':
+        location = context.scene.cursor.location
+
+    elif location_type == 'WORLD':
+        location = Vector()
+
+    return get_loc_matrix(location)
 
 
 class Group(bpy.types.Operator):
@@ -44,30 +65,13 @@ class Group(bpy.types.Operator):
         # get collection
         col = self.get_collection(context, sel)
 
-        if self.location == 'AVERAGE':
-            location = average_locations([obj.matrix_world.to_translation() for obj in sel])
-
-        elif self.location == 'ACTIVE':
-            if context.active_object:
-                location = context.active_object.matrix_world.to_translation()
-
-            # fallback to average if no active object is present
-            else:
-                location = average_locations([obj.matrix_world.to_translation() for obj in sel])
-
-        elif self.location == 'CURSOR':
-            location = context.scene.cursor.location
-
-        elif self.location == 'WORLD':
-            location = Vector()
-
         empty = bpy.data.objects.new(name="GROUP", object_data=None)
         empty.show_name = True
         empty.show_in_front = True
         empty.empty_display_type = 'CUBE'
         empty.empty_display_size = 0.1
 
-        empty.matrix_world = get_loc_matrix(location)
+        empty.matrix_world = get_group_matrix(context, self.location, sel)
         col.objects.link(empty)
         context.view_layer.objects.active = empty
         empty.select_set(True)
@@ -99,25 +103,41 @@ class Group(bpy.types.Operator):
             return context.scene.collection
 
 
-# TODO: allow it to be used in redo panel
-# TODO: add CTRL + ALT + G keymap
-
 class UnGroup(bpy.types.Operator):
     bl_idname = "machin3.ungroup"
     bl_label = "MACHIN3: Un-Group"
     bl_description = "Un-Group selected top-level Groups\nALT: Un-Group all selected Groups"
     bl_options = {'REGISTER', 'UNDO'}
 
+    only_ungroup_top_level: BoolProperty(name="Ungroup top Level only", default=True)
+
     @classmethod
     def poll(cls, context):
         if context.mode == 'OBJECT':
-            return[obj for obj in context.selected_objects if obj.M3.is_group_empty]
+            # return[obj for obj in context.selected_objects if obj.M3.is_group_empty]
+            return True
+
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column()
+
+        column.prop(self, 'only_ungroup_top_level', toggle=True)
 
     def invoke(self, context, event):
+        self.only_ungroup_top_level = not event.alt
+
+        self.execute(context)
+        return {'FINISHED'}
+
+    def execute(self, context):
         all_empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
 
         # by default only ungroup the top level groups
-        empties = all_empties if event.alt else [e for e in all_empties if e.parent not in all_empties]
+        if self.only_ungroup_top_level:
+            empties = [e for e in all_empties if e.parent not in all_empties]
+        else:
+            empties = all_empties
 
         # fetch potential higher level group empties
         upper_level = [e.parent for e in empties if e.parent and e.parent.M3.is_group_empty and e.parent not in all_empties]
@@ -167,18 +187,34 @@ class Add(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# TODO: optionally (ALT) adjust the emptie, allow it to be used in redo panel too
-
 class Remove(bpy.types.Operator):
     bl_idname = "machin3.remove_from_group"
     bl_label = "MACHIN3: remove_from_group"
     bl_description = "Remove Selection from Group"
     bl_options = {'REGISTER', 'UNDO'}
 
+    realign_group_empty: BoolProperty(name="Re-Align Group Empty", default=False)
+
+    location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
+
+
     @classmethod
     def poll(cls, context):
         if context.mode == 'OBJECT':
-            return [obj for obj in context.selected_objects if obj.M3.is_group_object]
+            # return [obj for obj in context.selected_objects if obj.M3.is_group_object]
+            return True
+
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column()
+
+        column.prop(self, 'realign_group_empty', toggle=True)
+
+        row = column.row()
+        row.active = self.realign_group_empty
+        row.prop(self, 'location', expand=True)
+
 
     def execute(self, context):
         all_group_objects = [obj for obj in context.selected_objects if obj.M3.is_group_object]
@@ -189,9 +225,34 @@ class Remove(bpy.types.Operator):
         # fetch potential higher level group empties
         upper_level = {obj.parent for obj in group_objects if obj.parent and obj.parent.M3.is_group_empty and obj.parent not in all_group_objects}
 
+        # collect group empties
+        empties = set()
+
         for obj in group_objects:
+            empties.add(obj.parent)
+
             unparent(obj)
             obj.M3.is_group_object = False
+
+        # optionally re-align the goup empty
+        if self.realign_group_empty:
+            for e in empties:
+                children = [c for c in e.children]
+
+                if children:
+                    gmx = get_group_matrix(context, self.location, children)
+
+                    # get the matrix difference, aka the old mx expressed in the new ones local space
+                    deltamx = gmx.inverted_safe() @ e.matrix_world
+
+                    # align the group's empty
+                    e.matrix_world = gmx
+
+                    # compensate the children location, so they stay in place
+                    for c in children:
+                        pmx = c.matrix_parent_inverse
+                        c.matrix_parent_inverse = pmx @ deltamx
+
 
         # clean up potential higher level groups that are now empty or only have a single child group
         for e in upper_level:
