@@ -74,6 +74,7 @@ def object_context_menu(self, context):
         groupable = len([obj for obj in context.selected_objects if not obj.parent]) > 1
         addable = [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group]
         removable = [obj for obj in context.selected_objects if obj.M3.is_group_object]
+        selectable = [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
 
 
         # AUTO SELECT GROUPS
@@ -105,7 +106,7 @@ def object_context_menu(self, context):
 
         # SELECT
 
-        if group_empties or removable:
+        if selectable:
             # custom spacer
             row = layout.row()
             row.scale_y = 0.3
@@ -119,7 +120,7 @@ def object_context_menu(self, context):
         if (addable and active_group) or removable:
 
             # only draw the spacer once
-            if not (group_empties or removable):
+            if not selectable:
                 # custom spacer
                 row = layout.row()
                 row.scale_y = 0.3
