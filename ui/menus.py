@@ -70,9 +70,10 @@ def object_context_menu(self, context):
 
     if get_prefs().activate_group:
         active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
+        active_child = context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None
         group_empties = [obj for obj in context.visible_objects if obj.M3.is_group_empty]
         groupable = len([obj for obj in context.selected_objects if not obj.parent]) > 1
-        addable = [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group]
+        addable = [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group and not obj == active_child]
         removable = [obj for obj in context.selected_objects if obj.M3.is_group_object]
         selectable = [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
         duplicatable = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
@@ -85,7 +86,7 @@ def object_context_menu(self, context):
             layout.prop(context.scene.M3, "group_select")
             layout.prop(context.scene.M3, "group_hide")
 
-            if groupable or group_empties or selectable or duplicatable or groupifyable or (addable and active_group) or removable:
+            if groupable or group_empties or selectable or duplicatable or groupifyable or (addable and (active_group or active_child)) or removable:
 
                 # custom spacer
                 row = layout.row()
@@ -146,20 +147,20 @@ def object_context_menu(self, context):
 
         # ADD and REMOVE
 
-        if (addable and active_group) or removable:
+        if (addable and (active_group or active_child)) or removable:
 
             # custom spacer
             row = layout.row()
             row.scale_y = 0.3
             row.label(text="")
 
-            if addable and active_group:
+            if addable and (active_group or active_child):
                 layout.operator("machin3.add_to_group", text="Add to Group")
 
             if removable:
                 layout.operator("machin3.remove_from_group", text="Remove from Group")
 
-        if group_empties or groupable or (addable and active_group) or removable or groupifyable:
+        if group_empties or groupable or (addable and (active_group or active_child)) or removable or groupifyable:
             layout.separator()
 
 

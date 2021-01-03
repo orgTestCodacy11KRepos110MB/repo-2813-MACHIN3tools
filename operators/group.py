@@ -211,22 +211,73 @@ class Add(bpy.types.Operator):
     bl_description = "Add Selection to Group"
     bl_options = {'REGISTER', 'UNDO'}
 
+    realign_group_empty: BoolProperty(name="Re-Align Group Empty", default=False)
+    location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
+
     @classmethod
     def poll(cls, context):
         if context.mode == 'OBJECT':
-            active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
-            if active_group:
-                return [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group]
+            # active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
+            # if active_group:
+                # return [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group]
+
+            # active_child = context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None
+
+            # if active_child:
+                # return [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_child]
+
+            return True
+
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column()
+
+        column.prop(self, 'realign_group_empty', toggle=True)
+
+        row = column.row()
+        row.active = self.realign_group_empty
+        row.prop(self, 'location', expand=True)
 
     def execute(self, context):
         active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
+
+        if not active_group:
+
+            # the poll is nerfed for the redo panel, so ensure there actually is an active child
+            active_group = context.active_object.parent if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None
+
+            if not active_group:
+                return {'CANCELLED'}
+
         objects = [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group]
 
-        for obj in objects:
-            parent(obj, active_group)
-            obj.M3.is_group_object = True
+        if objects:
+            for obj in objects:
+                parent(obj, active_group)
+                obj.M3.is_group_object = True
 
-        return {'FINISHED'}
+
+            # optionally re-align the goup empty
+            if self.realign_group_empty:
+                children = [c for c in active_group.children]
+
+                gmx = get_group_matrix(context, self.location, children)
+
+                # get the matrix difference, aka the old mx expressed in the new ones local space
+                deltamx = gmx.inverted_safe() @ active_group.matrix_world
+
+                # align the group's empty
+                active_group.matrix_world = gmx
+
+                # compensate the children location, so they stay in place
+                for c in children:
+                    pmx = c.matrix_parent_inverse
+                    c.matrix_parent_inverse = pmx @ deltamx
+
+            return {'FINISHED'}
+        else:
+            return {'CANCELLED'}
 
 
 class Remove(bpy.types.Operator):
@@ -236,7 +287,6 @@ class Remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     realign_group_empty: BoolProperty(name="Re-Align Group Empty", default=False)
-
     location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
 
 
@@ -356,7 +406,11 @@ class Duplicate(bpy.types.Operator):
     def invoke(self, context, event):
         empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
 
+        # deselect everything, this ensures only the group will be duplicated, not any other non-group objects that may be selected
+        bpy.ops.object.select_all(action='DESELECT')
+
         for e in empties:
+            e.select_set(True)
             select_group_children(e, recursive=event.ctrl)
 
         bpy.ops.object.duplicate_move_linked('INVOKE_DEFAULT') if event.alt else bpy.ops.object.duplicate_move('INVOKE_DEFAULT')
