@@ -6,7 +6,6 @@ from .. utils.object import parent, unparent
 from .. items import group_location_items
 
 
-# TODO: Select group (from child)
 # TODO: duplicate/instance group
 # TODO: groupify (turn empty hierarchy in to group)
 
@@ -67,7 +66,7 @@ class Group(bpy.types.Operator):
     def execute(self, context):
         sel = [obj for obj in context.selected_objects if not obj.parent]
 
-        if sel:
+        if len(sel) > 1:
 
             # get collection
             col = self.get_collection(context, sel)
@@ -281,5 +280,35 @@ class Remove(bpy.types.Operator):
                 print("INFO: Removing empty group", e.name)
                 bpy.data.objects.remove(e, do_unlink=True)
                 continue
+
+        return {'FINISHED'}
+
+
+class Select(bpy.types.Operator):
+    bl_idname = "machin3.select_group"
+    bl_label = "MACHIN3: Select Group"
+    bl_description = "Select entire Group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            return [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
+
+    def execute(self, context):
+        empties = {obj for obj in context.selected_objects if obj.M3.is_group_empty}
+        objects = [obj for obj in context.selected_objects if obj.M3.is_group_object and obj not in empties]
+
+        for obj in objects:
+            if obj.parent and obj.parent.M3.is_group_empty:
+                empties.add(obj.parent)
+
+        for e in empties:
+            e.select_set(True)
+
+            objects = [c for c in e.children if c.M3.is_group_object]
+
+            for obj in objects:
+                obj.select_set(True)
 
         return {'FINISHED'}

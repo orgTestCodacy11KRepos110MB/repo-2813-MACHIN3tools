@@ -103,14 +103,28 @@ def object_context_menu(self, context):
                 # reset op context just to be sure
                 layout.operator_context = "EXEC_REGION_WIN"
 
+        # SELECT
 
-        # ADD and REMOVE
-
-        if (addable and active_group) or removable:
+        if group_empties or removable:
             # custom spacer
             row = layout.row()
             row.scale_y = 0.3
             row.label(text="")
+
+            layout.operator("machin3.select_group", text="Select Group")
+
+
+        # ADD and REMOVE
+
+        if (addable and active_group) or removable:
+
+            # only draw the spacer once
+            if not (group_empties or removable):
+                # custom spacer
+                row = layout.row()
+                row.scale_y = 0.3
+                row.label(text="")
+
 
             if addable and active_group:
                 layout.operator("machin3.add_to_group", text="Add to Group")
