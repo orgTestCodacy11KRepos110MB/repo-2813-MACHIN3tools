@@ -1,52 +1,8 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
-from mathutils import Vector
-from .. utils.math import average_locations, get_loc_matrix
 from .. utils.object import parent, unparent
+from .. utils.group import ungroup, get_group_matrix, select_group_children
 from .. items import group_location_items
-
-
-# TODO: add groups by pickign another group member as the target too
-
-
-
-def ungroup(empty):
-    for obj in empty.children:
-        unparent(obj)
-        obj.M3.is_group_object = False
-
-    bpy.data.objects.remove(empty, do_unlink=True)
-
-
-def get_group_matrix(context, location_type, objects):
-    if location_type == 'AVERAGE':
-        location = average_locations([obj.matrix_world.to_translation() for obj in objects])
-
-    elif location_type == 'ACTIVE':
-        if context.active_object:
-            return context.active_object.matrix_world
-
-        # fallback to average if no active object is present
-        else:
-            location = average_locations([obj.matrix_world.to_translation() for obj in objects])
-
-    elif location_type == 'CURSOR':
-        location = context.scene.cursor.location
-
-    elif location_type == 'WORLD':
-        location = Vector()
-
-    return get_loc_matrix(location)
-
-
-def select_group_children(empty, recursive=False):
-    children = [c for c in empty.children if c.M3.is_group_object]
-
-    for obj in children:
-        obj.select_set(True)
-
-        if obj.M3.is_group_empty and recursive:
-            select_group_children(obj, recursive=True)
 
 
 class Group(bpy.types.Operator):
@@ -103,8 +59,7 @@ class Group(bpy.types.Operator):
                 obj.M3.is_group_object = True
 
             return {'FINISHED'}
-        else:
-            return {'CANCELLED'}
+        return {'CANCELLED'}
 
     def get_collection(self, context, sel):
         '''
@@ -136,9 +91,7 @@ class UnGroup(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if context.mode == 'OBJECT':
-            # return [obj for obj in context.selected_objects if obj.M3.is_group_empty]
-            return True
+        return context.mode == 'OBJECT'
 
     def draw(self, context):
         layout = self.layout
@@ -154,10 +107,23 @@ class UnGroup(bpy.types.Operator):
         self.ungroup_all_selected = event.alt
         self.ungroup_entire_hierarchy = event.ctrl
 
-        self.execute(context)
-        return {'FINISHED'}
+        empties, all_empties = self.get_group_empties(context)
+
+        if empties:
+            self.ungroup(empties, all_empties)
+            return {'FINISHED'}
+        return {'CANCELLED'}
 
     def execute(self, context):
+        empties, all_empties = self.get_group_empties(context)
+
+        if empties:
+            self.ungroup(empties, all_empties)
+
+            return {'FINISHED'}
+        return {'CANCELLED'}
+
+    def get_group_empties(self, context):
         all_empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
 
         # by default only ungroup the top level groups
@@ -166,6 +132,17 @@ class UnGroup(bpy.types.Operator):
         else:
             empties = [e for e in all_empties if e.parent not in all_empties]
 
+        return empties, all_empties
+
+    def collect_entire_hierarchy(self, empties):
+        for e in empties:
+            children = [obj for obj in e.children if obj.M3.is_group_empty]
+
+            for c in children:
+                self.empties.append(c)
+                self.collect_entire_hierarchy([c])
+
+    def ungroup(self, empties, all_empties):
         if self.ungroup_entire_hierarchy:
             self.empties = empties
             self.collect_entire_hierarchy(empties)
@@ -193,16 +170,6 @@ class UnGroup(bpy.types.Operator):
                     print("INFO: Removing empty group", e.name)
                     bpy.data.objects.remove(e, do_unlink=True)
                     continue
-
-        return {'FINISHED'}
-
-    def collect_entire_hierarchy(self, empties):
-        for e in empties:
-            children = [obj for obj in e.children if obj.M3.is_group_empty]
-
-            for c in children:
-                self.empties.append(c)
-                self.collect_entire_hierarchy([c])
 
 
 class Add(bpy.types.Operator):
@@ -276,8 +243,7 @@ class Add(bpy.types.Operator):
                     c.matrix_parent_inverse = pmx @ deltamx
 
             return {'FINISHED'}
-        else:
-            return {'CANCELLED'}
+        return {'CANCELLED'}
 
 
 class Remove(bpy.types.Operator):
@@ -288,7 +254,6 @@ class Remove(bpy.types.Operator):
 
     realign_group_empty: BoolProperty(name="Re-Align Group Empty", default=False)
     location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
-
 
     @classmethod
     def poll(cls, context):
@@ -307,62 +272,64 @@ class Remove(bpy.types.Operator):
         row.active = self.realign_group_empty
         row.prop(self, 'location', expand=True)
 
-
     def execute(self, context):
         all_group_objects = [obj for obj in context.selected_objects if obj.M3.is_group_object]
 
         # only ever remove top level objects/groups from other groups
         group_objects = [obj for obj in all_group_objects if obj.parent not in all_group_objects]
 
-        # fetch potential higher level group empties
-        upper_level = {obj.parent for obj in group_objects if obj.parent and obj.parent.M3.is_group_empty and obj.parent not in all_group_objects}
+        if group_objects:
 
-        # collect group empties
-        empties = set()
+            # fetch potential higher level group empties
+            upper_level = {obj.parent for obj in group_objects if obj.parent and obj.parent.M3.is_group_empty and obj.parent not in all_group_objects}
 
-        for obj in group_objects:
-            empties.add(obj.parent)
+            # collect group empties
+            empties = set()
 
-            unparent(obj)
-            obj.M3.is_group_object = False
+            for obj in group_objects:
+                empties.add(obj.parent)
 
-        # optionally re-align the goup empty
-        if self.realign_group_empty:
-            for e in empties:
-                children = [c for c in e.children]
+                unparent(obj)
+                obj.M3.is_group_object = False
 
-                if children:
-                    gmx = get_group_matrix(context, self.location, children)
+            # optionally re-align the goup empty
+            if self.realign_group_empty:
+                for e in empties:
+                    children = [c for c in e.children]
 
-                    # get the matrix difference, aka the old mx expressed in the new ones local space
-                    deltamx = gmx.inverted_safe() @ e.matrix_world
+                    if children:
+                        gmx = get_group_matrix(context, self.location, children)
 
-                    # align the group's empty
-                    e.matrix_world = gmx
+                        # get the matrix difference, aka the old mx expressed in the new ones local space
+                        deltamx = gmx.inverted_safe() @ e.matrix_world
 
-                    # compensate the children location, so they stay in place
-                    for c in children:
-                        pmx = c.matrix_parent_inverse
-                        c.matrix_parent_inverse = pmx @ deltamx
+                        # align the group's empty
+                        e.matrix_world = gmx
+
+                        # compensate the children location, so they stay in place
+                        for c in children:
+                            pmx = c.matrix_parent_inverse
+                            c.matrix_parent_inverse = pmx @ deltamx
 
 
-        # clean up potential higher level groups that are now empty or only have a single child group
-        for e in upper_level:
-            if str(e) != '<bpy_struct, Object invalid>':
+            # clean up potential higher level groups that are now empty or only have a single child group
+            for e in upper_level:
+                if str(e) != '<bpy_struct, Object invalid>':
 
-                # ungroup single child group
-                if len(e.children) == 1 and e.children[0].M3.is_group_object and not e.parent:
-                    print("INFO: Un-Grouping single child group", e.name)
-                    ungroup(e)
-                    continue
+                    # ungroup single child group
+                    if len(e.children) == 1 and e.children[0].M3.is_group_object and not e.parent:
+                        print("INFO: Un-Grouping single child group", e.name)
+                        ungroup(e)
+                        continue
 
-                # remove empty upper level groups
-                if not e.children:
-                    print("INFO: Removing empty group", e.name)
-                    bpy.data.objects.remove(e, do_unlink=True)
-                    continue
+                    # remove empty upper level groups
+                    if not e.children:
+                        print("INFO: Removing empty group", e.name)
+                        bpy.data.objects.remove(e, do_unlink=True)
+                        continue
 
-        return {'FINISHED'}
+            return {'FINISHED'}
+        return {'CANCELLED'}
 
 
 class Select(bpy.types.Operator):

@@ -10,6 +10,8 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                     ('ui.operators.call_pie', [('CallMACHIN3toolsPie', 'call_machin3tools_pie')]),
                     ('ui.operators.draw', [('DrawLabel', 'draw_label')]),
                     ('ui.panels', [('PanelMACHIN3tools', 'machin3_tools')]),
+                    ('ui.menus', [('MenuMACHIN3toolsObjectContextMenu', 'machin3tools_object_context_menu'),
+                                  ('MenuGroupObjectContextMenu', 'group_object_context_menu')]),
                     ('operators.quadsphere', [('QuadSphere', 'quadsphere')])],
 
 
@@ -132,7 +134,6 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
            'TOOLS_PIE': [('ui.pies', [('PieTools', 'tools_pie')]),
                          ('ui.operators.tool', [('SetToolByName', 'set_tool_by_name'),
                                                 ('SetBCPreset', 'set_boxcutter_preset')])],
-           'OBJECT_CONTEXT_MENU': [('ui.menus', [('MenuMACHIN3toolsObjectContextMenu', 'machin3tools_object_context_menu')])],
            }
 
 

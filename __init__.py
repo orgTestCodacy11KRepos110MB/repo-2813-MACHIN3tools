@@ -74,7 +74,7 @@ if 'bpy' in locals():
 import bpy
 from bpy.props import PointerProperty, BoolProperty
 from . properties import M3SceneProperties, M3ObjectProperties
-from . utils.registration import get_core, get_tools, get_pie_menus, get_menus
+from . utils.registration import get_core, get_tools, get_pie_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons
 from . ui.menus import object_context_menu, add_object_buttons, material_pick_button
 from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD, update_group
@@ -98,10 +98,9 @@ def register():
 
     tool_classlists, tool_keylists, tool_count = get_tools()
     pie_classlists, pie_keylists, pie_count = get_pie_menus()
-    menu_classlists, menu_keylists, menu_count = get_menus()
 
-    classes = register_classes(tool_classlists + pie_classlists + menu_classlists) + core_classes
-    keymaps = register_keymaps(tool_keylists + pie_keylists + menu_keylists)
+    classes = register_classes(tool_classlists + pie_classlists) + core_classes
+    keymaps = register_keymaps(tool_keylists + pie_keylists)
 
     bpy.types.VIEW3D_MT_object_context_menu.prepend(object_context_menu)
     bpy.types.VIEW3D_MT_mesh_add.prepend(add_object_buttons)
@@ -126,7 +125,7 @@ def register():
 
     # REGISTRATION OUTPUT
 
-    print("Registered %s %s with %d %s, %d pie %s and %s context %s" % (bl_info["name"], ".".join([str(i) for i in bl_info['version']]), tool_count, "tool" if tool_count == 1 else "tools", pie_count, "menu" if pie_count == 1 else "menus", menu_count, "menu" if menu_count == 1 else "menus"))
+    print(f"Registered {bl_info['name']} {'.'.join([str(i) for i in bl_info['version']])} with {tool_count} {'tool' if tool_count == 1 else 'tools'}, {pie_count} pie {'menu' if pie_count == 1 else 'menus'}")
 
 
 def unregister():

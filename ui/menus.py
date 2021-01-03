@@ -2,6 +2,9 @@ import bpy
 from .. utils.registration import get_prefs
 
 
+
+# MACHIN3tools SUB MENU
+
 class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
     bl_idname = "MACHIN3_MT_machin3tools_object_context_menu"
     bl_label = "MACHIN3tools"
@@ -25,6 +28,8 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
         if get_prefs().activate_material_picker:
             layout.operator("machin3.material_picker", text="Material Picker")
 
+
+# AppendMaterilas SUB MENU
 
 class MenuAppendMaterials(bpy.types.Menu):
     bl_idname = "MACHIN3_MT_append_materials"
@@ -59,6 +64,87 @@ class MenuAppendMaterials(bpy.types.Menu):
                 layout.operator("machin3.append_material", text=name, icon_value=icon_val).name = name
 
 
+# Group SUB MENU
+
+def get_group_polls(context):
+    active_group = bool(context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None)
+    active_child = bool(context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None)
+    group_empties = bool([obj for obj in context.visible_objects if obj.M3.is_group_empty])
+    groupable = bool(len([obj for obj in context.selected_objects if not obj.parent]) > 1)
+    ungroupable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty]) if group_empties else False
+    addable = bool([obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group and not obj == active_child])
+    removable = bool([obj for obj in context.selected_objects if obj.M3.is_group_object])
+    selectable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object])
+    duplicatable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty])
+    groupifyable = bool([obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children])
+
+    return active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable
+
+
+class MenuGroupObjectContextMenu(bpy.types.Menu):
+    bl_idname = "MACHIN3_MT_group_object_context_menu"
+    bl_label = "Group"
+
+    def draw(self, context):
+        layout = self.layout
+
+        active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
+
+
+        # SCENE PROPS
+
+        row = layout.row()
+        row.active = group_empties
+        row.prop(context.scene.M3, "group_select")
+
+        row = layout.row()
+        row.active = group_empties
+        row.prop(context.scene.M3, "group_hide")
+
+        layout.separator()
+
+
+        # GROUP CREATION/DESTRUCTION
+
+        row = layout.row()
+        row.active = groupable
+        row.operator("machin3.group", text="Group")
+
+        row = layout.row()
+        row.active = ungroupable
+        row.operator("machin3.ungroup", text="Un-Group")
+
+        row = layout.row()
+        row.active = groupifyable
+        layout.operator("machin3.groupify", text="Groupify")
+
+        layout.separator()
+
+
+        # SELECT and DUPLICATE
+
+        row = layout.row()
+        row.active = selectable
+        row.operator("machin3.select_group", text="Select Group")
+
+        row = layout.row()
+        row.active = duplicatable
+        row.operator("machin3.duplicate_group", text="Duplicate Group")
+
+        layout.separator()
+
+
+        # ADD and REMOVE
+
+        row = layout.row()
+        row.active = addable and (active_group or active_child)
+        row.operator("machin3.add_to_group", text="Add to Group")
+
+        row = layout.row()
+        row.active = removable
+        row.operator("machin3.remove_from_group", text="Remove from Group")
+
+
 # OBJECT CONTEXT MENU
 
 def object_context_menu(self, context):
@@ -69,45 +155,36 @@ def object_context_menu(self, context):
         layout.separator()
 
     if get_prefs().activate_group:
-        active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
-        active_child = context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None
-        group_empties = [obj for obj in context.visible_objects if obj.M3.is_group_empty]
-        groupable = len([obj for obj in context.selected_objects if not obj.parent]) > 1
-        addable = [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group and not obj == active_child]
-        removable = [obj for obj in context.selected_objects if obj.M3.is_group_object]
-        selectable = [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
-        duplicatable = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
-        groupifyable = [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
+
+        if get_prefs().use_group_sub_menu:
+            layout.menu("MACHIN3_MT_group_object_context_menu")
+            layout.separator()
+
+        else:
+            active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
 
-        # AUTO SELECT GROUPS
+            # SCENE PROPS
 
-        if group_empties:
-            layout.prop(context.scene.M3, "group_select")
-            layout.prop(context.scene.M3, "group_hide")
+            if group_empties:
+                layout.prop(context.scene.M3, "group_select")
+                layout.prop(context.scene.M3, "group_hide")
 
-            if groupable or group_empties or selectable or duplicatable or groupifyable or (addable and (active_group or active_child)) or removable:
+                if groupable or group_empties or selectable or duplicatable or groupifyable or (addable and (active_group or active_child)) or removable:
 
-                # custom spacer
-                row = layout.row()
-                row.scale_y = 0.3
-                row.label(text="")
-
-        # GROUPIFY
-
-        if groupifyable:
-            layout.operator("machin3.groupify", text="Groupify")
+                    # custom spacer
+                    row = layout.row()
+                    row.scale_y = 0.3
+                    row.label(text="")
 
 
-        # GROUP
+            # GROUP
 
-        if groupable:
-            layout.operator("machin3.group", text="Group")
+            if groupable:
+                layout.operator("machin3.group", text="Group")
 
-        # UN-GROUP
 
-        if group_empties:
-            ungroupable = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+            # UN-GROUP
 
             if ungroupable:
                 # set op context
@@ -120,48 +197,55 @@ def object_context_menu(self, context):
                 # reset op context just to be sure
                 layout.operator_context = "EXEC_REGION_WIN"
 
-        # SELECT
 
-        if selectable:
-            # custom spacer
-            row = layout.row()
-            row.scale_y = 0.3
-            row.label(text="")
+            # GROUPIFY
 
-            layout.operator_context = "INVOKE_REGION_WIN"
-            layout.operator("machin3.select_group", text="Select Group")
-            layout.operator_context = "EXEC_REGION_WIN"
+            if groupifyable:
+                layout.operator("machin3.groupify", text="Groupify")
 
-        if duplicatable:
 
-            if not selectable:
+            # SELECT
+
+            if selectable:
                 # custom spacer
                 row = layout.row()
                 row.scale_y = 0.3
                 row.label(text="")
 
-            layout.operator_context = "INVOKE_REGION_WIN"
-            layout.operator("machin3.duplicate_group", text="Duplicate Group")
-            layout.operator_context = "EXEC_REGION_WIN"
+                layout.operator_context = "INVOKE_REGION_WIN"
+                layout.operator("machin3.select_group", text="Select Group")
+                layout.operator_context = "EXEC_REGION_WIN"
+
+            if duplicatable:
+
+                if not selectable:
+                    # custom spacer
+                    row = layout.row()
+                    row.scale_y = 0.3
+                    row.label(text="")
+
+                layout.operator_context = "INVOKE_REGION_WIN"
+                layout.operator("machin3.duplicate_group", text="Duplicate Group")
+                layout.operator_context = "EXEC_REGION_WIN"
 
 
-        # ADD and REMOVE
+            # ADD and REMOVE
 
-        if (addable and (active_group or active_child)) or removable:
+            if (addable and (active_group or active_child)) or removable:
 
-            # custom spacer
-            row = layout.row()
-            row.scale_y = 0.3
-            row.label(text="")
+                # custom spacer
+                row = layout.row()
+                row.scale_y = 0.3
+                row.label(text="")
 
-            if addable and (active_group or active_child):
-                layout.operator("machin3.add_to_group", text="Add to Group")
+                if addable and (active_group or active_child):
+                    layout.operator("machin3.add_to_group", text="Add to Group")
 
-            if removable:
-                layout.operator("machin3.remove_from_group", text="Remove from Group")
+                if removable:
+                    layout.operator("machin3.remove_from_group", text="Remove from Group")
 
-        if group_empties or groupable or (addable and (active_group or active_child)) or removable or groupifyable:
-            layout.separator()
+            if group_empties or groupable or (addable and (active_group or active_child)) or removable or groupifyable:
+                layout.separator()
 
 
 # ADD OBJECTS MENU

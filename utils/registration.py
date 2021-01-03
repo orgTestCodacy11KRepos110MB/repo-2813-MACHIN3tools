@@ -434,18 +434,6 @@ def get_pie_menus():
     return classlists, keylists, count
 
 
-def get_menus():
-    classlists = []
-    keylists = []
-    count = 0
-
-    # OBJECT CONTEXT MENU
-
-    classlists, keylists, count = get_object_context_menu(classlists, keylists, count)
-
-    return classlists, keylists, count
-
-
 # GET SPECIFIC TOOLS
 
 def get_smart_vert(classlists=[], keylists=[], count=0):
@@ -711,16 +699,6 @@ def get_tools_pie(classlists=[], keylists=[], count=0):
     if get_prefs().activate_tools_pie:
         classlists.append(classesdict["TOOLS_PIE"])
         keylists.append(keysdict["TOOLS_PIE"])
-        count += 1
-
-    return classlists, keylists, count
-
-
-# GET OBJECT SPECIALS MENU
-
-def get_object_context_menu(classlists=[], keylists=[], count=0):
-    if get_prefs().activate_object_context_menu:
-        classlists.append(classesdict["OBJECT_CONTEXT_MENU"])
         count += 1
 
     return classlists, keylists, count

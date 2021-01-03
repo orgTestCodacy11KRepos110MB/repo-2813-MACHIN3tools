@@ -179,11 +179,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_tools_pie(self, context):
         activate(self, register=self.activate_tools_pie, tool="tools_pie")
 
-    # RUNTIME MENU ACTIVATION
-
-    def update_activate_object_context_menu(self, context):
-        activate(self, register=self.activate_object_context_menu, tool="object_context_menu")
-
 
     # PROPERTIES
 
@@ -274,8 +269,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     activate_tools_pie: BoolProperty(name="Tools Pie", default=False, update=update_activate_tools_pie)
 
 
-    # MACHIN3menus
-    activate_object_context_menu: BoolProperty(name="Object Context Menu", default=False, update=update_activate_object_context_menu)
+    # SUB MENUS
+
+    activate_object_context_menu: BoolProperty(name="Object Context Menu", default=False)
+    use_group_sub_menu: BoolProperty(name="Use Group Sub-Menu", default=False)
 
 
     # hidden
@@ -449,18 +446,24 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row.label(text="Switch Tools, used primarily for BoxCutter/HardOps.")
 
 
-        # MACHIN3menus
+        # SUB MENUS
 
-        if any([self.activate_mirror, self.activate_mesh_cut, self.activate_apply, self.activate_select, self.activate_material_picker]):
+        if any([self.activate_mirror, self.activate_mesh_cut, self.activate_apply, self.activate_select, self.activate_material_picker, self.activate_group]):
 
             bb = b.box()
             bb.label(text="Menus")
 
             column = bb.column()
 
-            row = column.split(factor=0.25)
-            row.prop(self, "activate_object_context_menu", toggle=True)
-            row.label(text="Object Context Menu, access tools, that aren't keymapped.")
+            if any([self.activate_mirror, self.activate_mesh_cut, self.activate_apply, self.activate_select, self.activate_material_picker]):
+                row = column.split(factor=0.25)
+                row.prop(self, "activate_object_context_menu", toggle=True)
+                row.label(text="Object Context Menu, access tools, that aren't keymapped.")
+
+            if self.activate_group:
+                row = column.split(factor=0.25)
+                row.prop(self, "use_group_sub_menu", toggle=True)
+                row.label(text="Use Group Sub Menu in Object Context Menu.")
 
 
         # RIGHT
