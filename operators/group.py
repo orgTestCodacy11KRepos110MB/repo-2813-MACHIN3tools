@@ -6,10 +6,7 @@ from .. utils.object import parent, unparent
 from .. items import group_location_items
 
 
-# TODO: ungroup entire hierarchy
-
 # TODO: groupify (turn empty hierarchy in to group)
-
 
 
 def ungroup(empty):
@@ -130,10 +127,11 @@ class Group(bpy.types.Operator):
 class UnGroup(bpy.types.Operator):
     bl_idname = "machin3.ungroup"
     bl_label = "MACHIN3: Un-Group"
-    bl_description = "Un-Group selected top-level Groups\nALT: Un-Group all selected Groups"
+    bl_description = "Un-Group selected top-level Groups\nALT: Un-Group all selected Groups\nCTRL: Un-Group entire Hierarchy down"
     bl_options = {'REGISTER', 'UNDO'}
 
-    only_ungroup_top_level: BoolProperty(name="Un-Group Top Level only", default=True)
+    ungroup_all_selected: BoolProperty(name="Un-Group all Selected Groups", default=False)
+    ungroup_entire_hierarchy: BoolProperty(name="Un-Group entire Hierarchy down", default=False)
 
     @classmethod
     def poll(cls, context):
@@ -146,10 +144,14 @@ class UnGroup(bpy.types.Operator):
 
         column = layout.column()
 
-        column.prop(self, 'only_ungroup_top_level', toggle=True)
+        row = column.row(align=True)
+        row.label(text="Un-Group")
+        row.prop(self, 'ungroup_all_selected', text='All Selected', toggle=True)
+        row.prop(self, 'ungroup_entire_hierarchy', text='Entire Hierarchy', toggle=True)
 
     def invoke(self, context, event):
-        self.only_ungroup_top_level = not event.alt
+        self.ungroup_all_selected = event.alt
+        self.ungroup_entire_hierarchy = event.ctrl
 
         self.execute(context)
         return {'FINISHED'}
@@ -158,10 +160,15 @@ class UnGroup(bpy.types.Operator):
         all_empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
 
         # by default only ungroup the top level groups
-        if self.only_ungroup_top_level:
-            empties = [e for e in all_empties if e.parent not in all_empties]
-        else:
+        if self.ungroup_all_selected:
             empties = all_empties
+        else:
+            empties = [e for e in all_empties if e.parent not in all_empties]
+
+        if self.ungroup_entire_hierarchy:
+            self.empties = empties
+            self.collect_entire_hierarchy(empties)
+            empties = set(self.empties)
 
         # fetch potential higher level group empties
         upper_level = [e.parent for e in empties if e.parent and e.parent.M3.is_group_empty and e.parent not in all_empties]
@@ -170,21 +177,31 @@ class UnGroup(bpy.types.Operator):
         for empty in empties:
             ungroup(empty)
 
+
         # clean up potential higher level groups that are now empty or only have a single child group
         for e in upper_level:
-            # ungroup single child group of groups
-            if len(e.children) == 1 and e.children[0].M3.is_group_empty and not e.parent:
-                print("INFO: Un-Grouping single child group of groups", e.name)
-                ungroup(e)
-                continue
+            if str(e) != '<bpy_struct, Object invalid>':
+                # ungroup single child group of groups
+                if len(e.children) == 1 and e.children[0].M3.is_group_empty and not e.parent:
+                    print("INFO: Un-Grouping single child group of groups", e.name)
+                    ungroup(e)
+                    continue
 
-            # remove empty upper level groups
-            if not e.children:
-                print("INFO: Removing empty group", e.name)
-                bpy.data.objects.remove(e, do_unlink=True)
-                continue
+                # remove empty upper level groups
+                if not e.children:
+                    print("INFO: Removing empty group", e.name)
+                    bpy.data.objects.remove(e, do_unlink=True)
+                    continue
 
         return {'FINISHED'}
+
+    def collect_entire_hierarchy(self, empties):
+        for e in empties:
+            children = [obj for obj in e.children if obj.M3.is_group_empty]
+
+            for c in children:
+                self.empties.append(c)
+                self.collect_entire_hierarchy([c])
 
 
 class Add(bpy.types.Operator):
@@ -280,17 +297,19 @@ class Remove(bpy.types.Operator):
 
         # clean up potential higher level groups that are now empty or only have a single child group
         for e in upper_level:
-            # ungroup single child group
-            if len(e.children) == 1 and e.children[0].M3.is_group_object and not e.parent:
-                print("INFO: Un-Grouping single child group", e.name)
-                ungroup(e)
-                continue
+            if str(e) != '<bpy_struct, Object invalid>':
 
-            # remove empty upper level groups
-            if not e.children:
-                print("INFO: Removing empty group", e.name)
-                bpy.data.objects.remove(e, do_unlink=True)
-                continue
+                # ungroup single child group
+                if len(e.children) == 1 and e.children[0].M3.is_group_object and not e.parent:
+                    print("INFO: Un-Grouping single child group", e.name)
+                    ungroup(e)
+                    continue
+
+                # remove empty upper level groups
+                if not e.children:
+                    print("INFO: Removing empty group", e.name)
+                    bpy.data.objects.remove(e, do_unlink=True)
+                    continue
 
         return {'FINISHED'}
 
