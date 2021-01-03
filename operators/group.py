@@ -387,6 +387,9 @@ class Select(bpy.types.Operator):
         for e in empties:
             e.select_set(True)
 
+            if len(empties) == 1:
+                context.view_layer.objects.active = e
+
             select_group_children(e, recursive=event.ctrl)
 
         return {'FINISHED'}
