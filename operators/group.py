@@ -398,6 +398,9 @@ class Groupify(bpy.types.Operator):
                 obj.empty_display_size = 0.1
                 obj.show_name = True
 
+                if not any([s in obj.name.lower() for s in ['grp', 'group']]):
+                    obj.name = f"{obj.name}_GROUP"
+
                 # do it all the way down
                 self.groupify(obj.children)
 

@@ -79,17 +79,24 @@ def object_context_menu(self, context):
         groupifyable = [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
 
 
-        # GROUPIFY
-
-        if groupifyable:
-            layout.operator("machin3.groupify", text="Groupify")
-
-
         # AUTO SELECT GROUPS
 
         if group_empties:
             layout.prop(context.scene.M3, "group_select")
             layout.prop(context.scene.M3, "group_hide")
+
+            if groupable or group_empties or selectable or duplicatable or groupifyable or (addable and active_group) or removable:
+
+                # custom spacer
+                row = layout.row()
+                row.scale_y = 0.3
+                row.label(text="")
+
+        # GROUPIFY
+
+        if groupifyable:
+            layout.operator("machin3.groupify", text="Groupify")
+
 
         # GROUP
 
@@ -152,7 +159,7 @@ def object_context_menu(self, context):
             if removable:
                 layout.operator("machin3.remove_from_group", text="Remove from Group")
 
-        if group_empties or groupable or (addable and active_group) or removable:
+        if group_empties or groupable or (addable and active_group) or removable or groupifyable:
             layout.separator()
 
 
