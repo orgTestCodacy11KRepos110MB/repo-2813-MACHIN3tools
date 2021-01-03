@@ -6,7 +6,8 @@ from .. utils.object import parent, unparent
 from .. items import group_location_items
 
 
-# TODO: groupify (turn empty hierarchy in to group)
+# TODO: add groups by pickign another group member as the target too
+
 
 
 def ungroup(empty):
@@ -361,3 +362,44 @@ class Duplicate(bpy.types.Operator):
         bpy.ops.object.duplicate_move_linked('INVOKE_DEFAULT') if event.alt else bpy.ops.object.duplicate_move('INVOKE_DEFAULT')
 
         return {'FINISHED'}
+
+
+class Groupify(bpy.types.Operator):
+    bl_idname = "machin3.groupify"
+    bl_label = "MACHIN3: Groupify"
+    bl_description = "Turn any Empty Hirearchy into Group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            return [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
+
+
+    def execute(self, context):
+        all_empties = [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
+
+        # only take the top level empties
+        empties = [e for e in all_empties if e.parent not in all_empties]
+
+        # groupify all the way down
+        self.groupify(empties)
+
+        return {'FINISHED'}
+
+
+    def groupify(self, objects):
+        for obj in objects:
+            if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children:
+                obj.M3.is_group_empty = True
+                obj.M3.is_group_object = True if obj.parent and obj.parent.M3.is_group_empty else False
+                obj.show_in_front = True
+                obj.empty_display_type = 'CUBE'
+                obj.empty_display_size = 0.1
+                obj.show_name = True
+
+                # do it all the way down
+                self.groupify(obj.children)
+
+            else:
+                obj.M3.is_group_object = True

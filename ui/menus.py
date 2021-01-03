@@ -76,6 +76,13 @@ def object_context_menu(self, context):
         removable = [obj for obj in context.selected_objects if obj.M3.is_group_object]
         selectable = [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
         duplicatable = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+        groupifyable = [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
+
+
+        # GROUPIFY
+
+        if groupifyable:
+            layout.operator("machin3.groupify", text="Groupify")
 
 
         # AUTO SELECT GROUPS

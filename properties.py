@@ -405,7 +405,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
                 e.empty_display_size = 0
 
     group_select: BoolProperty(name="Auto Select Groups", default=True)
-    group_hide: BoolProperty(name="Hide Group Empties in 3D View", default=True, update=update_group_hide)
+    group_hide: BoolProperty(name="Hide Group Empties in 3D View", default=False, update=update_group_hide)
 
 
     # hidden
