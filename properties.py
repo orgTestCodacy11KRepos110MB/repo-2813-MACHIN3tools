@@ -388,14 +388,24 @@ class M3SceneProperties(bpy.types.PropertyGroup):
         elif self.bcorientation == 'LONGEST':
             bcprefs.behavior.orient_method = 'TANGENT'
 
-    # BoxCutter
-
     bcorientation: EnumProperty(name="BoxCutter Orientation", items=bc_orientation_items, default='LOCAL', update=update_bcorientation)
 
 
     # GROUP
 
+    def update_group_hide(self, context):
+        empties = [obj for obj in context.visible_objects if obj.M3.is_group_empty]
+
+        for e in empties:
+            if e == context.active_object or not context.scene.M3.group_hide:
+                e.show_name = True
+                e.empty_display_size = 0.1
+            else:
+                e.show_name = False
+                e.empty_display_size = 0
+
     group_select: BoolProperty(name="Auto Select Groups", default=True)
+    group_hide: BoolProperty(name="Hide Group Empties in 3D View", default=True, update=update_group_hide)
 
 
     # hidden

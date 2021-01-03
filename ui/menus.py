@@ -80,6 +80,7 @@ def object_context_menu(self, context):
 
         if group_empties:
             layout.prop(context.scene.M3, "group_select")
+            layout.prop(context.scene.M3, "group_hide")
 
         # GROUP
 

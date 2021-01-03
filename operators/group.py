@@ -6,6 +6,11 @@ from .. utils.object import parent, unparent
 from .. items import group_location_items
 
 
+# TODO: Select group (from child)
+# TODO: duplicate/instance group
+# TODO: groupify (turn empty hierarchy in to group)
+
+
 
 def ungroup(empty):
     for obj in empty.children:
@@ -68,17 +73,22 @@ class Group(bpy.types.Operator):
             col = self.get_collection(context, sel)
 
             empty = bpy.data.objects.new(name="GROUP", object_data=None)
-            empty.show_name = True
-            empty.show_in_front = True
-            empty.empty_display_type = 'CUBE'
-            empty.empty_display_size = 0.1
-
+            empty.M3.is_group_empty = True
             empty.matrix_world = get_group_matrix(context, self.location, sel)
             col.objects.link(empty)
+
             context.view_layer.objects.active = empty
             empty.select_set(True)
+            empty.show_in_front = True
+            empty.empty_display_type = 'CUBE'
 
-            empty.M3.is_group_empty = True
+            if context.scene.M3.group_hide:
+                empty.show_name = False
+                empty.empty_display_size = 0
+
+            else:
+                empty.show_name = True
+                empty.empty_display_size = 0.1
 
             for obj in sel:
                 parent(obj, empty)
