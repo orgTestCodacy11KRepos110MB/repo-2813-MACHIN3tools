@@ -6,7 +6,8 @@ from .. utils.object import parent, unparent
 from .. items import group_location_items
 
 
-# TODO: duplicate/instance group
+# TODO: ungroup entire hierarchy
+
 # TODO: groupify (turn empty hierarchy in to group)
 
 
@@ -40,6 +41,16 @@ def get_group_matrix(context, location_type, objects):
     return get_loc_matrix(location)
 
 
+def select_group_children(empty, recursive=False):
+    children = [c for c in empty.children if c.M3.is_group_object]
+
+    for obj in children:
+        obj.select_set(True)
+
+        if obj.M3.is_group_empty and recursive:
+            select_group_children(obj, recursive=True)
+
+
 class Group(bpy.types.Operator):
     bl_idname = "machin3.group"
     bl_label = "MACHIN3: Group"
@@ -71,7 +82,7 @@ class Group(bpy.types.Operator):
             # get collection
             col = self.get_collection(context, sel)
 
-            empty = bpy.data.objects.new(name="GROUP", object_data=None)
+            empty = bpy.data.objects.new(name="GROUP.001", object_data=None)
             empty.M3.is_group_empty = True
             empty.matrix_world = get_group_matrix(context, self.location, sel)
             col.objects.link(empty)
@@ -127,7 +138,7 @@ class UnGroup(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         if context.mode == 'OBJECT':
-            # return[obj for obj in context.selected_objects if obj.M3.is_group_empty]
+            # return [obj for obj in context.selected_objects if obj.M3.is_group_empty]
             return True
 
     def draw(self, context):
@@ -287,7 +298,7 @@ class Remove(bpy.types.Operator):
 class Select(bpy.types.Operator):
     bl_idname = "machin3.select_group"
     bl_label = "MACHIN3: Select Group"
-    bl_description = "Select entire Group"
+    bl_description = "Select Group\nCTRL: Select entire Group Hierarchy down"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -295,7 +306,7 @@ class Select(bpy.types.Operator):
         if context.mode == 'OBJECT':
             return [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
 
-    def execute(self, context):
+    def invoke(self, context, event):
         empties = {obj for obj in context.selected_objects if obj.M3.is_group_empty}
         objects = [obj for obj in context.selected_objects if obj.M3.is_group_object and obj not in empties]
 
@@ -306,9 +317,28 @@ class Select(bpy.types.Operator):
         for e in empties:
             e.select_set(True)
 
-            objects = [c for c in e.children if c.M3.is_group_object]
+            select_group_children(e, recursive=event.ctrl)
 
-            for obj in objects:
-                obj.select_set(True)
+        return {'FINISHED'}
+
+
+class Duplicate(bpy.types.Operator):
+    bl_idname = "machin3.duplicate_group"
+    bl_label = "MACHIN3: duplicate_group"
+    bl_description = "Duplicate a Group\nALT: Create Instances\nCTRL: Duplicate entire Hierarchy down"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            return [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+
+    def invoke(self, context, event):
+        empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+
+        for e in empties:
+            select_group_children(e, recursive=event.ctrl)
+
+        bpy.ops.object.duplicate_move_linked('INVOKE_DEFAULT') if event.alt else bpy.ops.object.duplicate_move('INVOKE_DEFAULT')
 
         return {'FINISHED'}

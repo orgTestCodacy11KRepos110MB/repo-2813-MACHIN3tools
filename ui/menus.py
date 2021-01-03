@@ -75,6 +75,7 @@ def object_context_menu(self, context):
         addable = [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group]
         removable = [obj for obj in context.selected_objects if obj.M3.is_group_object]
         selectable = [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
+        duplicatable = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
 
 
         # AUTO SELECT GROUPS
@@ -112,20 +113,31 @@ def object_context_menu(self, context):
             row.scale_y = 0.3
             row.label(text="")
 
+            layout.operator_context = "INVOKE_REGION_WIN"
             layout.operator("machin3.select_group", text="Select Group")
+            layout.operator_context = "EXEC_REGION_WIN"
 
+        if duplicatable:
 
-        # ADD and REMOVE
-
-        if (addable and active_group) or removable:
-
-            # only draw the spacer once
             if not selectable:
                 # custom spacer
                 row = layout.row()
                 row.scale_y = 0.3
                 row.label(text="")
 
+            layout.operator_context = "INVOKE_REGION_WIN"
+            layout.operator("machin3.duplicate_group", text="Duplicate Group")
+            layout.operator_context = "EXEC_REGION_WIN"
+
+
+        # ADD and REMOVE
+
+        if (addable and active_group) or removable:
+
+            # custom spacer
+            row = layout.row()
+            row.scale_y = 0.3
+            row.label(text="")
 
             if addable and active_group:
                 layout.operator("machin3.add_to_group", text="Add to Group")

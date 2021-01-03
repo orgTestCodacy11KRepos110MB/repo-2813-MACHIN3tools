@@ -20,9 +20,11 @@ def update_group(none):
         active = context.active_object if context.active_object and context.active_object.M3.is_group_empty else None
         inactive = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj != active]
 
-
         # auto select active group's children
         if context.scene.M3.group_select and active:
+            """
+            # avoids unnecessary selection events
+            # but turns out this doesn't maintain the lower level selections when transforming/duplicating for some reason
             if active.select_get():
                 for obj in active.children:
                     if not obj.select_get():
@@ -32,6 +34,11 @@ def update_group(none):
                 for obj in active.children:
                     if obj.select_get():
                         obj.select_set(False)
+            # """
+
+            for obj in active.children:
+                obj.select_set(active.select_get())
+
 
         # auto "hide" group empties, except the active one
         if context.scene.M3.group_hide:
