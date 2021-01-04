@@ -71,6 +71,7 @@ def get_group_polls(context):
     active_child = bool(context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None)
     group_empties = bool([obj for obj in context.visible_objects if obj.M3.is_group_empty])
     groupable = bool(len([obj for obj in context.selected_objects if not obj.parent]) > 1)
+    regroupable = bool(len([obj for obj in context.selected_objects if obj.M3.is_group_object]) > 1)
     ungroupable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty]) if group_empties else False
     addable = bool([obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group and not obj == active_child])
     removable = bool([obj for obj in context.selected_objects if obj.M3.is_group_object])
@@ -78,7 +79,7 @@ def get_group_polls(context):
     duplicatable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty])
     groupifyable = bool([obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children])
 
-    return active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable
+    return active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable
 
 
 class MenuGroupObjectContextMenu(bpy.types.Menu):
@@ -88,7 +89,7 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
 
-        active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
+        active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
 
         # SCENE PROPS
@@ -104,11 +105,15 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
         layout.separator()
 
 
-        # GROUP CREATION/DESTRUCTION
+        # CREATE / DESTRUCT
 
         row = layout.row()
         row.active = groupable
         row.operator("machin3.group", text="Group")
+
+        row = layout.row()
+        row.active = regroupable
+        row.operator("machin3.regroup", text="Re-Group")
 
         row = layout.row()
         row.active = ungroupable
@@ -121,7 +126,7 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
         layout.separator()
 
 
-        # SELECT and DUPLICATE
+        # SELECT / DUPLICATE
 
         row = layout.row()
         row.active = selectable
@@ -134,7 +139,7 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
         layout.separator()
 
 
-        # ADD and REMOVE
+        # ADD / REMOVE
 
         row = layout.row()
         row.active = addable and (active_group or active_child)
@@ -161,7 +166,7 @@ def object_context_menu(self, context):
             layout.separator()
 
         else:
-            active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
+            active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
 
             # SCENE PROPS
@@ -182,6 +187,11 @@ def object_context_menu(self, context):
 
             if groupable:
                 layout.operator("machin3.group", text="Group")
+
+            # RE-GROUP
+
+            if regroupable:
+                layout.operator("machin3.regroup", text="Re-Group")
 
 
             # UN-GROUP

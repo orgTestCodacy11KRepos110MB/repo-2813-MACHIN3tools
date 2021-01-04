@@ -162,7 +162,7 @@ class Mirror(bpy.types.Operator):
 
         if mirror_object:
             mirror.mirror_object = mirror_object
-            parent(obj, mirror_object)
+            # parent(obj, mirror_object)
 
         if self.dm:
             if obj.DM.isdecal:
@@ -183,7 +183,7 @@ class Mirror(bpy.types.Operator):
 
         if mirror_object:
             mirror.object = mirror_object
-            parent(obj, mirror_object)
+            # parent(obj, mirror_object)
 
     def mirror_instance_collection(self, context, obj, mirror_object=None):
         '''

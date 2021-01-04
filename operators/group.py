@@ -1,9 +1,11 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
 from .. utils.object import parent, unparent
-from .. utils.group import ungroup, get_group_matrix, select_group_children
+from .. utils.group import group, ungroup, get_group_matrix, select_group_children
 from .. items import group_location_items
 
+
+# CREATE / DESTRUCT
 
 class Group(bpy.types.Operator):
     bl_idname = "machin3.group"
@@ -15,9 +17,7 @@ class Group(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if context.mode == 'OBJECT':
-            # return len([obj for obj in context.selected_objects if not obj.parent]) > 1
-            return True
+        return context.mode == 'OBJECT'
 
     def draw(self, context):
         layout = self.layout
@@ -32,52 +32,79 @@ class Group(bpy.types.Operator):
         sel = [obj for obj in context.selected_objects if not obj.parent]
 
         if len(sel) > 1:
-
-            # get collection
-            col = self.get_collection(context, sel)
-
-            empty = bpy.data.objects.new(name="GROUP.001", object_data=None)
-            empty.M3.is_group_empty = True
-            empty.matrix_world = get_group_matrix(context, self.location, sel)
-            col.objects.link(empty)
-
-            context.view_layer.objects.active = empty
-            empty.select_set(True)
-            empty.show_in_front = True
-            empty.empty_display_type = 'CUBE'
-
-            if context.scene.M3.group_hide:
-                empty.show_name = False
-                empty.empty_display_size = 0
-
-            else:
-                empty.show_name = True
-                empty.empty_display_size = 0.1
-
-            for obj in sel:
-                parent(obj, empty)
-                obj.M3.is_group_object = True
+            group(context, sel, self.location)
 
             return {'FINISHED'}
         return {'CANCELLED'}
 
-    def get_collection(self, context, sel):
-        '''
-        if all the objects in sel are in the same collection, return it
-        otherwise return the master collection
-        '''
 
-        collections = set()
+class ReGroup(bpy.types.Operator):
+    bl_idname = "machin3.regroup"
+    bl_label = "MACHIN3: Re-Group"
+    bl_description = "Create new Group from existing Group Members"
+    bl_options = {'REGISTER', 'UNDO'}
 
-        for obj in sel:
-            for col in obj.users_collection:
-                collections.add(col)
+    location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
 
-        if len(collections) == 1:
-            return collections.pop()
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT'
 
-        else:
-            return context.scene.collection
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column()
+
+        row = column.row()
+        row.label(text="Location")
+        row.prop(self, 'location', expand=True)
+
+
+    def execute(self, context):
+
+        # get all objects part of another group
+        objects = [obj for obj in context.selected_objects if obj.M3.is_group_object]
+
+        # collect their empties too
+        empties = set()
+
+        if objects:
+            regroupable = []
+
+            for obj in objects:
+
+                # should always be true, but you never know, be safe
+                if obj.parent and obj.parent.M3.is_group_empty:
+                    empties.add(obj.parent)
+
+                    unparent(obj)
+                    regroupable.append(obj)
+
+                # untag and unsellect invalid group members, should they be encountered
+                else:
+                    obj.M3.is_group_object = False
+                    obj.select_set(False)
+
+            if len(regroupable) > 1:
+                group(context, regroupable, self.location)
+
+            # clean up left over groups
+            for e in empties:
+                if str(e) != '<bpy_struct, Object invalid>':
+                    # ungroup single child group of groups
+                    if len(e.children) == 1 and e.children[0].M3.is_group_empty and not e.parent:
+                        print("INFO: Un-Grouping single child group of groups", e.name)
+                        ungroup(e)
+                        continue
+
+                    # remove empty upper level groups
+                    if not e.children:
+                        print("INFO: Removing empty group", e.name)
+                        bpy.data.objects.remove(e, do_unlink=True)
+                        continue
+
+            return {'FINISHED'}
+        return {'CANCELLED'}
 
 
 class UnGroup(bpy.types.Operator):
@@ -171,6 +198,110 @@ class UnGroup(bpy.types.Operator):
                     bpy.data.objects.remove(e, do_unlink=True)
                     continue
 
+
+class Groupify(bpy.types.Operator):
+    bl_idname = "machin3.groupify"
+    bl_label = "MACHIN3: Groupify"
+    bl_description = "Turn any Empty Hirearchy into Group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            return [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
+
+
+    def execute(self, context):
+        all_empties = [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
+
+        # only take the top level empties
+        empties = [e for e in all_empties if e.parent not in all_empties]
+
+        # groupify all the way down
+        self.groupify(empties)
+
+        return {'FINISHED'}
+
+
+    def groupify(self, objects):
+        for obj in objects:
+            if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children:
+                obj.M3.is_group_empty = True
+                obj.M3.is_group_object = True if obj.parent and obj.parent.M3.is_group_empty else False
+                obj.show_in_front = True
+                obj.empty_display_type = 'CUBE'
+                obj.empty_display_size = 0.1
+                obj.show_name = True
+
+                if not any([s in obj.name.lower() for s in ['grp', 'group']]):
+                    obj.name = f"{obj.name}_GROUP"
+
+                # do it all the way down
+                self.groupify(obj.children)
+
+            else:
+                obj.M3.is_group_object = True
+
+
+# SELECT / DUPLICATE
+
+class Select(bpy.types.Operator):
+    bl_idname = "machin3.select_group"
+    bl_label = "MACHIN3: Select Group"
+    bl_description = "Select Group\nCTRL: Select entire Group Hierarchy down"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            return [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
+
+    def invoke(self, context, event):
+        empties = {obj for obj in context.selected_objects if obj.M3.is_group_empty}
+        objects = [obj for obj in context.selected_objects if obj.M3.is_group_object and obj not in empties]
+
+        for obj in objects:
+            if obj.parent and obj.parent.M3.is_group_empty:
+                empties.add(obj.parent)
+
+        for e in empties:
+            e.select_set(True)
+
+            if len(empties) == 1:
+                context.view_layer.objects.active = e
+
+            select_group_children(e, recursive=event.ctrl)
+
+        return {'FINISHED'}
+
+
+class Duplicate(bpy.types.Operator):
+    bl_idname = "machin3.duplicate_group"
+    bl_label = "MACHIN3: duplicate_group"
+    bl_description = "Duplicate a Group\nALT: Create Instances\nCTRL: Duplicate entire Hierarchy down"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            return [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+
+    def invoke(self, context, event):
+        empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+
+        # deselect everything, this ensures only the group will be duplicated, not any other non-group objects that may be selected
+        bpy.ops.object.select_all(action='DESELECT')
+
+        for e in empties:
+            e.select_set(True)
+            select_group_children(e, recursive=event.ctrl)
+
+        bpy.ops.object.duplicate_move_linked('INVOKE_DEFAULT') if event.alt else bpy.ops.object.duplicate_move('INVOKE_DEFAULT')
+
+        return {'FINISHED'}
+
+
+# ADD / REMOVE
 
 class Add(bpy.types.Operator):
     bl_idname = "machin3.add_to_group"
@@ -330,103 +461,3 @@ class Remove(bpy.types.Operator):
 
             return {'FINISHED'}
         return {'CANCELLED'}
-
-
-class Select(bpy.types.Operator):
-    bl_idname = "machin3.select_group"
-    bl_label = "MACHIN3: Select Group"
-    bl_description = "Select Group\nCTRL: Select entire Group Hierarchy down"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        if context.mode == 'OBJECT':
-            return [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
-
-    def invoke(self, context, event):
-        empties = {obj for obj in context.selected_objects if obj.M3.is_group_empty}
-        objects = [obj for obj in context.selected_objects if obj.M3.is_group_object and obj not in empties]
-
-        for obj in objects:
-            if obj.parent and obj.parent.M3.is_group_empty:
-                empties.add(obj.parent)
-
-        for e in empties:
-            e.select_set(True)
-
-            if len(empties) == 1:
-                context.view_layer.objects.active = e
-
-            select_group_children(e, recursive=event.ctrl)
-
-        return {'FINISHED'}
-
-
-class Duplicate(bpy.types.Operator):
-    bl_idname = "machin3.duplicate_group"
-    bl_label = "MACHIN3: duplicate_group"
-    bl_description = "Duplicate a Group\nALT: Create Instances\nCTRL: Duplicate entire Hierarchy down"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        if context.mode == 'OBJECT':
-            return [obj for obj in context.selected_objects if obj.M3.is_group_empty]
-
-    def invoke(self, context, event):
-        empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
-
-        # deselect everything, this ensures only the group will be duplicated, not any other non-group objects that may be selected
-        bpy.ops.object.select_all(action='DESELECT')
-
-        for e in empties:
-            e.select_set(True)
-            select_group_children(e, recursive=event.ctrl)
-
-        bpy.ops.object.duplicate_move_linked('INVOKE_DEFAULT') if event.alt else bpy.ops.object.duplicate_move('INVOKE_DEFAULT')
-
-        return {'FINISHED'}
-
-
-class Groupify(bpy.types.Operator):
-    bl_idname = "machin3.groupify"
-    bl_label = "MACHIN3: Groupify"
-    bl_description = "Turn any Empty Hirearchy into Group"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        if context.mode == 'OBJECT':
-            return [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
-
-
-    def execute(self, context):
-        all_empties = [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
-
-        # only take the top level empties
-        empties = [e for e in all_empties if e.parent not in all_empties]
-
-        # groupify all the way down
-        self.groupify(empties)
-
-        return {'FINISHED'}
-
-
-    def groupify(self, objects):
-        for obj in objects:
-            if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children:
-                obj.M3.is_group_empty = True
-                obj.M3.is_group_object = True if obj.parent and obj.parent.M3.is_group_empty else False
-                obj.show_in_front = True
-                obj.empty_display_type = 'CUBE'
-                obj.empty_display_size = 0.1
-                obj.show_name = True
-
-                if not any([s in obj.name.lower() for s in ['grp', 'group']]):
-                    obj.name = f"{obj.name}_GROUP"
-
-                # do it all the way down
-                self.groupify(obj.children)
-
-            else:
-                obj.M3.is_group_object = True
