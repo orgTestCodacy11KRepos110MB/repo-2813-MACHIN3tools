@@ -39,7 +39,8 @@ def group(context, sel, location):
 
     else:
         empty.show_name = True
-        empty.empty_display_size = 0.1
+        empty.empty_display_size = get_prefs().group_size
+
 
     for obj in sel:
         parent(obj, empty)

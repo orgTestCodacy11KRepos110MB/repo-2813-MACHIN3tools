@@ -235,6 +235,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     group_basename: StringProperty(name="Group Basename", default="GROUP")
     group_prefix: StringProperty(name="Prefix to add to Group Names", default="_")
     group_suffix: StringProperty(name="Suffix to add to Group Names", default="_grp")
+    group_size: FloatProperty(name="Group Empty Draw Size", default=0.1)
 
 
     # MACHIN3tools
@@ -530,6 +531,11 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             rr.active = self.group_auto_name
             rr.prop(self, "group_prefix", text="Prefix")
             rr.prop(self, "group_suffix", text="Suffix")
+
+            row = column.row()
+            r = row.split(factor=0.2)
+            r.prop(self, "group_size", text="")
+            r.label(text="Default Empty Draw Size")
 
 
         # CUSTOMIZE

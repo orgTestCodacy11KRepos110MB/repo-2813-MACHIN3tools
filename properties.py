@@ -399,7 +399,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
         for e in empties:
             if e == context.active_object or not context.scene.M3.group_hide:
                 e.show_name = True
-                e.empty_display_size = 0.1
+                e.empty_display_size = get_prefs().group_size
             else:
                 e.show_name = False
                 e.empty_display_size = 0
