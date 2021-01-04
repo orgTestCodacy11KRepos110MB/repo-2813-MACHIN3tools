@@ -399,10 +399,16 @@ class M3SceneProperties(bpy.types.PropertyGroup):
         for e in empties:
             if e == context.active_object or not context.scene.M3.group_hide:
                 e.show_name = True
-                e.empty_display_size = get_prefs().group_size
+                e.empty_display_size = e.M3.group_size
+
             else:
                 e.show_name = False
-                e.empty_display_size = 0
+
+                # store existing non-zero size
+                if round(e.empty_display_size, 4) != 0.0001:
+                    e.M3.group_size = e.empty_display_size
+
+                e.empty_display_size = 0.0001
 
     group_select: BoolProperty(name="Auto Select Groups", default=True)
     group_hide: BoolProperty(name="Hide Group Empties in 3D View", default=False, update=update_group_hide)
@@ -422,6 +428,7 @@ class M3ObjectProperties(bpy.types.PropertyGroup):
 
     is_group_empty: BoolProperty()
     is_group_object: BoolProperty()
+    group_size: FloatProperty(default=0.1)
 
     # hidden
 

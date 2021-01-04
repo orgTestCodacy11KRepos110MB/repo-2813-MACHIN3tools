@@ -35,12 +35,15 @@ def group(context, sel, location):
 
     if context.scene.M3.group_hide:
         empty.show_name = False
-        empty.empty_display_size = 0
+
+        # 0.0001 is the smalled you can go
+        empty.empty_display_size = 0.0001
 
     else:
         empty.show_name = True
         empty.empty_display_size = get_prefs().group_size
 
+    empty.M3.group_size = get_prefs().group_size
 
     for obj in sel:
         parent(obj, empty)

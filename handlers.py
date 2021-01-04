@@ -27,17 +27,27 @@ def update_group(none):
             for obj in active.children:
                 obj.select_set(active.select_get())
 
+        # store new active empty size when the user changes it. avoid storing 0 sizes
+        if active:
+            # without this you can't actually set a new empty size, because it would be immediately reset to the stored value
+            if round(active.empty_display_size, 4) != 0.0001 and active.empty_display_size != active.M3.group_size:
+                active.M3.group_size = active.empty_display_size
 
         # auto "hide" group empties, except the active one
         if context.scene.M3.group_hide:
             if active:
                 active.show_name = True
-                active.empty_display_size = 0.1
+                active.empty_display_size = active.M3.group_size
 
             if inactive:
                 for e in inactive:
                     e.show_name = False
-                    e.empty_display_size = 0
+
+                    # store existing non-zero size
+                    if round(e.empty_display_size, 4) != 0.0001:
+                        e.M3.group_size = e.empty_display_size
+
+                    e.empty_display_size = 0.0001
 
         # auto name group
         if active and get_prefs().group_auto_name:
