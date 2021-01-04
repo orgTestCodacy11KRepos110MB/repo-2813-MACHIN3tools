@@ -1,6 +1,8 @@
 import bpy
 from bpy.app.handlers import persistent
 from . utils.draw import remove_object_axes_drawing_handler, draw_focus_HUD, draw_surface_slide_HUD
+from . utils.registration import get_prefs
+from . utils.group import update_group_name
 
 
 focusHUD = None
@@ -22,20 +24,6 @@ def update_group(none):
 
         # auto select active group's children
         if context.scene.M3.group_select and active:
-            """
-            # avoids unnecessary selection events
-            # but turns out this doesn't maintain the lower level selections when transforming/duplicating for some reason
-            if active.select_get():
-                for obj in active.children:
-                    if not obj.select_get():
-                        obj.select_set(True)
-
-            else:
-                for obj in active.children:
-                    if obj.select_get():
-                        obj.select_set(False)
-            # """
-
             for obj in active.children:
                 obj.select_set(active.select_get())
 
@@ -50,6 +38,10 @@ def update_group(none):
                 for e in inactive:
                     e.show_name = False
                     e.empty_display_size = 0
+
+        # auto name group
+        if active and get_prefs().group_auto_name:
+            update_group_name(active)
 
 
 @persistent

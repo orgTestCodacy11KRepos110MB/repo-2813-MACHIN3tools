@@ -231,6 +231,11 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     custom_preferences_system: BoolProperty(name="Preferences: System", default=False)
     custom_preferences_save: BoolProperty(name="Preferences: Save & Load", default=False)
 
+    group_auto_name: BoolProperty(name="Auto Name Groups", description="Automatically add a Prefix and/or Suffix to any user-set Group Name", default=True)
+    group_basename: StringProperty(name="Group Basename", default="GROUP")
+    group_prefix: StringProperty(name="Prefix to add to Group Names", default="_")
+    group_suffix: StringProperty(name="Suffix to add to Group Names", default="_grp")
+
 
     # MACHIN3tools
 
@@ -502,6 +507,29 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             r = row.split(factor=0.2)
             r.prop(self, "matpick_spacing_edit", text="")
             r.label(text="Edit Mode Spacing")
+
+
+        # GROUP
+
+        if getattr(bpy.types, "MACHIN3_OT_group", False):
+            bb = b.box()
+            bb.label(text="Group")
+
+            column = bb.column()
+
+            row = column.row()
+            r = row.split(factor=0.2)
+            r.label(text="Basename")
+            r.prop(self, "group_basename", text="")
+
+            row = column.row()
+            r = row.split(factor=0.2)
+            r.prop(self, "group_auto_name", text='Auto Name', toggle=False)
+
+            rr = r.row()
+            rr.active = self.group_auto_name
+            rr.prop(self, "group_prefix", text="Prefix")
+            rr.prop(self, "group_suffix", text="Suffix")
 
 
         # CUSTOMIZE

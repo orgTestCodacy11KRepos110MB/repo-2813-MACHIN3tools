@@ -2,6 +2,7 @@ import bpy
 from mathutils import Vector
 from . object import parent, unparent
 from . math import average_locations, get_loc_matrix
+from . registration import get_prefs
 
 
 def get_group_collection(context, sel):
@@ -10,11 +11,7 @@ def get_group_collection(context, sel):
     otherwise return the master collection
     '''
 
-    collections = set()
-
-    for obj in sel:
-        for col in obj.users_collection:
-            collections.add(col)
+    collections = set(col for obj in sel for col in obj.users_collection)
 
     if len(collections) == 1:
         return collections.pop()
@@ -26,7 +23,7 @@ def get_group_collection(context, sel):
 def group(context, sel, location):
     col = get_group_collection(context, sel)
 
-    empty = bpy.data.objects.new(name="GROUP.001", object_data=None)
+    empty = bpy.data.objects.new(name=get_base_group_name(), object_data=None)
     empty.M3.is_group_empty = True
     empty.matrix_world = get_group_matrix(context, location, sel)
     col.objects.link(empty)
@@ -86,3 +83,52 @@ def select_group_children(empty, recursive=False):
 
         if obj.M3.is_group_empty and recursive:
             select_group_children(obj, recursive=True)
+
+
+def get_base_group_name():
+    p = get_prefs()
+
+    if get_prefs().group_auto_name:
+        name = f"{p.group_prefix}{p.group_basename + '_001'}{p.group_suffix}"
+
+        c = 0
+        while name in bpy.data.objects:
+            c += 1
+            name = f"{p.group_prefix}{p.group_basename + '_' + str(c).zfill(3)}{p.group_suffix}"
+
+        return name
+
+    else:
+        name = f"{p.group_basename}_001"
+
+        c = 0
+        while name in bpy.data.objects:
+            c += 1
+            name = f"{p.group_basename + '_' + str(c).zfill(3)}"
+
+        return name
+
+
+def update_group_name(group):
+    p = get_prefs()
+    prefix = p.group_prefix
+    suffix = p.group_suffix
+
+    name = group.name
+    newname = name
+
+    if not name.startswith(prefix):
+        newname = prefix + newname
+
+    if not name.endswith(suffix):
+        newname = newname + suffix
+
+    if name == newname:
+        return
+
+    c = 0
+    while newname in bpy.data.objects:
+        c += 1
+        newname = f"{p.group_prefix}{name + '_' + str(c).zfill(3)}{p.group_suffix}"
+
+    group.name = newname
