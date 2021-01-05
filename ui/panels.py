@@ -14,7 +14,7 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return get_prefs().activate_smart_drive or get_prefs().activate_unity
+        return get_prefs().activate_smart_drive or get_prefs().activate_unity or get_prefs().activate_group
 
     def draw(self, context):
         layout = self.layout
