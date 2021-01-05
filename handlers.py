@@ -38,21 +38,23 @@ def update_group(none):
         # HIDE / UNHIDE
 
         if context.scene.M3.group_hide:
-            if active:
-                active.show_name = True
-                active.empty_display_size = active.M3.group_size
+            selected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj.select_get()]
+            unselected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and not obj.select_get()]
 
-            inactive = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj != active]
+            if selected:
+                for group in selected:
+                    group.show_name = True
+                    group.empty_display_size = group.M3.group_size
 
-            if inactive:
-                for e in inactive:
-                    e.show_name = False
+            if unselected:
+                for group in unselected:
+                    group.show_name = False
 
                     # store existing non-zero size
-                    if round(e.empty_display_size, 4) != 0.0001:
-                        e.M3.group_size = e.empty_display_size
+                    if round(group.empty_display_size, 4) != 0.0001:
+                        group.M3.group_size = group.empty_display_size
 
-                    e.empty_display_size = 0.0001
+                    group.empty_display_size = 0.0001
 
 
         # AUTO NAME
