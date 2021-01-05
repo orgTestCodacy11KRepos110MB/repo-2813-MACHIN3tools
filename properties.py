@@ -411,6 +411,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
                 e.empty_display_size = 0.0001
 
     group_select: BoolProperty(name="Auto Select Groups", default=True)
+    group_recursive_select: BoolProperty(name="Recursively Select Groups", default=False)
     group_hide: BoolProperty(name="Hide Group Empties in 3D View", default=False, update=update_group_hide)
 
 

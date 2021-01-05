@@ -110,11 +110,17 @@ class ReGroup(bpy.types.Operator):
 class UnGroup(bpy.types.Operator):
     bl_idname = "machin3.ungroup"
     bl_label = "MACHIN3: Un-Group"
-    bl_description = "Un-Group selected top-level Groups\nALT: Un-Group all selected Groups\nCTRL: Un-Group entire Hierarchy down"
     bl_options = {'REGISTER', 'UNDO'}
 
     ungroup_all_selected: BoolProperty(name="Un-Group all Selected Groups", default=False)
     ungroup_entire_hierarchy: BoolProperty(name="Un-Group entire Hierarchy down", default=False)
+
+    @classmethod
+    def description(cls, context, properties):
+        if context.scene.M3.group_recursive_select and context.scene.M3.group_select:
+            return "Un-Group selected top-level Groups\nALT: Un-Group all selected Groups"
+        else:
+            return "Un-Group selected top-level Groups\nALT: Un-Group all selected Groups\nCTRL: Un-Group entire Hierarchy down"
 
     @classmethod
     def poll(cls, context):
@@ -252,6 +258,13 @@ class Select(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
+    def description(cls, context, properties):
+        if context.scene.M3.group_recursive_select:
+            return "Select entire Group Hierarchies down"
+        else:
+            return "Select Top Level Groups\nCTRL: Select entire Group Hierarchy down"
+
+    @classmethod
     def poll(cls, context):
         if context.mode == 'OBJECT':
             return [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
@@ -270,7 +283,7 @@ class Select(bpy.types.Operator):
             if len(empties) == 1:
                 context.view_layer.objects.active = e
 
-            select_group_children(e, recursive=event.ctrl)
+            select_group_children(e, recursive=event.ctrl or context.scene.M3.group_recursive_select)
 
         return {'FINISHED'}
 
@@ -278,8 +291,14 @@ class Select(bpy.types.Operator):
 class Duplicate(bpy.types.Operator):
     bl_idname = "machin3.duplicate_group"
     bl_label = "MACHIN3: duplicate_group"
-    bl_description = "Duplicate a Group\nALT: Create Instances\nCTRL: Duplicate entire Hierarchy down"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        if context.scene.M3.group_recursive_select:
+            return "Duplicate entire Group Hierarchies down\nALT: Create Instances"
+        else:
+            return "Duplicate Top Level Groups\nALT: Create Instances\nCTRL: Duplicate entire Group Hierarchies down"
 
     @classmethod
     def poll(cls, context):
@@ -294,7 +313,7 @@ class Duplicate(bpy.types.Operator):
 
         for e in empties:
             e.select_set(True)
-            select_group_children(e, recursive=event.ctrl)
+            select_group_children(e, recursive=event.ctrl or context.scene.M3.group_recursive_select)
 
         bpy.ops.object.duplicate_move_linked('INVOKE_DEFAULT') if event.alt else bpy.ops.object.duplicate_move('INVOKE_DEFAULT')
 

@@ -100,6 +100,10 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
 
         row = layout.row()
         row.active = group_empties
+        row.prop(context.scene.M3, "group_recursive_select")
+
+        row = layout.row()
+        row.active = group_empties
         row.prop(context.scene.M3, "group_hide")
 
         layout.separator()
@@ -173,6 +177,7 @@ def object_context_menu(self, context):
 
             if group_empties:
                 layout.prop(context.scene.M3, "group_select")
+                layout.prop(context.scene.M3, "group_recursive_select")
                 layout.prop(context.scene.M3, "group_hide")
 
                 if groupable or group_empties or selectable or duplicatable or groupifyable or (addable and (active_group or active_child)) or removable:

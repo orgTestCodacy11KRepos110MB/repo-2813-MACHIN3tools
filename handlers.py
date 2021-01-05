@@ -2,7 +2,7 @@ import bpy
 from bpy.app.handlers import persistent
 from . utils.draw import remove_object_axes_drawing_handler, draw_focus_HUD, draw_surface_slide_HUD
 from . utils.registration import get_prefs
-from . utils.group import update_group_name
+from . utils.group import update_group_name, select_group_children
 
 
 focusHUD = None
@@ -19,13 +19,13 @@ def update_group(none):
     context = bpy.context
 
     if context.mode == 'OBJECT':
-        active = context.active_object if context.active_object and context.active_object.M3.is_group_empty else None
+        active = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
         inactive = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj != active]
 
         # auto select active group's children
         if context.scene.M3.group_select and active:
-            for obj in active.children:
-                obj.select_set(active.select_get())
+            select_group_children(active, recursive=context.scene.M3.group_recursive_select)
+
 
         # store new active empty size when the user changes it. avoid storing 0 sizes
         if active:
