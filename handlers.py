@@ -20,24 +20,29 @@ def update_group(none):
 
     if context.mode == 'OBJECT':
         active = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
-        inactive = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj != active]
 
-        # auto select active group's children
+        # AUTO SELECT
+
         if context.scene.M3.group_select and active:
             select_group_children(active, recursive=context.scene.M3.group_recursive_select)
 
 
-        # store new active empty size when the user changes it. avoid storing 0 sizes
+        # STORE USER-SET EMPTY SIZE
+
         if active:
-            # without this you can't actually set a new empty size, because it would be immediately reset to the stored value
+            # without this you can't actually set a new empty size, because it would be immediately reset to the stored value, if group_hide is enabled
             if round(active.empty_display_size, 4) != 0.0001 and active.empty_display_size != active.M3.group_size:
                 active.M3.group_size = active.empty_display_size
 
-        # auto "hide" group empties, except the active one
+
+        # HIDE / UNHIDE
+
         if context.scene.M3.group_hide:
             if active:
                 active.show_name = True
                 active.empty_display_size = active.M3.group_size
+
+            inactive = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj != active]
 
             if inactive:
                 for e in inactive:
@@ -49,7 +54,9 @@ def update_group(none):
 
                     e.empty_display_size = 0.0001
 
-        # auto name group
+
+        # AUTO NAME
+
         if active and get_prefs().group_auto_name:
             update_group_name(active)
 
