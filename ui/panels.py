@@ -181,14 +181,14 @@ class PanelMACHIN3tools(bpy.types.Panel):
             r.prop(m3, 'show_group_select', text='', icon='HIDE_OFF' if m3.show_group_select else 'HIDE_ON')
         r.prop(m3, 'group_select', text='True' if m3.group_select else 'False', toggle=True)
 
-        row = column.split(factor=0.3)
+        row = column.split(factor=0.3, align=True)
         row.label(text="Recursive")
         r = row.row(align=True)
         if not p.use_group_sub_menu:
             r.prop(m3, 'show_group_recursive_select', text='', icon='HIDE_OFF' if m3.show_group_recursive_select else 'HIDE_ON')
         r.prop(m3, 'group_recursive_select', text='True' if m3.group_recursive_select else 'False', toggle=True)
 
-        row = column.split(factor=0.3)
+        row = column.split(factor=0.3, align=True)
         row.label(text="Hide Empties")
         r = row.row(align=True)
         if not p.use_group_sub_menu:
