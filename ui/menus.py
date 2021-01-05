@@ -1,6 +1,6 @@
 import bpy
 from .. utils.registration import get_prefs
-
+from .. utils.group import get_group_polls
 
 
 # MACHIN3tools SUB MENU
@@ -66,28 +66,13 @@ class MenuAppendMaterials(bpy.types.Menu):
 
 # Group SUB MENU
 
-def get_group_polls(context):
-    active_group = bool(context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None)
-    active_child = bool(context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None)
-    group_empties = bool([obj for obj in context.visible_objects if obj.M3.is_group_empty])
-    groupable = bool(len([obj for obj in context.selected_objects if not obj.parent]) > 1)
-    regroupable = bool(len([obj for obj in context.selected_objects if obj.M3.is_group_object]) > 1)
-    ungroupable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty]) if group_empties else False
-    addable = bool([obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group and not obj == active_child])
-    removable = bool([obj for obj in context.selected_objects if obj.M3.is_group_object])
-    selectable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object])
-    duplicatable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty])
-    groupifyable = bool([obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children])
-
-    return active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable
-
-
 class MenuGroupObjectContextMenu(bpy.types.Menu):
     bl_idname = "MACHIN3_MT_group_object_context_menu"
     bl_label = "Group"
 
     def draw(self, context):
         layout = self.layout
+        m3 = context.scene.M3
 
         active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
@@ -96,15 +81,15 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
 
         row = layout.row()
         row.active = group_empties
-        row.prop(context.scene.M3, "group_select")
+        row.prop(m3, "group_select")
 
         row = layout.row()
         row.active = group_empties
-        row.prop(context.scene.M3, "group_recursive_select")
+        row.prop(m3, "group_recursive_select")
 
         row = layout.row()
         row.active = group_empties
-        row.prop(context.scene.M3, "group_hide")
+        row.prop(m3, "group_hide")
 
         layout.separator()
 
@@ -125,7 +110,7 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
 
         row = layout.row()
         row.active = groupifyable
-        layout.operator("machin3.groupify", text="Groupify")
+        row.operator("machin3.groupify", text="Groupify")
 
         layout.separator()
 
@@ -158,6 +143,7 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
 
 def object_context_menu(self, context):
     layout = self.layout
+    m3 = context.scene.M3
 
     if get_prefs().activate_object_context_menu:
         layout.menu("MACHIN3_MT_machin3tools_object_context_menu")
@@ -175,10 +161,15 @@ def object_context_menu(self, context):
 
             # SCENE PROPS
 
-            if group_empties:
-                layout.prop(context.scene.M3, "group_select")
-                layout.prop(context.scene.M3, "group_recursive_select")
-                layout.prop(context.scene.M3, "group_hide")
+            if group_empties and any([m3.show_group_select, m3.show_group_recursive_select, m3.show_group_hide]):
+                if m3.show_group_select:
+                    layout.prop(m3, "group_select")
+
+                if m3.show_group_recursive_select:
+                    layout.prop(m3, "group_recursive_select")
+
+                if m3.show_group_hide:
+                    layout.prop(m3, "group_hide")
 
                 if groupable or group_empties or selectable or duplicatable or groupifyable or (addable and (active_group or active_child)) or removable:
 

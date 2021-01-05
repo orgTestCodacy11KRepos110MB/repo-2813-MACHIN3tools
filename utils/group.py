@@ -5,6 +5,22 @@ from . math import average_locations, get_loc_matrix
 from . registration import get_prefs
 
 
+def get_group_polls(context):
+    active_group = bool(context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None)
+    active_child = bool(context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None)
+    group_empties = bool([obj for obj in context.visible_objects if obj.M3.is_group_empty])
+    groupable = bool(len([obj for obj in context.selected_objects if not obj.parent]) > 1)
+    regroupable = bool(len([obj for obj in context.selected_objects if obj.M3.is_group_object]) > 1)
+    ungroupable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty]) if group_empties else False
+    addable = bool([obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group and not obj == active_child])
+    removable = bool([obj for obj in context.selected_objects if obj.M3.is_group_object])
+    selectable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object])
+    duplicatable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty])
+    groupifyable = bool([obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children])
+
+    return active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable
+
+
 def get_group_collection(context, sel):
     '''
     if all the objects in sel are in the same collection, return it

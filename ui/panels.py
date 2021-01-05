@@ -1,5 +1,6 @@
 import bpy
 from .. utils.registration import get_prefs
+from .. utils.group import get_group_polls
 from .. import bl_info
 
 
@@ -34,6 +35,16 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
             if m3.show_unity:
                 self.draw_unity(context, m3, box)
+
+
+        if get_prefs().activate_group:
+            box = layout.box()
+
+            box.prop(m3, "show_group", text="Group", icon='TRIA_DOWN' if m3.show_group else 'TRIA_RIGHT', emboss=False)
+
+            if m3.show_group:
+                self.draw_group(context, m3, box)
+
 
     def draw_smart_drive(self, m3, layout):
         column = layout.column()
@@ -152,3 +163,85 @@ class PanelMACHIN3tools(bpy.types.Panel):
         row = column.row(align=True)
         row.scale_y = 1.2
         row.operator("machin3.restore_unity_export", text="Restore Transformations")
+
+
+    def draw_group(self, context, m3, layout):
+        column = layout.column(align=True)
+        p = get_prefs()
+
+        active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
+
+
+        # SCENE PROPS
+
+        row = column.split(factor=0.3, align=True)
+        row.label(text="Auto Select")
+        r = row.row(align=True)
+        if not p.use_group_sub_menu:
+            r.prop(m3, 'show_group_select', text='', icon='HIDE_OFF' if m3.show_group_select else 'HIDE_ON')
+        r.prop(m3, 'group_select', text='True' if m3.group_select else 'False', toggle=True)
+
+        row = column.split(factor=0.3)
+        row.label(text="Recursive")
+        r = row.row(align=True)
+        if not p.use_group_sub_menu:
+            r.prop(m3, 'show_group_recursive_select', text='', icon='HIDE_OFF' if m3.show_group_recursive_select else 'HIDE_ON')
+        r.prop(m3, 'group_recursive_select', text='True' if m3.group_recursive_select else 'False', toggle=True)
+
+        row = column.split(factor=0.3)
+        row.label(text="Hide Empties")
+        r = row.row(align=True)
+        if not p.use_group_sub_menu:
+            r.prop(m3, 'show_group_hide', text='', icon='HIDE_OFF' if m3.show_group_hide else 'HIDE_ON')
+        r.prop(m3, 'group_hide', text='True' if m3.group_hide else 'False', toggle=True)
+
+
+        # CREATE / DESTRUCT
+
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.2
+        r = row.row(align=True)
+        r.active = groupable
+        r.operator("machin3.group", text="Group")
+        r = row.row(align=True)
+        r.active = regroupable
+        r.operator("machin3.regroup", text="Re-Group")
+
+        row = column.row(align=True)
+        row.scale_y = 1.2
+        r = row.row(align=True)
+        r.active = ungroupable
+        r.operator("machin3.ungroup", text="Un-Group")
+        r = row.row(align=True)
+        r.active = groupifyable
+        row.operator("machin3.groupify", text="Groupify")
+
+
+        # SELECT / DUPLICATE
+
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.2
+        r = row.row(align=True)
+        r.active = selectable
+        r.operator("machin3.select_group", text="Select Group")
+        r = row.row(align=True)
+        r.active = duplicatable
+        r.operator("machin3.duplicate_group", text="Duplicate Group")
+
+
+        # ADD / REMOVE
+
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.2
+        r = row.row(align=True)
+        r.active = addable and (active_group or active_child)
+        r.operator("machin3.add_to_group", text="Add to Group")
+        r = row.row(align=True)
+        r.active = removable
+        r.operator("machin3.remove_from_group", text="Remove from Group")
