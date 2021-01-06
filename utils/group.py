@@ -152,3 +152,14 @@ def update_group_name(group):
         newname = f"{p.group_prefix}{name + '_' + str(c).zfill(3)}{p.group_suffix}"
 
     group.name = newname
+
+
+def get_child_depth(self, children, depth=0, init=False):
+    if init or depth > self.depth:
+        self.depth = depth
+
+    for child in children:
+        if child.children:
+            get_child_depth(self, child.children, depth + 1, init=False)
+
+    return self.depth

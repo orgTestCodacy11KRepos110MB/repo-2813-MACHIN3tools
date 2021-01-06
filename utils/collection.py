@@ -35,3 +35,14 @@ def get_scene_collections(scene, ignore_decals=True):
         seen.extend(list(col.children))
 
     return scenecols
+
+
+def get_collection_depth(self, collections, depth=0, init=False):
+    if init or depth > self.depth:
+        self.depth = depth
+
+    for col in collections:
+        if col.children:
+            get_collection_depth(self, col.children, depth + 1, init=False)
+
+    return self.depth

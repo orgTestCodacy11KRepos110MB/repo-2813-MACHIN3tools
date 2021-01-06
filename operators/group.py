@@ -1,7 +1,8 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
 from .. utils.object import parent, unparent
-from .. utils.group import group, ungroup, get_group_matrix, select_group_children
+from .. utils.group import group, ungroup, get_group_matrix, select_group_children, get_child_depth
+from .. utils.collection import get_collection_depth
 from .. items import group_location_items
 
 
@@ -480,3 +481,112 @@ class Remove(bpy.types.Operator):
 
             return {'FINISHED'}
         return {'CANCELLED'}
+
+
+# OUTLINER
+
+class ToggleChildren(bpy.types.Operator):
+    bl_idname = "machin3.toggle_outliner_children"
+    bl_label = "MACHIN3: Toggle Outliner Children"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.area.type == 'OUTLINER'
+
+    def execute(self, context):
+        area = context.area
+        space = area.spaces[0]
+
+        space.use_filter_children = not space.use_filter_children
+
+        return {'FINISHED'}
+
+
+class ToggleGroupMode(bpy.types.Operator):
+    bl_idname = "machin3.toggle_outliner_group_mode"
+    bl_label = "MACHIN3: Toggle Outliner Group Mode"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.area.type == 'OUTLINER'
+
+    def execute(self, context):
+        area = context.area
+        space = area.spaces[0]
+
+        if space.use_filter_object_mesh:
+            space.use_filter_collection = False
+            space.use_filter_object_mesh = False
+            space.use_filter_object_content = False
+            space.use_filter_object_armature = False
+            space.use_filter_object_light = False
+            space.use_filter_object_camera = False
+            space.use_filter_object_others = False
+            space.use_filter_children = True
+
+        else:
+            space.use_filter_collection = True
+            space.use_filter_object_mesh = True
+            space.use_filter_object_content = True
+            space.use_filter_object_armature = True
+            space.use_filter_object_light = True
+            space.use_filter_object_camera = True
+            space.use_filter_object_others = False
+
+        return {'FINISHED'}
+
+
+class CollapseOutliner(bpy.types.Operator):
+    bl_idname = "machin3.collapse_outliner"
+    bl_label = "MACHIN3: Collapse Outliner"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.area.type == 'OUTLINER'
+
+    def execute(self, context):
+
+        # get collection depth
+        col_depth = get_collection_depth(self, [context.scene.collection], init=True)
+        # print("collection depth", col_depth)
+
+        # get child depth
+        child_depth = get_child_depth(self, [obj for obj in context.scene.objects if obj.children], init=True)
+        # print("child depth", child_depth)
+
+        # collapse the max amount of the two, plus once more, in case meshes are expanded too
+        for i in range(max(col_depth, child_depth) + 1):
+            bpy.ops.outliner.show_one_level(open=False)
+
+        return {'FINISHED'}
+
+
+class ExpandOutliner(bpy.types.Operator):
+    bl_idname = "machin3.expand_outliner"
+    bl_label = "MACHIN3: Expand Outliner"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.area.type == 'OUTLINER'
+
+    def execute(self, context):
+
+        # expand parent-child hierarchies completely
+        bpy.ops.outliner.show_hierarchy()
+
+        # get collection depth
+        depth = get_collection_depth(self, [context.scene.collection], init=True)
+
+        # expand collections
+        for i in range(depth):
+            bpy.ops.outliner.show_one_level(open=True)
+
+        return {'FINISHED'}
