@@ -347,6 +347,13 @@ class SmartVert(bpy.types.Operator):
 
         verts = [v for v in bm.verts if v.select]
 
+
+        # VERT BEVEL
+
+        if len(verts) == 1:
+            bpy.ops.mesh.bevel('INVOKE_DEFAULT', affect='VERTICES')
+
+
         # MERGE
 
         if self.mode == "MERGE":
