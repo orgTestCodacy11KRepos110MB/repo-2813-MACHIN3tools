@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
 from .. utils.object import parent, unparent
-from .. utils.group import group, ungroup, get_group_matrix, select_group_children, get_child_depth
+from .. utils.group import group, ungroup, get_group_matrix, select_group_children, get_child_depth, clean_up_groups
 from .. utils.collection import get_collection_depth
 from .. items import group_location_items
 
@@ -29,16 +29,139 @@ class Group(bpy.types.Operator):
         row.label(text="Location")
         row.prop(self, 'location', expand=True)
 
-    def execute(self, context):
-        sel = [obj for obj in context.selected_objects if not obj.parent]
+    def invoke(self, context, event):
+        self.coords = (event.mouse_region_x, event.mouse_region_y)
 
-        if len(sel) > 1:
-            group(context, sel, self.location)
+        # get selection, but ignore objects that are regularly parented(as opposed to grouped)
+        sel = {obj for obj in context.selected_objects if (obj.parent and obj.parent.M3.is_group_empty) or not obj.parent}
+
+        if sel:
+            self.group(context, sel)
 
             return {'FINISHED'}
         return {'CANCELLED'}
 
+    def execute(self, context):
+        # get selection, but ignore objects that are regularly parented(as opposed to grouped)
+        sel = {obj for obj in context.selected_objects if (obj.parent and obj.parent.M3.is_group_empty) or not obj.parent}
 
+        if sel:
+            self.group(context, sel)
+
+            return {'FINISHED'}
+        return {'CANCELLED'}
+
+    def group(self, context, sel):
+        debug = False
+        # debug = True
+
+        # fetch all the already grouped objects in the selection
+        grouped = {obj for obj in sel if obj.parent and obj.parent.M3.is_group_empty}
+
+        # get the selected empties from the selection
+        selected_empties = {obj for obj in sel if obj.M3.is_group_empty}
+
+        if debug:
+            print()
+            print("               sel", [obj.name for obj in sel])
+            print("           grouped", [obj.name for obj in grouped])
+            print("  selected empties", [obj.name for obj in selected_empties])
+
+        # all objects are grouped, find out if they share a common parent group
+        # if there is a common parent then the new group can become a child of it
+        if grouped == sel:
+
+            # get the unselected empties too
+            unsellected_empties = {obj.parent for obj in sel if obj not in selected_empties and obj.parent and obj.parent.M3.is_group_empty and obj.parent not in selected_empties}
+
+            # find the top level empties of the union of both of these sets
+            top_level = {obj for obj in selected_empties | unsellected_empties if obj.parent not in selected_empties | unsellected_empties}
+
+            if debug:
+                print("unselected empties", [obj.name for obj in unsellected_empties])
+                print("         top level", [obj.name for obj in top_level])
+
+
+            # if there is a single top level, then this will be the parent of the new group
+            if len(top_level) == 1:
+                new_parent = top_level.pop()
+
+            # otherwise find out if there is a single common parent, that the top level empties share
+            else:
+                # NOTE: it's important to include None as a parent possibility here, if there a group doesn't have a parent
+                # parent_groups = {obj.parent for obj in top_level if obj.parent and obj.parent.M3.is_group_empty}
+                parent_groups = {obj.parent for obj in top_level}
+
+                if debug:
+                    print("     parent_groups", [obj.name if obj else None for obj in parent_groups])
+
+                if len(parent_groups) == 1:
+                    new_parent = parent_groups.pop()
+
+                else:
+                    new_parent = None
+
+        # not all objects are grouped, create a new separate group, not parented to anything
+        else:
+            new_parent = None
+
+        if debug:
+            print("        new parent", new_parent.name if new_parent else None)
+            print(20 * "-")
+
+        # get three kinds of objects:
+        # 1. top level group empties, that are in the original/group sel
+        # 2. grouped non-empty objects whose parents are not in selected_empties
+        # 3. objects not grouped
+
+        # get the ungrouped objects in the selection, note that there are no ungrouped objects when sel == grouped
+        ungrouped = {obj for obj in sel - grouped if obj not in selected_empties}
+
+        # get top level of only the selected empties, important to not take the unselected empties into account here NOTE: this is different from the initial top_level set
+        top_level = {obj for obj in selected_empties if obj.parent not in selected_empties}
+
+        # get grouped objects not part of any top_level hierarchy, NOTE: this is different from the initial grouped set
+        grouped = {obj for obj in grouped if obj not in selected_empties and obj.parent not in selected_empties}
+
+        # if you select a single sub group, then its empty will also be the parent, in that case, simply update the parent to the group's parent!
+        if len(top_level) == 1 and new_parent in top_level:
+            new_parent = list(top_level)[0].parent
+
+            if debug:
+                print("updated parent", new_parent.name)
+
+        if debug:
+            print("     top level", [obj.name for obj in top_level])
+            print("       grouped", [obj.name for obj in grouped])
+            print("     ungrouped", [obj.name for obj in ungrouped])
+
+        # unparent the grouped objects and the top_level empties
+        for obj in top_level | grouped:
+            unparent(obj)
+
+        # then group top_level, grouped and ungrouped
+        empty = group(context, top_level | grouped | ungrouped, location=self.location)
+
+        if new_parent:
+            parent(empty, new_parent)
+            empty.M3.is_group_object = True
+
+        # NOTE: blender seems to collapse the hierarchy for newly created objects in the outliner, including for empties
+        # ####: it may not be visible for empties as they don't have a mesh, but it will be obvious once you parent something to the empty
+        # ####: so unfortunately, you can't see the entire hierarchy when grouping
+        # ####: the outliner ops will run when overriden with the correct area, but nothing is happening
+
+        # cleanup potential empty groups, also untag groub objects that are no longer tagged properly
+        clean_up_groups(context)
+
+        # draw label
+        if new_parent:
+            bpy.ops.machin3.draw_label(text=f"Sub: {empty.name}", coords=self.coords, color=(0.5, 1, 0.5), alpha=0.75)
+        else:
+            bpy.ops.machin3.draw_label(text=f"Root: {empty.name}", coords=self.coords, alpha=0.75)
+
+
+"""
 class ReGroup(bpy.types.Operator):
     bl_idname = "machin3.regroup"
     bl_label = "MACHIN3: Re-Group"
@@ -106,6 +229,7 @@ class ReGroup(bpy.types.Operator):
 
             return {'FINISHED'}
         return {'CANCELLED'}
+"""
 
 
 class UnGroup(bpy.types.Operator):

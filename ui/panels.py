@@ -206,15 +206,12 @@ class PanelMACHIN3tools(bpy.types.Panel):
         r.active = groupable
         r.operator("machin3.group", text="Group")
         r = row.row(align=True)
-        r.active = regroupable
-        r.operator("machin3.regroup", text="Re-Group")
-
-        row = column.row(align=True)
-        row.scale_y = 1.2
-        r = row.row(align=True)
         r.active = ungroupable
         r.operator("machin3.ungroup", text="Un-Group")
         r = row.row(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1
         r.active = groupifyable
         row.operator("machin3.groupify", text="Groupify")
 
