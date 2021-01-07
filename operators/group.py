@@ -96,11 +96,8 @@ class Group(bpy.types.Operator):
                 if debug:
                     print("     parent_groups", [obj.name if obj else None for obj in parent_groups])
 
-                if len(parent_groups) == 1:
-                    new_parent = parent_groups.pop()
+                new_parent = parent_groups.pop() if len(parent_groups) == 1 else None
 
-                else:
-                    new_parent = None
 
         # not all objects are grouped, create a new separate group, not parented to anything
         else:
@@ -152,7 +149,7 @@ class Group(bpy.types.Operator):
         # ####: so unfortunately, you can't see the entire hierarchy when grouping
         # ####: the outliner ops will run when overriden with the correct area, but nothing is happening
 
-        # cleanup potential empty groups, also untag groub objects that are no longer tagged properly
+        # cleanup potential empty groups, also untag group objects that are no longer tagged properly
         clean_up_groups(context)
 
         # fade group sizes
@@ -160,10 +157,7 @@ class Group(bpy.types.Operator):
             fade_group_sizes(context, init=True)
 
         # draw label
-        if new_parent:
-            bpy.ops.machin3.draw_label(text=f"Sub: {empty.name}", coords=self.coords, color=(0.5, 1, 0.5), alpha=0.75)
-        else:
-            bpy.ops.machin3.draw_label(text=f"Root: {empty.name}", coords=self.coords, alpha=0.75)
+        bpy.ops.machin3.draw_label(text=f"{'Sub' if new_parent else 'Root'}: {empty.name}", coords=self.coords, color=(0.5, 1, 0.5) if new_parent else (1, 1, 1), alpha=0.75)
 
 
 class UnGroup(bpy.types.Operator):
