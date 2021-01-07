@@ -289,7 +289,7 @@ class Groupify(bpy.types.Operator):
                 obj.M3.is_group_object = True if obj.parent and obj.parent.M3.is_group_empty else False
                 obj.show_in_front = True
                 obj.empty_display_type = 'CUBE'
-                obj.empty_display_size = 0.1
+                obj.empty_display_size = get_prefs().group_size
                 obj.show_name = True
 
                 if not any([s in obj.name.lower() for s in ['grp', 'group']]):
