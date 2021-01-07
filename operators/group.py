@@ -198,6 +198,10 @@ class UnGroup(bpy.types.Operator):
 
         if empties:
             self.ungroup(empties, all_empties)
+
+            # cleanup
+            clean_up_groups(context)
+
             return {'FINISHED'}
         return {'CANCELLED'}
 
@@ -206,6 +210,9 @@ class UnGroup(bpy.types.Operator):
 
         if empties:
             self.ungroup(empties, all_empties)
+
+            # cleanup
+            clean_up_groups(context)
 
             return {'FINISHED'}
         return {'CANCELLED'}
@@ -235,28 +242,9 @@ class UnGroup(bpy.types.Operator):
             self.collect_entire_hierarchy(empties)
             empties = set(self.empties)
 
-        # fetch potential higher level group empties
-        upper_level = [e.parent for e in empties if e.parent and e.parent.M3.is_group_empty and e.parent not in all_empties]
-
         # ungroup
         for empty in empties:
             ungroup(empty)
-
-
-        # clean up potential higher level groups that are now empty or only have a single child group
-        for e in upper_level:
-            if str(e) != '<bpy_struct, Object invalid>':
-                # ungroup single child group of groups
-                if len(e.children) == 1 and e.children[0].M3.is_group_empty and not e.parent:
-                    print("INFO: Un-Grouping single child group of groups", e.name)
-                    ungroup(e)
-                    continue
-
-                # remove empty upper level groups
-                if not e.children:
-                    print("INFO: Removing empty group", e.name)
-                    bpy.data.objects.remove(e, do_unlink=True)
-                    continue
 
 
 class Groupify(bpy.types.Operator):
@@ -522,22 +510,8 @@ class Remove(bpy.types.Operator):
                             pmx = c.matrix_parent_inverse
                             c.matrix_parent_inverse = pmx @ deltamx
 
-
-            # clean up potential higher level groups that are now empty or only have a single child group
-            for e in upper_level:
-                if str(e) != '<bpy_struct, Object invalid>':
-
-                    # ungroup single child group
-                    if len(e.children) == 1 and e.children[0].M3.is_group_object and not e.parent:
-                        print("INFO: Un-Grouping single child group", e.name)
-                        ungroup(e)
-                        continue
-
-                    # remove empty upper level groups
-                    if not e.children:
-                        print("INFO: Removing empty group", e.name)
-                        bpy.data.objects.remove(e, do_unlink=True)
-                        continue
+            # clean up
+            clean_up_groups(context)
 
             return {'FINISHED'}
         return {'CANCELLED'}
