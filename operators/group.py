@@ -73,13 +73,13 @@ class Group(bpy.types.Operator):
         if grouped == sel:
 
             # get the unselected empties too
-            unsellected_empties = {obj.parent for obj in sel if obj not in selected_empties and obj.parent and obj.parent.M3.is_group_empty and obj.parent not in selected_empties}
+            unselected_empties = {obj.parent for obj in sel if obj not in selected_empties and obj.parent and obj.parent.M3.is_group_empty and obj.parent not in selected_empties}
 
             # find the top level empties of the union of both of these sets
-            top_level = {obj for obj in selected_empties | unsellected_empties if obj.parent not in selected_empties | unsellected_empties}
+            top_level = {obj for obj in selected_empties | unselected_empties if obj.parent not in selected_empties | unselected_empties}
 
             if debug:
-                print("unselected empties", [obj.name for obj in unsellected_empties])
+                print("unselected empties", [obj.name for obj in unselected_empties])
                 print("         top level", [obj.name for obj in top_level])
 
 
