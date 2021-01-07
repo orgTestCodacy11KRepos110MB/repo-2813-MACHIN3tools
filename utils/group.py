@@ -152,8 +152,7 @@ def fade_group_sizes(context, size=None, factor=0.8, groups=[], init=False):
         sub_groups = [c for c in group.children if c.M3.is_group_empty]
 
         if sub_groups:
-            fade_group_sizes(context, size=group.empty_display_size, factor=factor, groups=sub_groups, init=False)
-
+            fade_group_sizes(context, size=group.M3.group_size, factor=factor, groups=sub_groups, init=False)
 
 
 # NAMING
