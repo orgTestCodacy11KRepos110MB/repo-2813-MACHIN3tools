@@ -334,6 +334,19 @@ class Customize(bpy.types.Operator):
 
             for kmi in km.keymap_items:
 
+                if kmi.idname == "mesh.bevel":
+                    if kmi.properties.affect == "EDGES":
+                        print("  Changed", kmi_to_string(kmi))
+                        kmi.properties.offset_type = 'OFFSET'
+                        print("       to", kmi_to_string(kmi))
+
+                    elif kmi.properties.affect == "VERTICES":
+                        print("  Changed", kmi_to_string(kmi))
+                        kmi.properties.affect = "EDGES"
+                        kmi.properties.offset_type = 'PERCENT'
+                        print("       to", kmi_to_string(kmi))
+
+
                 if kmi.idname == "wm.call_menu":
                     if kmi.properties.name == "VIEW3D_MT_edit_mesh_select_mode":
                         print("  Deactivated", kmi_to_string(kmi))
@@ -450,6 +463,8 @@ class Customize(bpy.types.Operator):
                     if kmi.properties.name == "VIEW3D_MT_edit_mesh_split":
                         print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
+
+
 
 
             # CURVE
