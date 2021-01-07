@@ -72,7 +72,7 @@ def get_group_polls(context):
     groupable = bool([obj for obj in context.selected_objects if (obj.parent and obj.parent.M3.is_group_empty) or not obj.parent])
     ungroupable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty]) if group_empties else False
 
-    addable = bool([obj for obj in context.selected_objects if obj != (active_group if active_group else active_child.parent) and obj not in (active_group.children if active_group else active_child.parent.children) and (not obj.parent or (obj.parent and obj.parent.M3.is_group_empty))]) if active_group or active_child else False
+    addable = bool([obj for obj in context.selected_objects if obj != (active_group if active_group else active_child.parent) and obj not in (active_group.children if active_group else active_child.parent.children) and (not obj.parent or (obj.parent and obj.parent.M3.is_group_empty and not obj.parent.select_get()))]) if active_group or active_child else False
     removable = bool([obj for obj in context.selected_objects if obj.M3.is_group_object])
     selectable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object])
     duplicatable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty])

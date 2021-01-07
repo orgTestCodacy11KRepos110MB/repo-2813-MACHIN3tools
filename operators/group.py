@@ -414,8 +414,8 @@ class Add(bpy.types.Operator):
             if not active_group:
                 return {'CANCELLED'}
 
-        # get the addable objects, all objects that aren't the active group or among its direct children, so including selected objects of other groups
-        objects = [obj for obj in context.selected_objects if obj != active_group and obj not in active_group.children and (not obj.parent or (obj.parent and obj.parent.M3.is_group_empty))]
+        # get the addable objects, all objects that aren't the active group or among its direct children, so including selected objects of other groups, but not those children whose parents are also selected, bc you want to keeps those hierarchies
+        objects = [obj for obj in context.selected_objects if obj != active_group and obj not in active_group.children and (not obj.parent or (obj.parent and obj.parent.M3.is_group_empty and not obj.parent.select_get()))]
 
         if debug:
             print("active group", active_group.name)
