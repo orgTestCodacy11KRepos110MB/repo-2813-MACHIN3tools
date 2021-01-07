@@ -1,8 +1,9 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
 from .. utils.object import parent, unparent
-from .. utils.group import group, ungroup, get_group_matrix, select_group_children, get_child_depth, clean_up_groups
+from .. utils.group import group, ungroup, get_group_matrix, select_group_children, get_child_depth, clean_up_groups, fade_group_sizes
 from .. utils.collection import get_collection_depth
+from .. utils.registration import get_prefs
 from .. items import group_location_items
 
 
@@ -154,6 +155,10 @@ class Group(bpy.types.Operator):
         # cleanup potential empty groups, also untag groub objects that are no longer tagged properly
         clean_up_groups(context)
 
+        # fade group sizes
+        if get_prefs().group_fade_sizes:
+            fade_group_sizes(context, init=True)
+
         # draw label
         if new_parent:
             bpy.ops.machin3.draw_label(text=f"Sub: {empty.name}", coords=self.coords, color=(0.5, 1, 0.5), alpha=0.75)
@@ -202,6 +207,10 @@ class UnGroup(bpy.types.Operator):
             # cleanup
             clean_up_groups(context)
 
+            # fade group sizes
+            if get_prefs().group_fade_sizes:
+                fade_group_sizes(context, init=True)
+
             return {'FINISHED'}
         return {'CANCELLED'}
 
@@ -213,6 +222,10 @@ class UnGroup(bpy.types.Operator):
 
             # cleanup
             clean_up_groups(context)
+
+            # fade group sizes
+            if get_prefs().group_fade_sizes:
+                fade_group_sizes(context, init=True)
 
             return {'FINISHED'}
         return {'CANCELLED'}
@@ -267,6 +280,10 @@ class Groupify(bpy.types.Operator):
 
         # groupify all the way down
         self.groupify(empties)
+
+        # fade group sizes
+        if get_prefs().group_fade_sizes:
+            fade_group_sizes(context, init=True)
 
         return {'FINISHED'}
 
@@ -327,6 +344,10 @@ class Select(bpy.types.Operator):
 
             select_group_children(e, recursive=event.ctrl or context.scene.M3.group_recursive_select)
 
+        # fade group sizes
+        if get_prefs().group_fade_sizes:
+            fade_group_sizes(context, init=True)
+
         return {'FINISHED'}
 
 
@@ -356,6 +377,10 @@ class Duplicate(bpy.types.Operator):
         for e in empties:
             e.select_set(True)
             select_group_children(e, recursive=event.ctrl or context.scene.M3.group_recursive_select)
+
+        # fade group sizes
+        if get_prefs().group_fade_sizes:
+            fade_group_sizes(context, init=True)
 
         bpy.ops.object.duplicate_move_linked('INVOKE_DEFAULT') if event.alt else bpy.ops.object.duplicate_move('INVOKE_DEFAULT')
 
@@ -440,6 +465,10 @@ class Add(bpy.types.Operator):
 
             # clean up
             clean_up_groups(context)
+
+            # fade group sizes
+            if get_prefs().group_fade_sizes:
+                fade_group_sizes(context, init=True)
 
             return {'FINISHED'}
         return {'CANCELLED'}
