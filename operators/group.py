@@ -161,77 +161,6 @@ class Group(bpy.types.Operator):
             bpy.ops.machin3.draw_label(text=f"Root: {empty.name}", coords=self.coords, alpha=0.75)
 
 
-"""
-class ReGroup(bpy.types.Operator):
-    bl_idname = "machin3.regroup"
-    bl_label = "MACHIN3: Re-Group"
-    bl_description = "Create new Group from existing Group Members"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
-
-    @classmethod
-    def poll(cls, context):
-        return context.mode == 'OBJECT'
-
-    def draw(self, context):
-        layout = self.layout
-
-        column = layout.column()
-
-        row = column.row()
-        row.label(text="Location")
-        row.prop(self, 'location', expand=True)
-
-
-    def execute(self, context):
-
-        # get all objects part of another group
-        objects = [obj for obj in context.selected_objects if obj.M3.is_group_object]
-
-        # collect their empties too
-        empties = set()
-
-        if objects:
-            regroupable = []
-
-            for obj in objects:
-
-                # should always be true, but you never know, be safe
-                if obj.parent and obj.parent.M3.is_group_empty:
-                    empties.add(obj.parent)
-
-                    unparent(obj)
-                    regroupable.append(obj)
-
-                # untag and unsellect invalid group members, should they be encountered
-                else:
-                    obj.M3.is_group_object = False
-                    obj.select_set(False)
-
-            if len(regroupable) > 1:
-                group(context, regroupable, self.location)
-
-            # clean up left over groups
-            for e in empties:
-                if str(e) != '<bpy_struct, Object invalid>':
-                    # ungroup single child group of groups
-                    if len(e.children) == 1 and e.children[0].M3.is_group_empty and not e.parent:
-                        print("INFO: Un-Grouping single child group of groups", e.name)
-                        ungroup(e)
-                        continue
-
-                    # remove empty upper level groups
-                    if not e.children:
-                        print("INFO: Removing empty group", e.name)
-                        bpy.data.objects.remove(e, do_unlink=True)
-                        continue
-
-            return {'FINISHED'}
-        return {'CANCELLED'}
-"""
-
-
 class UnGroup(bpy.types.Operator):
     bl_idname = "machin3.ungroup"
     bl_label = "MACHIN3: Un-Group"
@@ -458,17 +387,7 @@ class Add(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if context.mode == 'OBJECT':
-            # active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
-            # if active_group:
-                # return [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group]
-
-            # active_child = context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None
-
-            # if active_child:
-                # return [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_child]
-
-            return True
+        return context.mode == 'OBJECT'
 
     def draw(self, context):
         layout = self.layout
@@ -482,6 +401,9 @@ class Add(bpy.types.Operator):
         row.prop(self, 'location', expand=True)
 
     def execute(self, context):
+        debug = False
+        # debug = True
+
         active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
 
         if not active_group:
@@ -492,13 +414,24 @@ class Add(bpy.types.Operator):
             if not active_group:
                 return {'CANCELLED'}
 
-        objects = [obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group]
+        # get the addable objects, all objects that aren't the active group or among its direct children, so including selected objects of other groups
+        objects = [obj for obj in context.selected_objects if obj != active_group and obj not in active_group.children and (not obj.parent or (obj.parent and obj.parent.M3.is_group_empty))]
+
+        if debug:
+            print("active group", active_group.name)
+            print("     addable", [obj.name for obj in objects])
 
         if objects:
             for obj in objects:
-                parent(obj, active_group)
-                obj.M3.is_group_object = True
 
+                # unparent existing group objects
+                if obj.parent:
+                    unparent(obj)
+
+                # parent to the new/active group
+                parent(obj, active_group)
+
+                obj.M3.is_group_object = True
 
             # optionally re-align the goup empty
             if self.realign_group_empty:
@@ -516,6 +449,9 @@ class Add(bpy.types.Operator):
                 for c in children:
                     pmx = c.matrix_parent_inverse
                     c.matrix_parent_inverse = pmx @ deltamx
+
+            # clean up
+            clean_up_groups(context)
 
             return {'FINISHED'}
         return {'CANCELLED'}

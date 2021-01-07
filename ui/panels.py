@@ -169,7 +169,7 @@ class PanelMACHIN3tools(bpy.types.Panel):
         column = layout.column(align=True)
         p = get_prefs()
 
-        active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
+        active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
 
         # SCENE PROPS

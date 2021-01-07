@@ -74,7 +74,7 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
         layout = self.layout
         m3 = context.scene.M3
 
-        active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
+        active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
 
         # SCENE PROPS
@@ -99,10 +99,6 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
         row = layout.row()
         row.active = groupable
         row.operator("machin3.group", text="Group")
-
-        row = layout.row()
-        row.active = regroupable
-        row.operator("machin3.regroup", text="Re-Group")
 
         row = layout.row()
         row.active = ungroupable
@@ -156,7 +152,7 @@ def object_context_menu(self, context):
             layout.separator()
 
         else:
-            active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
+            active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
 
             # SCENE PROPS
@@ -182,25 +178,16 @@ def object_context_menu(self, context):
             # GROUP
 
             if groupable:
+                layout.operator_context = "INVOKE_REGION_WIN"
                 layout.operator("machin3.group", text="Group")
-
-            # RE-GROUP
-
-            if regroupable:
-                layout.operator("machin3.regroup", text="Re-Group")
+                layout.operator_context = "EXEC_REGION_WIN"
 
 
             # UN-GROUP
 
             if ungroupable:
-                # set op context
-                # NOTE: why the the op context necessary here, and not in the MACHIN3tools sub menu?
-                # ####: looks like the menue is automatically INVOKE_REGION_WIN for some reason
                 layout.operator_context = "INVOKE_REGION_WIN"
-
                 layout.operator("machin3.ungroup", text="Un-Group")
-
-                # reset op context just to be sure
                 layout.operator_context = "EXEC_REGION_WIN"
 
 

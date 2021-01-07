@@ -48,7 +48,7 @@ def clean_up_groups(context):
             print("INFO: Removing empty Group", obj.name)
             bpy.data.objects.remove(obj, do_unlink=True)
 
-        if obj.M3.is_group_object:
+        elif obj.M3.is_group_object:
             if obj.parent:
 
                 # group objects whose parent is not a group empty are no longer group objects
@@ -65,19 +65,20 @@ def clean_up_groups(context):
 # CONTEXT
 
 def get_group_polls(context):
-    active_group = bool(context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None)
-    active_child = bool(context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None)
+    active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
+    active_child = context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None
+
     group_empties = bool([obj for obj in context.visible_objects if obj.M3.is_group_empty])
     groupable = bool([obj for obj in context.selected_objects if (obj.parent and obj.parent.M3.is_group_empty) or not obj.parent])
-    regroupable = bool(len([obj for obj in context.selected_objects if obj.M3.is_group_object]) > 1)
     ungroupable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty]) if group_empties else False
-    addable = bool([obj for obj in context.selected_objects if not obj.M3.is_group_object and not obj.parent and not obj == active_group and not obj == active_child])
+
+    addable = bool([obj for obj in context.selected_objects if obj != (active_group if active_group else active_child.parent) and obj not in (active_group.children if active_group else active_child.parent.children) and (not obj.parent or (obj.parent and obj.parent.M3.is_group_empty))]) if active_group or active_child else False
     removable = bool([obj for obj in context.selected_objects if obj.M3.is_group_object])
     selectable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object])
     duplicatable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty])
     groupifyable = bool([obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children])
 
-    return active_group, active_child, group_empties, groupable, regroupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable
+    return bool(active_group), bool(active_child), group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable
 
 
 def get_group_collection(context, sel):
