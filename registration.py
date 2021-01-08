@@ -165,6 +165,7 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
                         {'label': 'Toggle Display', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'TWO', 'value': 'PRESS', 'properties': [('type', 'DISPLAY_TYPE')]},
                         {'label': 'Toggle Hidden', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'THREE', 'value': 'PRESS', 'properties': [('type', 'HIDDEN')]}],
         'GROUP': [{'label': 'Create Group', 'keymap': 'Object Mode', 'idname': 'machin3.group', 'type': 'G', 'value': 'PRESS', 'ctrl': True},
+                  {"label": "Select Group", "keymap": "Object Mode", "idname": "machin3.select_group", "type": "LEFTMOUSE", "value": "DOUBLE_CLICK", 'shift': True},
                   {'label': 'Toggle Group Mode', 'keymap': 'Outliner', 'space_type': 'OUTLINER', 'idname': 'machin3.toggle_outliner_group_mode', 'type': 'ONE', 'value': 'PRESS'},
                   {'label': 'Expand Outliner', 'keymap': 'Outliner', 'space_type': 'OUTLINER', 'idname': 'machin3.expand_outliner', 'type': 'TWO', 'value': 'PRESS'},
                   {'label': 'Collapse Outliner', 'keymap': 'Outliner', 'space_type': 'OUTLINER', 'idname': 'machin3.collapse_outliner', 'type': 'THREE', 'value': 'PRESS'},
