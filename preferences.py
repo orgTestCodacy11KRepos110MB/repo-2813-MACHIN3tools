@@ -280,7 +280,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     activate_object_context_menu: BoolProperty(name="Object Context Menu", default=False)
     use_group_sub_menu: BoolProperty(name="Use Group Sub-Menu", default=False)
-
+    use_group_outliner_toggles: BoolProperty(name="Show Group Outliner Toggles", default=True)
 
     # hidden
 
@@ -472,6 +472,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
                 row.prop(self, "use_group_sub_menu", toggle=True)
                 row.label(text="Use Group Sub Menu in Object Context Menu.")
 
+                row = column.split(factor=0.25)
+                row.prop(self, "use_group_outliner_toggles", toggle=True)
+                row.label(text="Show Group Toggles in Outliner Header.")
 
         # RIGHT
 

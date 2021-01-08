@@ -241,7 +241,7 @@ def object_context_menu(self, context):
                 layout.separator()
 
 
-# ADD OBJECTS MENU
+# ADD OBJECTS - QUADSPHERE
 
 def add_object_buttons(self, context):
     self.layout.operator("machin3.quadsphere", text="Quad Sphere", icon='SPHERE')
@@ -260,3 +260,15 @@ def material_pick_button(self, context):
             # row.separator_spacer()
             row.separator(factor=get_prefs().matpick_spacing_obj if context.mode == 'OBJECT' else get_prefs().matpick_spacing_edit)
             row.operator("machin3.material_picker", text="", icon="EYEDROPPER")
+
+
+# OUTLINER GROUP BUTTONS
+
+def outliner_group_toggles(self, context):
+    if getattr(bpy.types, 'MACHIN3_OT_group', False) and get_prefs().use_group_outliner_toggles:
+
+        if get_group_polls(context)[2]:
+            m3 = context.scene.M3
+            self.layout.prop(m3, "group_select", text='', icon='GROUP_VERTEX')
+            self.layout.prop(m3, "group_recursive_select", text='', icon='CON_SIZELIKE')
+            self.layout.prop(m3, "group_hide", text='', icon='HIDE_ON' if m3.group_hide else 'HIDE_OFF', emboss=False)
