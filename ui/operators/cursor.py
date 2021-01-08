@@ -92,8 +92,8 @@ class CursorToSelected(bpy.types.Operator):
             popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
             return {'CANCELLED'}
 
-        # if in object mode with multiple selected ojects, pass it on to Blender's op
-        if context.mode == 'OBJECT' and active and not sel:
+        # if in object mode with multiple selected ojects, pass it on to Blender's op, except when the active is a group empty!
+        if context.mode == 'OBJECT' and active and (not sel or active.M3.is_group_empty):
             self.cursor_to_active_object(active, cmx, only_location=event.alt, only_rotation=event.ctrl)
 
             if set_transform_preset_and_draw_cursor_axes:
@@ -206,9 +206,14 @@ class SelectedToCursor(bpy.types.Operator):
     def invoke(self, context, event):
         sel = context.selected_objects
 
+        # if the active object is a group empty, ignore all other selected objects
+        if context.active_object and context.active_object.M3.is_group_empty:
+            sel = [context.active_object]
+
         # add active to selection if if isn't part of it
-        if context.active_object and context.active_object not in sel:
+        elif context.active_object and context.active_object not in sel:
             sel.append(context.active_object)
+
 
         cmx = context.scene.cursor.matrix
 
