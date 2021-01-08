@@ -19,7 +19,9 @@ def update_group(none):
     context = bpy.context
 
     if context.mode == 'OBJECT':
-        active = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
+
+        # avoid AttributeError: 'Context' object has no attribute 'active_object'
+        active = context.active_object if getattr(context, 'active_object', None) and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
 
         # AUTO SELECT
 
@@ -92,7 +94,8 @@ def surface_slide_HUD(scene):
     if surfaceslideHUD and "RNA_HANDLE_REMOVED" in str(surfaceslideHUD):
         surfaceslideHUD = None
 
-    active = bpy.context.active_object if bpy.context.active_object else None
+    # avoid AttributeError: 'Context' object has no attribute 'active_object'
+    active = getattr(bpy.context, 'active_object', None)
 
     if active:
         surfaceslide = [mod for mod in active.modifiers if mod.type == 'SHRINKWRAP' and 'SurfaceSlide' in mod.name]
