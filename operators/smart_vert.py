@@ -356,7 +356,7 @@ class SmartVert(bpy.types.Operator):
 
         # MERGE
 
-        if self.mode == "MERGE":
+        elif self.mode == "MERGE":
 
             if self.mergetype == "LAST":
                 if len(verts) >= 2:
