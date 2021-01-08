@@ -495,15 +495,21 @@ class Remove(bpy.types.Operator):
         row.prop(self, 'location', expand=True)
 
     def execute(self, context):
+        debug = False
+        # debug = True
+
         all_group_objects = [obj for obj in context.selected_objects if obj.M3.is_group_object]
 
-        # only ever remove top level objects/groups from other groups
+        # skip group objects, whose parents are also selected, so only ever remove top level objects/groups from other groups
+        # this allows removing sub groups with auto-select enabled
         group_objects = [obj for obj in all_group_objects if obj.parent not in all_group_objects]
 
-        if group_objects:
+        if debug:
+            print()
+            print("all group objects", [obj.name for obj in all_group_objects])
+            print("    group objects", [obj.name for obj in group_objects])
 
-            # fetch potential higher level group empties
-            upper_level = {obj.parent for obj in group_objects if obj.parent and obj.parent.M3.is_group_empty and obj.parent not in all_group_objects}
+        if group_objects:
 
             # collect group empties
             empties = set()
