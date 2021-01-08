@@ -187,7 +187,7 @@ def object_context_menu(self, context):
 
             if ungroupable:
                 layout.operator_context = "INVOKE_REGION_WIN"
-                layout.operator("machin3.ungroup", text="Un-Group")
+                layout.operator("machin3.ungroup", text="(X) Un-Group")
                 layout.operator_context = "EXEC_REGION_WIN"
 
 
