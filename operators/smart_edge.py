@@ -19,17 +19,24 @@ class SmartEdge(bpy.types.Operator):
     bridge_cuts: IntProperty(name="Cuts", default=0, min=0)
     bridge_interpolation: EnumProperty(name="Interpolation", items=bridge_interpolation_items, default='SURFACE')
 
-    draw_props = False
+    cut_through: BoolProperty(name="Cut Trough", default=False)
+
+    draw_bridge_props = False
+    draw_knife_props_props = False
 
     def draw(self, context):
         layout = self.layout
 
         column = layout.column()
 
-        if self.draw_props:
+        if self.draw_bridge_props:
             row = column.row(align=True)
             row.prop(self, "bridge_cuts")
             row.prop(self, "bridge_interpolation", text="")
+
+        elif self.draw_knife_props:
+            row = column.row(align=True)
+            row.prop(self, "cut_through")
 
     @classmethod
     def poll(cls, context):
@@ -37,7 +44,8 @@ class SmartEdge(bpy.types.Operator):
         return any(mode == m for m in [(True, False, False), (False, True, False), (False, False, True)])
 
     def execute(self, context):
-        self.draw_props = False
+        self.draw_bridge_props = False
+        self.draw_knife_props = False
 
         active = context.active_object
 
@@ -45,7 +53,17 @@ class SmartEdge(bpy.types.Operator):
         bm.normal_update()
         bm.verts.ensure_lookup_table()
 
+        verts = [v for v in bm.verts if v.select]
+        faces = [f for f in bm.faces if f.select]
         edges = [e for e in bm.edges if e.select]
+
+
+        # KNIFE PROJECT
+
+        if self.is_selection_separated(bm, verts, edges, faces):
+            self.knife_project(context, active, cut_through=self.cut_through)
+            return {'FINISHED'}
+
 
         # TOGGLE SHARP
 
@@ -89,7 +107,7 @@ class SmartEdge(bpy.types.Operator):
                 elif all([not e.is_manifold for e in edges]):
                     try:
                         bpy.ops.mesh.bridge_edge_loops(number_cuts=self.bridge_cuts, interpolation=self.bridge_interpolation)
-                        self.draw_props = True
+                        self.draw_bridge_props = True
                     except:
                         popup_message("SmartEdge in Bridge mode requires two separate, non-manifold edge loops.")
 
@@ -115,6 +133,47 @@ class SmartEdge(bpy.types.Operator):
                     bpy.ops.mesh.loopcut_slide('INVOKE_DEFAULT')
 
         return {'FINISHED'}
+
+    def knife_project(self, context, active, cut_through=False):
+        bpy.ops.mesh.separate(type='SELECTED')
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        sel = [obj for obj in context.selected_objects if obj != active]
+
+        if sel:
+            cutter = sel[0]
+            cutter.select_set(True)
+            bpy.ops.object.mode_set(mode='EDIT')
+
+            try:
+                bpy.ops.mesh.knife_project(cut_through=cut_through)
+                self.draw_knife_props = True
+
+            except RuntimeError:
+                self.draw_knife_props = False
+
+            # remove cutter
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.data.meshes.remove(cutter.data, do_unlink=True)
+            bpy.ops.object.mode_set(mode='EDIT')
+
+    def is_selection_separated(self, bm, verts, edges, faces):
+        '''
+        figure out of selecting is separated from the rest of the mesh
+        '''
+
+        # abort if nothing is selected or the entire mesh is selected
+        if not verts or len(faces) == len(bm.faces):
+            return False
+
+        # check for each selected vert, if every connected edge or face is also selected
+        for v in verts:
+            if not all(e in edges for e in v.link_edges):
+                return False
+
+            if not all(f in faces for f in v.link_faces):
+                return False
+        return True
 
     def toggle_sharp(self, active, bm, edges):
         '''
