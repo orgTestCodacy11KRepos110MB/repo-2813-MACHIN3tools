@@ -184,5 +184,6 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
         'SNAPPING_PIE': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'wm.call_menu_pie', 'type': 'BUTTON5MOUSE', 'value': 'PRESS', 'shift': True, 'properties': [('name', 'MACHIN3_MT_snapping_pie')]}],
         'COLLECTIONS_PIE': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'wm.call_menu_pie', 'type': 'C', 'value': 'PRESS', 'shift': True, 'properties': [('name', 'MACHIN3_MT_collections_pie')]}],
         'WORKSPACE_PIE': [{'keymap': 'Window', 'idname': 'wm.call_menu_pie', 'type': 'PAUSE', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_workspace_pie')]}],
-        'TOOLS_PIE': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'wm.call_menu_pie', 'type': 'Q', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_tools_pie')]}],
+        # 'TOOLS_PIE': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'wm.call_menu_pie', 'type': 'Q', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_tools_pie')]}],
+        'TOOLS_PIE': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'machin3.call_machin3tools_pie', 'type': 'Q', 'value': 'PRESS', 'properties': [('idname', 'tools_pie')]}],
         }

@@ -11,6 +11,9 @@ class CallMACHIN3toolsPie(bpy.types.Operator):
 
     def invoke(self, context, event):
         if context.space_data.type == 'VIEW_3D':
+
+            # SHADING PIE
+
             if self.idname == 'shading_pie':
                 engine = context.scene.render.engine
                 device = context.scene.cycles.device
@@ -22,10 +25,18 @@ class CallMACHIN3toolsPie(bpy.types.Operator):
 
                 # sync cyclces device settings
                 if engine == 'CYCLES' and device != context.scene.M3.cycles_device:
-                    print("syncing device")
                     context.scene.M3.avoid_update = True
                     context.scene.M3.cycles_device = device
 
                 bpy.ops.wm.call_menu_pie(name='MACHIN3_MT_%s' % (self.idname))
+
+            # TOOLS PIE
+
+            elif self.idname == 'tools_pie':
+                if context.mode in ['OBJECT', 'EDIT_MESH']:
+                    bpy.ops.wm.call_menu_pie(name='MACHIN3_MT_%s' % (self.idname))
+
+                else:
+                    return {'PASS_THROUGH'}
 
         return {'FINISHED'}
