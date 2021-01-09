@@ -1,6 +1,6 @@
 import bpy
 from bpy.props import BoolProperty, EnumProperty, FloatProperty
-from mathutils import Matrix, Vector, Euler
+from mathutils import Matrix, Vector, Euler, Quaternion
 from math import radians
 from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, average_locations
 from .. utils.draw import draw_vector
@@ -19,6 +19,7 @@ class Align(bpy.types.Operator):
 
     inbetween: BoolProperty(name="Align in between", default=False)
     is_inbetween: BoolProperty(name="Draw in between", default=True)
+    inbetween_flip: BoolProperty(name="Flip", default=False)
 
     mode: EnumProperty(name='Mode', items=modeitems, default='ACTIVE')
 
@@ -105,8 +106,11 @@ class Align(bpy.types.Operator):
         if self.is_inbetween:
             row = column.split(factor=0.3)
             row.label(text='Align in between')
-            r = row.row()
+            r = row.row(align=True)
             r.prop(self, 'inbetween', toggle=True)
+
+            if self.inbetween:
+                r.prop(self, 'inbetween_flip', toggle=True)
 
 
     @classmethod
@@ -347,6 +351,6 @@ class Align(bpy.types.Operator):
         locations = [obj.matrix_world.to_translation() for obj in sel]
 
         active_up = rot @ Vector((0, 0, 1))
-        sel_up = locations[1] - locations[0]
+        sel_up = locations[0] - locations[1]
 
-        active.matrix_world = get_loc_matrix(average_locations(locations)) @ get_rot_matrix(active_up.rotation_difference(sel_up) @ rot) @ get_sca_matrix(sca)
+        active.matrix_world = get_loc_matrix(average_locations(locations)) @ get_rot_matrix(active_up.rotation_difference(sel_up) @ rot @ Quaternion((1, 0, 0), radians(180 if self.inbetween_flip else 0))) @ get_sca_matrix(sca)
