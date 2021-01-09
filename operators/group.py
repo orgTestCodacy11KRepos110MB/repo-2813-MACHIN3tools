@@ -265,7 +265,6 @@ class Groupify(bpy.types.Operator):
         if context.mode == 'OBJECT':
             return [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
 
-
     def execute(self, context):
         all_empties = [obj for obj in context.selected_objects if obj.type == 'EMPTY' and not obj.M3.is_group_empty and obj.children]
 
@@ -280,7 +279,6 @@ class Groupify(bpy.types.Operator):
             fade_group_sizes(context, init=True)
 
         return {'FINISHED'}
-
 
     def groupify(self, objects):
         for obj in objects:

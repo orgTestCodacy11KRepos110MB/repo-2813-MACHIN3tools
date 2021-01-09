@@ -2,7 +2,8 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty, FloatProperty
 from mathutils import Matrix, Vector, Euler
 from math import radians
-from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix
+from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, average_locations
+from .. utils.draw import draw_vector
 
 
 modeitems = [('ORIGIN', 'Origin', ''),
@@ -15,6 +16,9 @@ class Align(bpy.types.Operator):
     bl_idname = 'machin3.align'
     bl_label = 'MACHIN3: Align'
     bl_options = {'REGISTER', 'UNDO'}
+
+    inbetween: BoolProperty(name="Align in between", default=False)
+    is_inbetween: BoolProperty(name="Draw in between", default=True)
 
     mode: EnumProperty(name='Mode', items=modeitems, default='ACTIVE')
 
@@ -44,74 +48,88 @@ class Align(bpy.types.Operator):
 
         column = layout.column()
 
-        row = column.split(factor=0.3)
-        row.label(text='Align to', icon='BONE_DATA' if self.mode == 'ACTIVE' and context.active_bone else 'BLANK1')
-        r = row.row()
-        r.prop(self, 'mode', expand=True)
-
-        if self.mode == 'ACTIVE' and context.active_bone:
+        if not self.inbetween or not self.is_inbetween:
             row = column.split(factor=0.3)
-            row.label(text='Parent to Bone')
-            row.prop(self, 'parent_to_bone', text='True' if self.parent_to_bone else 'False', toggle=True)
+            row.label(text='Align to', icon='BONE_DATA' if self.mode == 'ACTIVE' and context.active_bone else 'BLANK1')
+            r = row.row()
+            r.prop(self, 'mode', expand=True)
 
-            row = column.split(factor=0.3)
-            row.label(text='Align Z to Y')
-            row.prop(self, 'align_z_to_y', text='True' if self.align_z_to_y else 'False', toggle=True)
-
-            row = column.split(factor=0.3)
-            row.prop(self, 'roll', text='Roll')
-
-            r = row.row(align=True)
-            r.active = self.roll
-            r.prop(self, 'roll_amount', text='')
-
-        else:
-            if self.mode in ['ORIGIN', 'CURSOR', 'ACTIVE']:
+            if self.mode == 'ACTIVE' and context.active_bone:
                 row = column.split(factor=0.3)
-                row.prop(self, 'location', text='Location')
+                row.label(text='Parent to Bone')
+                row.prop(self, 'parent_to_bone', text='True' if self.parent_to_bone else 'False', toggle=True)
+
+                row = column.split(factor=0.3)
+                row.label(text='Align Z to Y')
+                row.prop(self, 'align_z_to_y', text='True' if self.align_z_to_y else 'False', toggle=True)
+
+                row = column.split(factor=0.3)
+                row.prop(self, 'roll', text='Roll')
 
                 r = row.row(align=True)
-                r.active = self.location
-                r.prop(self, 'loc_x', toggle=True)
-                r.prop(self, 'loc_y', toggle=True)
-                r.prop(self, 'loc_z', toggle=True)
+                r.active = self.roll
+                r.prop(self, 'roll_amount', text='')
 
-            if self.mode in ['CURSOR', 'ACTIVE']:
-                row = column.split(factor=0.3)
-                row.prop(self, 'rotation', text='Rotation')
+            else:
+                if self.mode in ['ORIGIN', 'CURSOR', 'ACTIVE']:
+                    row = column.split(factor=0.3)
+                    row.prop(self, 'location', text='Location')
 
-                r = row.row(align=True)
-                r.active = self.rotation
-                r.prop(self, 'rot_x', toggle=True)
-                r.prop(self, 'rot_y', toggle=True)
-                r.prop(self, 'rot_z', toggle=True)
+                    r = row.row(align=True)
+                    r.active = self.location
+                    r.prop(self, 'loc_x', toggle=True)
+                    r.prop(self, 'loc_y', toggle=True)
+                    r.prop(self, 'loc_z', toggle=True)
 
-            if self.mode == 'ACTIVE':
-                row = column.split(factor=0.3)
-                row.prop(self, 'scale', text='Scale')
+                if self.mode in ['CURSOR', 'ACTIVE']:
+                    row = column.split(factor=0.3)
+                    row.prop(self, 'rotation', text='Rotation')
 
-                r = row.row(align=True)
-                r.active = self.scale
-                r.prop(self, 'sca_x', toggle=True)
-                r.prop(self, 'sca_y', toggle=True)
-                r.prop(self, 'sca_z', toggle=True)
+                    r = row.row(align=True)
+                    r.active = self.rotation
+                    r.prop(self, 'rot_x', toggle=True)
+                    r.prop(self, 'rot_y', toggle=True)
+                    r.prop(self, 'rot_z', toggle=True)
+
+                if self.mode == 'ACTIVE':
+                    row = column.split(factor=0.3)
+                    row.prop(self, 'scale', text='Scale')
+
+                    r = row.row(align=True)
+                    r.active = self.scale
+                    r.prop(self, 'sca_x', toggle=True)
+                    r.prop(self, 'sca_y', toggle=True)
+                    r.prop(self, 'sca_z', toggle=True)
+
+
+        if self.is_inbetween:
+            row = column.split(factor=0.3)
+            row.label(text='Align in between')
+            r = row.row()
+            r.prop(self, 'inbetween', toggle=True)
+
 
     @classmethod
     def poll(cls, context):
         return context.selected_objects and context.mode in ['OBJECT', 'POSE']
 
     def execute(self, context):
+        active = context.active_object
         sel = context.selected_objects
 
-        if self.mode == 'ORIGIN':
+        # decide if in between alignment is possible
+        self.is_inbetween = len(sel) == 3 and active and active in sel
+
+        if self.is_inbetween and self.inbetween:
+            self.align_in_between(context.active_object, [obj for obj in context.selected_objects if obj != active])
+
+        elif self.mode == 'ORIGIN':
             self.align_to_origin(sel)
 
-        if self.mode == 'CURSOR':
+        elif self.mode == 'CURSOR':
             self.align_to_cursor(context.scene.cursor, sel)
 
         elif self.mode == 'ACTIVE':
-            active = context.active_object
-
             if active in sel:
                 sel.remove(active)
 
@@ -319,3 +337,16 @@ class Align(bpy.types.Operator):
 
             elif obj.type == 'EMPTY':
                 mx.translation.z -= obj.location.z
+
+    def align_in_between(self, active, sel):
+        '''
+        center active between two objects and align it with the vector between the two
+        '''
+
+        _, rot, sca = active.matrix_world.decompose()
+        locations = [obj.matrix_world.to_translation() for obj in sel]
+
+        active_up = rot @ Vector((0, 0, 1))
+        sel_up = locations[1] - locations[0]
+
+        active.matrix_world = get_loc_matrix(average_locations(locations)) @ get_rot_matrix(active_up.rotation_difference(sel_up) @ rot) @ get_sca_matrix(sca)
