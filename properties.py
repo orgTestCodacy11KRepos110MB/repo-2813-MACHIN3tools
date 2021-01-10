@@ -459,7 +459,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     show_group_recursive_select: BoolProperty(name="Show Recursive Selection Toggle in main Object Context Menu", default=True)
     show_group_hide: BoolProperty(name="Show Group Hide Toggle in main Object Context Menu", default=True)
 
-    affect_only_group_origin: BoolProperty(name="Transform only the Group Origin(Empty)", description="Transform the Group Origin(Empty) only, disable Group Auto-Select and enabled affect Parents only", default=False, update=update_affect_only_group_origin)
+    affect_only_group_origin: BoolProperty(name="Transform only the Group Origin(Empty)", description='Transform the Group Origin(Empty) only, disable Group Auto-Select and enable "affect Parents only"', default=False, update=update_affect_only_group_origin)
 
 
     # hidden

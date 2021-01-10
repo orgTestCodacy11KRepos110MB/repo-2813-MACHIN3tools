@@ -108,3 +108,27 @@ tool_name_mapping_dict = {'BC': 'BoxCutter',
                           'builtin.select_box': 'Select Box',
                           'machin3.tool_hyper_cursor': 'Hyper Cursor',
                           'machin3.tool_hyper_cursor_simple': 'Simple Hyper Cursor'}
+
+
+# MODIFIERS
+
+mirror_props = ['type',
+                'merge_threshold',
+                'mirror_object',
+                'mirror_offset_u',
+                'mirror_offset_v',
+                'offset_u',
+                'offset_v',
+                'show_expanded',
+                'show_in_editmode',
+                'show_on_cage',
+                'show_render',
+                'show_viewport',
+                'use_axis',
+                'use_bisect_axis',
+                'use_bisect_flip_axis',
+                'use_clip',
+                'use_mirror_merge',
+                'use_mirror_u',
+                'use_mirror_v',
+                'use_mirror_vertex_groups']

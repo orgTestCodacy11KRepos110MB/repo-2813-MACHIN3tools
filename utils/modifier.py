@@ -1,3 +1,4 @@
+from .. items import mirror_props
 
 
 # ADD
@@ -19,6 +20,15 @@ def add_shrinkwrap(obj, target):
     return mod
 
 
+def add_mods_from_dict(obj, modsdict):
+    for name, props in modsdict.items():
+        mod = obj.modifiers.new(name=name, type=props['type'])
+
+        for pname, pvalue in props.items():
+            if pname != 'type':
+                setattr(mod, pname, pvalue)
+
+
 # REMOVE
 
 def remove_triangulate(obj):
@@ -27,3 +37,41 @@ def remove_triangulate(obj):
     if lastmod and lastmod.type == 'TRIANGULATE':
         obj.modifiers.remove(lastmod)
         return True
+
+
+# DICT REPRESENTATION
+
+def get_mod_as_dict(mod, skip_show_expanded=False):
+    d = {}
+
+    if mod.type == 'MIRROR':
+        for prop in mirror_props:
+            if skip_show_expanded and prop == 'show_expanded':
+                continue
+
+            if prop in ['use_axis', 'use_bisect_axis', 'use_bisect_flip_axis']:
+                d[prop] = tuple(getattr(mod, prop))
+            else:
+                d[prop] = getattr(mod, prop)
+
+    return d
+
+
+def get_mods_as_dict(obj, types=[], skip_show_expanded=False):
+    mods = []
+
+    # get all mods or all mods of a type in types
+    for mod in obj.modifiers:
+        if types:
+            if mod.type in types:
+                mods.append(mod)
+
+        else:
+            mods.append(mod)
+
+    modsdict = {}
+
+    for mod in mods:
+        modsdict[mod.name] = get_mod_as_dict(mod, skip_show_expanded=skip_show_expanded)
+
+    return modsdict

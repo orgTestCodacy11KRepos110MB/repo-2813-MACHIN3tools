@@ -4,6 +4,7 @@ from .. utils.object import parent, unparent
 from .. utils.group import group, ungroup, get_group_matrix, select_group_children, get_child_depth, clean_up_groups, fade_group_sizes
 from .. utils.collection import get_collection_depth
 from .. utils.registration import get_prefs
+from .. utils.modifier import get_mods_as_dict, add_mods_from_dict
 from .. items import group_location_items
 
 
@@ -427,6 +428,8 @@ class Add(bpy.types.Operator):
             print("     addable", [obj.name for obj in objects])
 
         if objects:
+            children = [c for c in active_group.children]
+
             for obj in objects:
 
                 # unparent existing group objects
@@ -438,10 +441,12 @@ class Add(bpy.types.Operator):
 
                 obj.M3.is_group_object = True
 
+                # check if all group children have common mirror mods, and if so add those same mirros to the new objects!
+                self.mirror(obj, active_group, children, debug=False)
+
+
             # optionally re-align the goup empty
             if self.realign_group_empty:
-                children = [c for c in active_group.children]
-
                 gmx = get_group_matrix(context, self.location, children)
 
                 # get the matrix difference, aka the old mx expressed in the new ones local space
@@ -464,6 +469,77 @@ class Add(bpy.types.Operator):
 
             return {'FINISHED'}
         return {'CANCELLED'}
+
+    def mirror(self, obj, active_group, children, debug=False):
+        '''
+        check if all group children have common mirror mods, and if so add those same mirros to the new objects!
+        unless the object object also hase those same mods already
+        '''
+
+        all_mirrors = {}
+        obj_mirrors = get_mods_as_dict(obj, types=['MIRROR'], skip_show_expanded=True)
+
+        for c in children:
+            if c.M3.is_group_object and not c.M3.is_group_empty and c.type == 'MESH':
+                mirrors = get_mods_as_dict(c, types=['MIRROR'], skip_show_expanded=True)
+
+                if mirrors:
+                    all_mirrors[c] = mirrors
+
+        if debug:
+            for c, mirrors in all_mirrors.items():
+                print()
+                print(c.name)
+
+                for name, props in mirrors.items():
+                    print()
+                    print("", name)
+
+                    for prop in props:
+                        print(" ", prop, props[prop])
+
+        mirrors_are_the_same = False
+
+        if all_mirrors:
+            mirrors_are_the_same = True
+
+            # if there's only a single object with mirrors in the group, its mirror mods can be replicated right away
+            if len(all_mirrors) == 1:
+                if debug:
+                    print(f"INFO: Single object group with mirror mods: {active_group.name}")
+
+            # otherwise find out if all object have the same amount of mirror mods
+            elif len(set([len(mirrors) for c, mirrors in all_mirrors.items()])) == 1:
+
+                # only then compare if the mods are all identical and in the same order
+                for idx, (c, mirrors) in enumerate(all_mirrors.items()):
+
+                    # get the mirror mods of the first object that is iterated over
+                    if idx == 0:
+                        first_mirrors = mirrors
+                        continue
+
+                    # compare all following object mirrors to the first ones
+                    if not all(name in first_mirrors and props == first_mirrors[name] for name, props in mirrors.items()):
+                        mirrors_are_the_same = False
+                        if debug:
+                            print(f"INFO: {c.name}'s mirror mods differ from the others in group {active_group.name}")
+                        break
+            else:
+                mirrors_are_the_same = False
+                if debug:
+                    print(f"INFO: {active_group.name}'s objects have different amounts of mirror mods!")
+
+            if mirrors_are_the_same:
+                if debug:
+                    print(f"INFO: {active_group.name}'s objects all share the same mirror mods!")
+
+                if all_mirrors[c] == obj_mirrors:
+                    if debug:
+                        print(f"INFO: However, the mirror mods are identical to {obj.name}'s existing mirror mods!")
+
+                else:
+                    add_mods_from_dict(obj, all_mirrors[c])
 
 
 class Remove(bpy.types.Operator):
