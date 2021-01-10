@@ -37,11 +37,6 @@ def unparent_children(obj):
     return children
 
 
-def reparent_children(children, obj):
-    for c in children:
-        parent(c, obj)
-
-
 def compensate_children(obj, oldmx, newmx):
     '''
     compensate object's childen, for instance, if obj's world matrix is about to be changed and "affect parents only" is enabled
