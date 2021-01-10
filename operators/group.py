@@ -391,6 +391,10 @@ class Add(bpy.types.Operator):
     realign_group_empty: BoolProperty(name="Re-Align Group Empty", default=False)
     location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
 
+    add_mirror: BoolProperty(name="Add Mirror Modifiers, if there are common ones among the existing Group's objects, that are missing from the new Objects", default=True)
+    is_mirror: BoolProperty()
+
+
     @classmethod
     def poll(cls, context):
         return context.mode == 'OBJECT'
@@ -405,6 +409,10 @@ class Add(bpy.types.Operator):
         row = column.row()
         row.active = self.realign_group_empty
         row.prop(self, 'location', expand=True)
+
+        if self.is_mirror:
+            column.prop(self, 'add_mirror', text="Add Mirror", toggle=True)
+
 
     def execute(self, context):
         debug = False
@@ -441,9 +449,14 @@ class Add(bpy.types.Operator):
 
                 obj.M3.is_group_object = True
 
-                # check if all group children have common mirror mods, and if so add those same mirros to the new objects!
-                self.mirror(obj, active_group, children, debug=False)
+                mesh_children = [c for c in children if c.type == 'MESH']
 
+                # set prop to determine how whether add_mirror is drawn
+                self.is_mirror = any(obj for obj in mesh_children for mod in obj.modifiers if mod.type == 'MIRROR')
+
+                # check if all group children have common mirror mods, and if so add those same mirros to the new objects!
+                if mesh_children and self.add_mirror:
+                    self.mirror(obj, active_group, mesh_children)
 
             # optionally re-align the goup empty
             if self.realign_group_empty:
@@ -470,14 +483,13 @@ class Add(bpy.types.Operator):
             return {'FINISHED'}
         return {'CANCELLED'}
 
-    def mirror(self, obj, active_group, children, debug=False):
+    def mirror(self, obj, active_group, children):
         '''
-        check if all group children have common mirror mods, and if so add those same mirros to the new objects!
+        check if all group children have common mirror mods, and if so add those same mirrors to the new objects!
         unless the object object also hase those same mods already
         '''
 
         all_mirrors = {}
-        obj_mirrors = get_mods_as_dict(obj, types=['MIRROR'], skip_show_expanded=True)
 
         for c in children:
             if c.M3.is_group_object and not c.M3.is_group_empty and c.type == 'MESH':
@@ -486,60 +498,37 @@ class Add(bpy.types.Operator):
                 if mirrors:
                     all_mirrors[c] = mirrors
 
-        if debug:
-            for c, mirrors in all_mirrors.items():
-                print()
-                print(c.name)
+        # first check if all the children actually have mirror mods
+        if all_mirrors and len(all_mirrors) == len(children):
 
-                for name, props in mirrors.items():
-                    print()
-                    print("", name)
+            # get the mirror props of the object
+            obj_props = [props for props in get_mods_as_dict(obj, types=['MIRROR'], skip_show_expanded=True).values()]
 
-                    for prop in props:
-                        print(" ", prop, props[prop])
-
-        mirrors_are_the_same = False
-
-        if all_mirrors:
-            mirrors_are_the_same = True
-
-            # if there's only a single object with mirrors in the group, its mirror mods can be replicated right away
+            # then find the common mirror props among all the groups children
+            # if there's only a single object with mirrors in the group, no commonally needs to be checked of course
             if len(all_mirrors) == 1:
-                if debug:
-                    print(f"INFO: Single object group with mirror mods: {active_group.name}")
 
-            # otherwise find out if all object have the same amount of mirror mods
-            elif len(set([len(mirrors) for c, mirrors in all_mirrors.items()])) == 1:
+                common_props = [props for props in next(iter(all_mirrors.values())).values() if props not in obj_props]
 
-                # only then compare if the mods are all identical and in the same order
-                for idx, (c, mirrors) in enumerate(all_mirrors.items()):
-
-                    # get the mirror mods of the first object that is iterated over
-                    if idx == 0:
-                        first_mirrors = mirrors
-                        continue
-
-                    # compare all following object mirrors to the first ones
-                    if not all(name in first_mirrors and props == first_mirrors[name] for name, props in mirrors.items()):
-                        mirrors_are_the_same = False
-                        if debug:
-                            print(f"INFO: {c.name}'s mirror mods differ from the others in group {active_group.name}")
-                        break
+            # for mutliple objects with mirrors, get all the mods shared by all the group's children
             else:
-                mirrors_are_the_same = False
-                if debug:
-                    print(f"INFO: {active_group.name}'s objects have different amounts of mirror mods!")
+                common_props = []
 
-            if mirrors_are_the_same:
-                if debug:
-                    print(f"INFO: {active_group.name}'s objects all share the same mirror mods!")
+                for c, mirrors in all_mirrors.items():
+                    others = [obj for obj in all_mirrors if obj != c]
 
-                if all_mirrors[c] == obj_mirrors:
-                    if debug:
-                        print(f"INFO: However, the mirror mods are identical to {obj.name}'s existing mirror mods!")
+                    for name, props in mirrors.items():
+                        if all(props in all_mirrors[o].values() for o in others) and props not in common_props:
+                            if props not in obj_props:
+                                common_props.append(props)
 
-                else:
-                    add_mods_from_dict(obj, all_mirrors[c])
+
+            # create proper mods dict from list of common props, using mod names as keys
+            if common_props:
+                common_mirrors = {f"Mirror{'.' + str(idx).zfill(3) if idx else ''}": props for idx, props in enumerate(common_props)}
+
+                # add the mods
+                add_mods_from_dict(obj, common_mirrors)
 
 
 class Remove(bpy.types.Operator):
