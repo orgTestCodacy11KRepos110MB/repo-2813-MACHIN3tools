@@ -196,25 +196,24 @@ class SmartEdge(bpy.types.Operator):
 
     def offset_edges(self, active, bm, edges):
         '''
-        offset parallel edges creating a "korean bevel", choosing either the bevel tool or the offset_edge_loop_slide tool to do so, depending on the circumstances
+        offset parallel edges creating a "korean bevel", choosing either the bevel tool or the offset_edge_loop_slide tool to do so, depending on the circumstances, remove sharps too
         '''
         verts = {v for e in edges for v in e.verts}
 
         connected_edge_counts = [len([e for e in v.link_edges if e not in edges]) for v in verts]
 
+        for e in edges:
+            e.smooth = True
+
         # if at least one of the verts doesn't have at least 2 conencted edges use bevel!
         if any(count < 2 for count in connected_edge_counts):
             bpy.ops.mesh.bevel('INVOKE_DEFAULT', segments=2, profile=1)
-
 
         # other wise use edge offset slide
         else:
             bpy.ops.mesh.offset_edge_loops_slide('INVOKE_DEFAULT',
                                                  MESH_OT_offset_edge_loops={"use_cap_endpoint": False},
                                                  TRANSFORM_OT_edge_slide={"value": -1, "use_even": True, "flipped": False, "use_clamp": True, "correct_uv": True})
-            for e in edges:
-                e.smooth = True
-
         bmesh.update_edit_mesh(active.data)
 
     def star_connect(self, active, bm):
