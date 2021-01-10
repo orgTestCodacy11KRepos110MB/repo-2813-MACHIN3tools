@@ -2045,7 +2045,7 @@ class PieTransform(Menu):
             col.prop(scene.tool_settings, "use_transform_pivot_point_align", text="Locations")
             col.prop(scene.tool_settings, "use_transform_skip_children", text="Parents")
 
-            if get_prefs().activate_group and context.active_object and context.active_object.M3.is_group_empty:
+            if get_prefs().activate_group and (context.active_object and context.active_object.M3.is_group_empty) or context.scene.M3.affect_only_group_origin:
                 col.prop(scene.M3, "affect_only_group_origin", text="Group Origin")
 
 
