@@ -120,34 +120,46 @@ class Align(bpy.types.Operator):
         self.is_inbetween = len(sel) == 3 and active and active in sel
 
         if self.is_inbetween and self.inbetween:
-            self.align_in_between(context.active_object, [obj for obj in context.selected_objects if obj != active])
+            self.align_in_between(context, active, [obj for obj in context.selected_objects if obj != active])
+            return {'FINISHED'}
 
-        elif self.mode == 'ORIGIN':
-            self.align_to_origin(sel)
+        # adjust the selection if your are dealing with groups
+        if self.mode in ['ORIGIN', 'CURSOR', 'FLOOR']:
+
+            # ignore all group objects if a group empty is the active object, so th group moves as once
+            if active and active.M3.is_group_empty and active.children:
+                sel = [active]
+
+        # if there are group empties in the selection, select the top_level ones only!
+        elif self.mode in 'ACTIVE':
+            all_empties = [obj for obj in sel if obj.M3.is_group_empty and obj != active]
+            top_level = [obj for obj in all_empties if obj.parent not in all_empties]
+
+            if top_level:
+                sel = top_level
+
+        if self.mode == 'ORIGIN':
+            self.align_to_origin(context, sel)
 
         elif self.mode == 'CURSOR':
             self.align_to_cursor(context, sel)
 
         elif self.mode == 'ACTIVE':
-            if active in sel:
-                sel.remove(active)
+            if context.active_bone:
+                self.align_to_active_bone(active, context.active_bone.name, [obj for obj in sel if obj != active])
 
-                if context.active_bone:
-                    self.align_to_active_bone(active, context.active_bone.name, sel)
-
-                else:
-                    self.align_to_active_object(context, active, sel)
-
+            else:
+                self.align_to_active_object(context, active, [obj for obj in sel if obj != active])
 
         elif self.mode == 'FLOOR':
             # for some reason a dg is neccessary, in a fresh startup scene, when running clear location followed for floor alignment
             # not for the other alignment types however, and only once at the very beginning at the start of the scene editing
             context.evaluated_depsgraph_get()
-            self.drop_to_floor(sel)
+            self.drop_to_floor(context, sel)
 
         return {'FINISHED'}
 
-    def align_to_origin(self, sel):
+    def align_to_origin(self, context, sel):
         for obj in sel:
             # get object matrix and decompose
             omx = obj.matrix_world
@@ -183,6 +195,9 @@ class Align(bpy.types.Operator):
 
             sca = get_sca_matrix(osca)
 
+            # compensate children
+            if obj.children and context.scene.tool_settings.use_transform_skip_children:
+                compensate_children(obj, omx, loc @ rot @ sca)
 
             # re-combine components into world matrix
             obj.matrix_world = loc @ rot @ sca
@@ -332,27 +347,37 @@ class Align(bpy.types.Operator):
             else:
                 obj.matrix_world = armature.matrix_world @ bone.matrix @ Matrix.Rotation(radians(self.roll_amount if self.roll else 0), 4, 'Y')
 
-    def drop_to_floor(self, selection):
+    def drop_to_floor(self, context, selection):
         for obj in selection:
             mx = obj.matrix_world
+            oldmx = mx.copy()
 
             if obj.type == 'MESH':
                 minz = min((mx @ v.co)[2] for v in obj.data.vertices)
-
                 mx.translation.z -= minz
 
             elif obj.type == 'EMPTY':
                 mx.translation.z -= obj.location.z
 
-    def align_in_between(self, active, sel):
+            if obj.children and context.scene.tool_settings.use_transform_skip_children:
+                compensate_children(obj, oldmx, mx)
+
+
+    def align_in_between(self, context, active, sel):
         '''
         center active between two objects and align it with the vector between the two
         '''
 
-        _, rot, sca = active.matrix_world.decompose()
+        oldmx = active.matrix_world.copy()
+
+        _, rot, sca = oldmx.decompose()
         locations = [obj.matrix_world.to_translation() for obj in sel]
 
         active_up = rot @ Vector((0, 0, 1))
         sel_up = locations[0] - locations[1]
+        mx = get_loc_matrix(average_locations(locations)) @ get_rot_matrix(active_up.rotation_difference(sel_up) @ rot @ Quaternion((1, 0, 0), radians(180 if self.inbetween_flip else 0))) @ get_sca_matrix(sca)
 
-        active.matrix_world = get_loc_matrix(average_locations(locations)) @ get_rot_matrix(active_up.rotation_difference(sel_up) @ rot @ Quaternion((1, 0, 0), radians(180 if self.inbetween_flip else 0))) @ get_sca_matrix(sca)
+        active.matrix_world = mx
+
+        if active.children and context.scene.tool_settings.use_transform_skip_children:
+            compensate_children(active, oldmx, mx)

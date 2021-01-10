@@ -208,7 +208,7 @@ class SelectedToCursor(bpy.types.Operator):
         sel = context.selected_objects
 
         # if the active object is a group empty, ignore all other selected objects
-        if context.active_object and context.active_object.M3.is_group_empty:
+        if context.active_object and context.active_object.M3.is_group_empty and context.active_object.children:
             sel = [context.active_object]
 
         # add active to selection if if isn't part of it
