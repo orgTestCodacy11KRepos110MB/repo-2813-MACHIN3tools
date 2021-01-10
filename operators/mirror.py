@@ -240,7 +240,7 @@ class Unmirror(bpy.types.Operator):
             if obj.type in ["MESH", "CURVE"]:
                 target = self.unmirror_mesh_obj(obj)
 
-                if target and target.type == "EMPTY":
+                if target and target.type == "EMPTY" and not target.children:
                     targets.add(target)
 
             elif obj.type == "GPENCIL":
@@ -276,9 +276,6 @@ class Unmirror(bpy.types.Operator):
         if mirrors:
             target = mirrors[-1].mirror_object
             obj.modifiers.remove(mirrors[-1])
-
-            if target and target == obj.parent:
-                unparent(obj)
 
             return target
 
