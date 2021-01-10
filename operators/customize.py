@@ -338,12 +338,14 @@ class Customize(bpy.types.Operator):
                     if kmi.properties.affect == "EDGES":
                         print("  Changed", kmi_to_string(kmi))
                         kmi.properties.offset_type = 'OFFSET'
+                        kmi.properties.profile = 0.6
                         print("       to", kmi_to_string(kmi))
 
                     elif kmi.properties.affect == "VERTICES":
                         print("  Changed", kmi_to_string(kmi))
                         kmi.properties.affect = "EDGES"
                         kmi.properties.offset_type = 'PERCENT'
+                        kmi.properties.profile = 0.6
                         print("       to", kmi_to_string(kmi))
 
 
