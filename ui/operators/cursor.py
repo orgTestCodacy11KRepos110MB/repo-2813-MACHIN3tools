@@ -229,6 +229,15 @@ class SelectedToCursor(bpy.types.Operator):
             else:
                 mx = get_loc_matrix(cmx.to_translation()) @ get_rot_matrix(cmx.to_quaternion()) @ get_sca_matrix(sca)
 
+            # compensate children, if "affect only parents" is enabled!
+            if context.scene.tool_settings.use_transform_skip_children:
+                deltamx = mx.inverted_safe() @ obj.matrix_world
+                children = [c for c in obj.children]
+
+                for c in children:
+                    pmx = c.matrix_parent_inverse
+                    c.matrix_parent_inverse = pmx @ deltamx
+
             obj.matrix_world = mx
 
         return {'FINISHED'}
