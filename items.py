@@ -48,6 +48,11 @@ align_orientation_items = [('LOCAL', 'Local', ''),
                            ('WORLD', 'World', ''),
                            ('CURSOR', 'Cursor', '')]
 
+obj_align_mode_items = [('ORIGIN', 'Origin', ''),
+                        ('CURSOR', 'Cursor', ''),
+                        ('ACTIVE', 'Active', ''),
+                        ('FLOOR', 'Floor', '')]
+
 cleanup_select_items = [("NON-MANIFOLD", "Non-Manifold", ""),
                         ("TRIS", "Tris", ""),
                         ("NGONS", "Ngons", "")]

@@ -113,7 +113,6 @@ class OriginToActive(bpy.types.Operator):
         # change the origin
         set_obj_origin(active, selmx, bm=bm, decalmachine=decalmachine, meshmachine=meshmachine)
 
-
     def origin_to_active_object(self, context, only_location, only_rotation, decalmachine, meshmachine):
         sel = [obj for obj in context.selected_objects if obj != context.active_object and obj.type not in ['EMPTY', 'FONT']]
 

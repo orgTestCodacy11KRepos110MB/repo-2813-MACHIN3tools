@@ -42,6 +42,20 @@ def reparent_children(children, obj):
         parent(c, obj)
 
 
+def compensate_children(obj, oldmx, newmx):
+    '''
+    compensate object's childen, for instance, if obj's world matrix is about to be changed and "affect parents only" is enabled
+    '''
+
+    # the delta matrix, aka the old mx expressed in the new one's local space
+    deltamx = newmx.inverted_safe() @ oldmx
+    children = [c for c in obj.children]
+
+    for c in children:
+        pmx = c.matrix_parent_inverse
+        c.matrix_parent_inverse = deltamx @ pmx
+
+
 def flatten(obj, depsgraph=None):
     if not depsgraph:
         depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -85,14 +99,14 @@ def set_obj_origin(obj, mx, bm=None, decalmachine=False, meshmachine=False):
     '''
     change object origin to supplied matrix, support doing it in edit mode when bmesh is passed in
     also update decal backups and stashes if decalmachine or meshmachine are True
-    NOTE: will unparent and reparent all children, which could be avoided by manipulating the parent (inverse?) matrices
     '''
 
     # pre-origin adjusted object matrix
     omx = obj.matrix_world.copy()
 
-    # unparent all the children before changing the origin
-    children = unparent_children(obj)
+    # get children and compensate for the parent transform
+    children = [c for c in obj.children]
+    compensate_children(obj, omx, mx)
 
     # object mx expressed in new mx's local space, this is the "difference matrix" representing the origin change
     deltamx = mx.inverted_safe() @ obj.matrix_world
@@ -108,23 +122,13 @@ def set_obj_origin(obj, mx, bm=None, decalmachine=False, meshmachine=False):
     if obj.type == 'MESH':
         obj.data.update()
 
-    # reparent children
-    reparent_children(children, obj)
-
     # the decal origin needs to be chanegd too and the backupmx needs to be compensated for the change in parent object origin
     if decalmachine and children:
-        for child in children:
 
-            # update decal origin and decal backup's backupmx, but only for projected/sliced decals!
-            if child.DM.isdecal and child.DM.decalbackup:
-                child.data.transform(deltamx)
-                child.matrix_world = mx
-                child.data.update()
-
-                # update the decal backup's backupmx
-                if child.DM.decalbackup:
-                    backup = child.DM.decalbackup
-                    backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
+        # decal backup's backup matrices, but only for projected/sliced decals!
+        for c in [c for c in children if c.DM.isdecal and c.DM.decalbackup]:
+            backup = c.DM.decalbackup
+            backup.DM.backupmx = flatten_matrix(deltamx @ backup.DM.backupmx)
 
     # adjust stashes and stash matrices
     if meshmachine:

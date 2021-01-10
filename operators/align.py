@@ -3,13 +3,8 @@ from bpy.props import BoolProperty, EnumProperty, FloatProperty
 from mathutils import Matrix, Vector, Euler, Quaternion
 from math import radians
 from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, average_locations
-from .. utils.draw import draw_vector
-
-
-modeitems = [('ORIGIN', 'Origin', ''),
-             ('CURSOR', 'Cursor', ''),
-             ('ACTIVE', 'Active', ''),
-             ('FLOOR', 'Floor', '')]
+from .. utils.object import compensate_children
+from .. items import obj_align_mode_items
 
 
 class Align(bpy.types.Operator):
@@ -21,7 +16,7 @@ class Align(bpy.types.Operator):
     is_inbetween: BoolProperty(name="Draw in between", default=True)
     inbetween_flip: BoolProperty(name="Flip", default=False)
 
-    mode: EnumProperty(name='Mode', items=modeitems, default='ACTIVE')
+    mode: EnumProperty(name='Mode', items=obj_align_mode_items, default='ACTIVE')
 
     location: BoolProperty(name='Align Location', default=True)
     rotation: BoolProperty(name='Align Rotation', default=True)
@@ -131,7 +126,7 @@ class Align(bpy.types.Operator):
             self.align_to_origin(sel)
 
         elif self.mode == 'CURSOR':
-            self.align_to_cursor(context.scene.cursor, sel)
+            self.align_to_cursor(context, sel)
 
         elif self.mode == 'ACTIVE':
             if active in sel:
@@ -141,7 +136,7 @@ class Align(bpy.types.Operator):
                     self.align_to_active_bone(active, context.active_bone.name, sel)
 
                 else:
-                    self.align_to_active_object(active, sel)
+                    self.align_to_active_object(context, active, sel)
 
 
         elif self.mode == 'FLOOR':
@@ -192,7 +187,8 @@ class Align(bpy.types.Operator):
             # re-combine components into world matrix
             obj.matrix_world = loc @ rot @ sca
 
-    def align_to_cursor(self, cursor, sel):
+    def align_to_cursor(self, context, sel):
+        cursor = context.scene.cursor
         cursor.rotation_mode = 'XYZ'
 
         for obj in sel:
@@ -241,11 +237,14 @@ class Align(bpy.types.Operator):
 
             sca = get_sca_matrix(osca)
 
+            # compensate children
+            if obj.children and context.scene.tool_settings.use_transform_skip_children:
+                compensate_children(obj, omx, loc @ rot @ sca)
 
             # re-combine components into world matrix
             obj.matrix_world = loc @ rot @ sca
 
-    def align_to_active_object(self, active, sel):
+    def align_to_active_object(self, context, active, sel):
         # get target matrix and decompose
         amx = active.matrix_world
         aloc, arot, asca = amx.decompose()
@@ -312,6 +311,9 @@ class Align(bpy.types.Operator):
             else:
                 sca = get_sca_matrix(osca)
 
+            # compensate children, if "affect only parents" is enabled!
+            if obj.children and context.scene.tool_settings.use_transform_skip_children:
+                compensate_children(obj, omx, loc @ rot @ sca)
 
             # re-combine components into world matrix
             obj.matrix_world = loc @ rot @ sca

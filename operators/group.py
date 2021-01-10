@@ -5,6 +5,7 @@ from .. utils.group import group, ungroup, get_group_matrix, select_group_childr
 from .. utils.collection import get_collection_depth
 from .. utils.registration import get_prefs
 from .. utils.modifier import get_mods_as_dict, add_mods_from_dict
+from .. utils.object import compensate_children
 from .. items import group_location_items
 
 
@@ -436,10 +437,11 @@ class Add(bpy.types.Operator):
             print("     addable", [obj.name for obj in objects])
 
         if objects:
-            children = [c for c in active_group.children]
+
+            # existing mesh object children, before any new objects are added
+            children = [c for c in active_group.children if c.type == 'MESH']
 
             for obj in objects:
-
                 # unparent existing group objects
                 if obj.parent:
                     unparent(obj)
@@ -449,29 +451,25 @@ class Add(bpy.types.Operator):
 
                 obj.M3.is_group_object = True
 
-                mesh_children = [c for c in children if c.type == 'MESH']
-
                 # set prop to determine how whether add_mirror is drawn
-                self.is_mirror = any(obj for obj in mesh_children for mod in obj.modifiers if mod.type == 'MIRROR')
+                self.is_mirror = any(obj for obj in children for mod in obj.modifiers if mod.type == 'MIRROR')
 
                 # check if all group children have common mirror mods, and if so add those same mirros to the new objects!
-                if mesh_children and self.add_mirror:
-                    self.mirror(obj, active_group, mesh_children)
+                if children and self.add_mirror:
+                    self.mirror(obj, active_group, children)
 
             # optionally re-align the goup empty
             if self.realign_group_empty:
-                gmx = get_group_matrix(context, self.location, children)
 
-                # get the matrix difference, aka the old mx expressed in the new ones local space
-                deltamx = gmx.inverted_safe() @ active_group.matrix_world
+                # get the new group empties matrix
+                gmx = get_group_matrix(context, self.location, [c for c in active_group.children])
+
+                # compensate the children location, so they stay in place
+                compensate_children(active_group, active_group.matrix_world, gmx)
 
                 # align the group's empty
                 active_group.matrix_world = gmx
 
-                # compensate the children location, so they stay in place
-                for c in children:
-                    pmx = c.matrix_parent_inverse
-                    c.matrix_parent_inverse = pmx @ deltamx
 
             # clean up
             clean_up_groups(context)
@@ -591,16 +589,11 @@ class Remove(bpy.types.Operator):
                     if children:
                         gmx = get_group_matrix(context, self.location, children)
 
-                        # get the matrix difference, aka the old mx expressed in the new ones local space
-                        deltamx = gmx.inverted_safe() @ e.matrix_world
+                        # compensate the children location, so they stay in place
+                        compensate_children(e, e.matrix_world, gmx)
 
                         # align the group's empty
                         e.matrix_world = gmx
-
-                        # compensate the children location, so they stay in place
-                        for c in children:
-                            pmx = c.matrix_parent_inverse
-                            c.matrix_parent_inverse = pmx @ deltamx
 
             # clean up
             clean_up_groups(context)

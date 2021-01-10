@@ -8,6 +8,7 @@ from ... utils.ui import popup_message
 from ... utils.registration import get_prefs, get_addon
 from ... utils.draw import add_object_axes_drawing_handler, remove_object_axes_drawing_handler
 from ... utils.tools import get_active_tool
+from ... utils.object import compensate_children
 
 
 cursor = None
@@ -230,13 +231,8 @@ class SelectedToCursor(bpy.types.Operator):
                 mx = get_loc_matrix(cmx.to_translation()) @ get_rot_matrix(cmx.to_quaternion()) @ get_sca_matrix(sca)
 
             # compensate children, if "affect only parents" is enabled!
-            if context.scene.tool_settings.use_transform_skip_children:
-                deltamx = mx.inverted_safe() @ obj.matrix_world
-                children = [c for c in obj.children]
-
-                for c in children:
-                    pmx = c.matrix_parent_inverse
-                    c.matrix_parent_inverse = pmx @ deltamx
+            if obj.children and context.scene.tool_settings.use_transform_skip_children:
+                compensate_children(obj, obj.matrix_world, mx)
 
             obj.matrix_world = mx
 
