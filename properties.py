@@ -393,6 +393,35 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     # GROUP
 
+    def update_group_select(self, context):
+        '''
+        if auto select is disabled, update the selected objets accordingly to properly represent that
+        this allows you to easily select just the top_level group empties, even if they are hidden, by selecting the group and then disabling auto select
+        '''
+
+        if not self.group_select:
+            all_empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+            top_level = [obj for obj in all_empties if obj.parent not in all_empties]
+
+            for obj in context.selected_objects:
+                if obj not in top_level:
+                    obj.select_set(False)
+
+    def update_group_recursive_select(self, context):
+        '''
+        if recursive select is disabled, update the selected objets accordingly to properly represent that
+        this allows you to easily select just the top_level group objects, even if they are hidden, by selecting the group and then disabling recursive select
+        NOTE: the update_group handler will do the rest and actually select the group, after this functions leaves just the top_level empties selected
+        '''
+
+        if not self.group_recursive_select:
+            all_empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+            top_level = [obj for obj in all_empties if obj.parent not in all_empties]
+
+            for obj in context.selected_objects:
+                if obj not in top_level:
+                    obj.select_set(False)
+
     def update_group_hide(self, context):
         empties = [obj for obj in context.visible_objects if obj.M3.is_group_empty]
 
@@ -413,8 +442,8 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     show_group: BoolProperty(name="Show Group")
 
-    group_select: BoolProperty(name="Auto Select Groups", description="Auto Select Groups", default=True)
-    group_recursive_select: BoolProperty(name="Recursively Select Groups", description="Recursively Select Groups", default=True)
+    group_select: BoolProperty(name="Auto Select Groups", description="Auto Select Groups", default=True, update=update_group_select)
+    group_recursive_select: BoolProperty(name="Recursively Select Groups", description="Recursively Select Groups", default=True, update=update_group_recursive_select)
     group_hide: BoolProperty(name="Hide Group Empties in 3D View", description="Hide Group Empties in 3D View", default=False, update=update_group_hide)
 
     # group option visibilty in main object context menu
