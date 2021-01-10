@@ -442,9 +442,9 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     show_group: BoolProperty(name="Show Group")
 
-    group_select: BoolProperty(name="Auto Select Groups", description="Auto Select Groups", default=True, update=update_group_select)
-    group_recursive_select: BoolProperty(name="Recursively Select Groups", description="Recursively Select Groups", default=True, update=update_group_recursive_select)
-    group_hide: BoolProperty(name="Hide Group Empties in 3D View", description="Hide Group Empties in 3D View", default=False, update=update_group_hide)
+    group_select: BoolProperty(name="Auto Select Groups", description="Automatically select the entire Group, when its Empty is made active", default=True, update=update_group_select)
+    group_recursive_select: BoolProperty(name="Recursively Select Groups", description="Recursively select entire Group Hierarchies down", default=True, update=update_group_recursive_select)
+    group_hide: BoolProperty(name="Hide Group Empties in 3D View", description="Hide Group Empties in 3D View to avoid Clutter", default=False, update=update_group_hide)
 
     # group option visibilty in main object context menu
     show_group_select: BoolProperty(name="Show Auto Select Toggle in main Object Context Menu", default=True)
