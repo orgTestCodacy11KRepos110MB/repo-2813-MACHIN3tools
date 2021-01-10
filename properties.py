@@ -439,6 +439,14 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
                 e.empty_display_size = 0.0001
 
+    def update_affect_only_group_origin(self, context):
+        if self.affect_only_group_origin:
+            context.scene.tool_settings.use_transform_skip_children = True
+            self.group_select = False
+
+        else:
+            context.scene.tool_settings.use_transform_skip_children = False
+            self.group_select = True
 
     show_group: BoolProperty(name="Show Group")
 
@@ -450,6 +458,8 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     show_group_select: BoolProperty(name="Show Auto Select Toggle in main Object Context Menu", default=True)
     show_group_recursive_select: BoolProperty(name="Show Recursive Selection Toggle in main Object Context Menu", default=True)
     show_group_hide: BoolProperty(name="Show Group Hide Toggle in main Object Context Menu", default=True)
+
+    affect_only_group_origin: BoolProperty(name="Transform only the Group Origin(Empty)", description="Transform the Group Origin(Empty) only, disable Group Auto-Select and enabled affect Parents only", default=False, update=update_affect_only_group_origin)
 
 
     # hidden
