@@ -1,18 +1,18 @@
 import bpy
-from mathutils import Vector
+from mathutils import Vector, Quaternion
 from . object import parent, unparent
-from . math import average_locations, get_loc_matrix
+from . math import average_locations, get_loc_matrix, get_rot_matrix
 from . registration import get_prefs
 
 
 # CREATION / DESTRUCTION
 
-def group(context, sel, location):
+def group(context, sel, location='AVERAGE', rotation='WORLD'):
     col = get_group_collection(context, sel)
 
     empty = bpy.data.objects.new(name=get_base_group_name(), object_data=None)
     empty.M3.is_group_empty = True
-    empty.matrix_world = get_group_matrix(context, location, sel)
+    empty.matrix_world = get_group_matrix(context, sel, location, rotation)
     col.objects.link(empty)
 
     context.view_layer.objects.active = empty
@@ -96,13 +96,19 @@ def get_group_collection(context, sel):
         return context.scene.collection
 
 
-def get_group_matrix(context, location_type, objects):
+def get_group_matrix(context, objects, location_type='AVERAGE', rotation_type='WORLD'):
+    '''
+    get group's location and rotation
+    '''
+
+    # LOCATION
+
     if location_type == 'AVERAGE':
         location = average_locations([obj.matrix_world.to_translation() for obj in objects])
 
     elif location_type == 'ACTIVE':
         if context.active_object:
-            return context.active_object.matrix_world
+            location = context.active_object.matrix_world.to_translation()
 
         # fallback to average if no active object is present
         else:
@@ -114,7 +120,27 @@ def get_group_matrix(context, location_type, objects):
     elif location_type == 'WORLD':
         location = Vector()
 
-    return get_loc_matrix(location)
+
+    # ROTATION
+
+    if rotation_type == 'AVERAGE':
+        rotation = Quaternion(average_locations([obj.matrix_world.to_quaternion().to_exponential_map() for obj in objects]))
+
+    elif rotation_type == 'ACTIVE':
+        if context.active_object:
+            rotation = context.active_object.matrix_world.to_quaternion()
+
+        # fallback to average if no active object is present
+        else:
+            rotation = Quaternion(average_locations([obj.matrix_world.to_quaternion().to_exponential_map() for obj in objects]))
+
+    elif rotation_type == 'CURSOR':
+        rotation = context.scene.cursor.matrix.to_quaternion()
+
+    elif rotation_type == 'WORLD':
+        rotation = Quaternion()
+
+    return get_loc_matrix(location) @ get_rot_matrix(rotation)
 
 
 # HIERARCHY

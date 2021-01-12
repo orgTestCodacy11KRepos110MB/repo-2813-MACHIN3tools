@@ -18,6 +18,7 @@ class Group(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
+    rotation: EnumProperty(name="Rotation", items=group_location_items, default='WORLD')
 
     @classmethod
     def poll(cls, context):
@@ -31,6 +32,10 @@ class Group(bpy.types.Operator):
         row = column.row()
         row.label(text="Location")
         row.prop(self, 'location', expand=True)
+
+        row = column.row()
+        row.label(text="Rotation")
+        row.prop(self, 'rotation', expand=True)
 
     def invoke(self, context, event):
         self.coords = (event.mouse_region_x, event.mouse_region_y)
@@ -140,7 +145,7 @@ class Group(bpy.types.Operator):
             unparent(obj)
 
         # then group top_level, grouped and ungrouped
-        empty = group(context, top_level | grouped | ungrouped, location=self.location)
+        empty = group(context, top_level | grouped | ungrouped, location=self.location, rotation=self.rotation)
 
         if new_parent:
             parent(empty, new_parent)
@@ -391,6 +396,7 @@ class Add(bpy.types.Operator):
 
     realign_group_empty: BoolProperty(name="Re-Align Group Empty", default=False)
     location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
+    rotation: EnumProperty(name="Rotation", items=group_location_items, default='WORLD')
 
     add_mirror: BoolProperty(name="Add Mirror Modifiers, if there are common ones among the existing Group's objects, that are missing from the new Objects", default=True)
     is_mirror: BoolProperty()
@@ -410,6 +416,10 @@ class Add(bpy.types.Operator):
         row = column.row()
         row.active = self.realign_group_empty
         row.prop(self, 'location', expand=True)
+
+        row = column.row()
+        row.active = self.realign_group_empty
+        row.prop(self, 'rotation', expand=True)
 
         if self.is_mirror:
             column.prop(self, 'add_mirror', text="Add Mirror", toggle=True)
@@ -462,7 +472,7 @@ class Add(bpy.types.Operator):
             if self.realign_group_empty:
 
                 # get the new group empties matrix
-                gmx = get_group_matrix(context, self.location, [c for c in active_group.children])
+                gmx = get_group_matrix(context, [c for c in active_group.children], self.location, self.rotation)
 
                 # compensate the children location, so they stay in place
                 compensate_children(active_group, active_group.matrix_world, gmx)
@@ -537,6 +547,7 @@ class Remove(bpy.types.Operator):
 
     realign_group_empty: BoolProperty(name="Re-Align Group Empty", default=False)
     location: EnumProperty(name="Location", items=group_location_items, default='AVERAGE')
+    rotation: EnumProperty(name="Rotation", items=group_location_items, default='WORLD')
 
     @classmethod
     def poll(cls, context):
@@ -554,6 +565,10 @@ class Remove(bpy.types.Operator):
         row = column.row()
         row.active = self.realign_group_empty
         row.prop(self, 'location', expand=True)
+
+        row = column.row()
+        row.active = self.realign_group_empty
+        row.prop(self, 'rotation', expand=True)
 
     def execute(self, context):
         debug = False
@@ -587,7 +602,7 @@ class Remove(bpy.types.Operator):
                     children = [c for c in e.children]
 
                     if children:
-                        gmx = get_group_matrix(context, self.location, children)
+                        gmx = get_group_matrix(context, children, self.location, self.rotation)
 
                         # compensate the children location, so they stay in place
                         compensate_children(e, e.matrix_world, gmx)
