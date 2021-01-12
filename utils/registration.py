@@ -366,6 +366,10 @@ def get_tools():
     classlists, keylists, count = get_group(classlists, keylists, count)
 
 
+    # THREADS
+    classlists, keylists, count = get_threads(classlists, keylists, count)
+
+
     # CUSTOMIZE
     classlists, keylists, count = get_customize(classlists, keylists, count)
 
@@ -584,6 +588,14 @@ def get_group(classlists=[], keylists=[], count=0):
     if get_prefs().activate_group:
         classlists.append(classesdict["GROUP"])
         keylists.append(keysdict["GROUP"])
+        count +=1
+
+    return classlists, keylists, count
+
+
+def get_threads(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_threads:
+        classlists.append(classesdict["THREADS"])
         count +=1
 
     return classlists, keylists, count
