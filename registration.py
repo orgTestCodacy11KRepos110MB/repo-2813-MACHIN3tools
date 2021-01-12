@@ -11,6 +11,7 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                     ('ui.operators.draw', [('DrawLabel', 'draw_label')]),
                     ('ui.panels', [('PanelMACHIN3tools', 'machin3_tools')]),
                     ('ui.menus', [('MenuMACHIN3toolsObjectContextMenu', 'machin3tools_object_context_menu'),
+                                  ('MenuMACHIN3toolsMeshContextMenu', 'machin3tools_mesh_context_menu'),
                                   ('MenuGroupObjectContextMenu', 'group_object_context_menu')]),
                     ('operators.quadsphere', [('QuadSphere', 'quadsphere')])],
 

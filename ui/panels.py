@@ -45,7 +45,6 @@ class PanelMACHIN3tools(bpy.types.Panel):
             if m3.show_group:
                 self.draw_group(context, m3, box)
 
-
     def draw_smart_drive(self, m3, layout):
         column = layout.column()
 
@@ -163,7 +162,6 @@ class PanelMACHIN3tools(bpy.types.Panel):
         row = column.row(align=True)
         row.scale_y = 1.2
         row.operator("machin3.restore_unity_export", text="Restore Transformations")
-
 
     def draw_group(self, context, m3, layout):
         column = layout.column(align=True)

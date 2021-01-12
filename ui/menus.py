@@ -29,6 +29,17 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
             layout.operator("machin3.material_picker", text="Material Picker")
 
 
+class MenuMACHIN3toolsMeshContextMenu(bpy.types.Menu):
+    bl_idname = "MACHIN3_MT_machin3tools_mesh_context_menu"
+    bl_label = "MACHIN3tools"
+
+    def draw(self, context):
+        layout = self.layout
+
+        if get_prefs().activate_threads:
+            layout.operator("machin3.add_threads", text="Add Threads")
+
+
 # AppendMaterilas SUB MENU
 
 class MenuAppendMaterials(bpy.types.Menu):
@@ -239,6 +250,16 @@ def object_context_menu(self, context):
 
             if group_empties or groupable or (addable and (active_group or active_child)) or removable or groupifyable:
                 layout.separator()
+
+
+# MESH CONTEXT MENU
+
+def mesh_context_menu(self, context):
+    layout = self.layout
+
+    if get_prefs().activate_threads:
+        layout.menu("MACHIN3_MT_machin3tools_mesh_context_menu")
+        layout.separator()
 
 
 # ADD OBJECTS - QUADSPHERE
