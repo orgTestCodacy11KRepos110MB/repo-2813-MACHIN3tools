@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import IntProperty, FloatProperty
 import bmesh
-from math import pi, cos, sin
+from math import pi, cos, sin, sqrt
 from mathutils import Vector
 from .. utils.draw import draw_points
 
@@ -12,9 +12,11 @@ class Threads(bpy.types.Operator):
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO'}
 
-    segments: IntProperty(name="Segments", min=5, default=12)
+    segments: IntProperty(name="Segments", min=5, default=92)
     loops: IntProperty(name="Loops", min=1, default=2)
-    falloff: IntProperty(name="Falloff", min=1, default=2)
+
+    depth: FloatProperty(name="Depth", min=0, max=1, default=0.2, description="Depth in Percentage of minor Diamater", subtype='PERCENTAGE')
+    fade: FloatProperty(name="Fade", description="Percentage of Segments fading into inner Diameter", min=0.01, max=0.5, default=0.25, subtype='PERCENTAGE')
 
     h1: FloatProperty(name="Under Side", min=0, default=0.3, step=0.1)
     h2: FloatProperty(name="Width", min=0, default=0.0, step=0.1)
@@ -36,14 +38,16 @@ class Threads(bpy.types.Operator):
         row = column.row(align=True)
         row.prop(self, 'segments')
         row.prop(self, 'loops')
-        row.prop(self, 'falloff')
+
+        row = column.row(align=True)
+        row.prop(self, 'depth')
+        row.prop(self, 'fade')
 
         row = column.row(align=True)
         row.prop(self, 'h1', text='')
         row.prop(self, 'h3', text='')
         row.prop(self, 'h2', text='')
         row.prop(self, 'h4', text='')
-
 
 
     def execute(self, context):
@@ -59,7 +63,7 @@ class Threads(bpy.types.Operator):
         # draw_points(coords, size=6, color=(1, 0, 0), alpha=0.5, modal=False)
 
 
-        coords, indices = thread_generator2(segments=self.segments, loops=self.loops, outer_radius=1.2, inner_radius=1, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, falloff=self.falloff)
+        coords, indices = thread_generator2(segments=self.segments, loops=self.loops, radius=1, depth=self.depth, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade)
 
 
         # draw_points(coords, size=3, color=(0, 1, 0), modal=False)
@@ -163,7 +167,7 @@ def thread_generator(verts_per_loop=12, loops=2, outer_radius=1.2, inner_radius=
     return coords, indices
 
 
-def thread_generator2(segments=12, loops=1, outer_radius=1.2, inner_radius=1, h1=0.3, h2=0.05, h3=0.1, h4=0.05, falloff=2):
+def thread_generator2(segments=12, loops=1, radius=1, depth=0.2, h1=0.3, h2=0.05, h3=0.1, h4=0.05, fade=0.25):
     '''
     thread profile
     # |   h4
@@ -173,19 +177,21 @@ def thread_generator2(segments=12, loops=1, outer_radius=1.2, inner_radius=1, h1
     '''
 
     height = h1 + h2 + h3 + h4
-    depth = outer_radius - inner_radius
+
+    # fade determines how many of the segments falloff
+    falloff = segments * fade
 
     # create profile coords, there are 3-5 coords, depending on the h2 and h4 "spacer values"
-    profile = [Vector((inner_radius, 0, 0))]
-    profile.append(Vector((outer_radius, 0, h1)))
+    profile = [Vector((radius, 0, 0))]
+    profile.append(Vector((radius + depth, 0, h1)))
 
     if h2 > 0:
-        profile.append(Vector((outer_radius, 0, h1 + h2)))
+        profile.append(Vector((radius + depth, 0, h1 + h2)))
 
-    profile.append(Vector((inner_radius, 0, h1 + h2 + h3)))
+    profile.append(Vector((radius, 0, h1 + h2 + h3)))
 
     if h4 > 0:
-        profile.append(Vector((inner_radius, 0, h1 + h2 + h3 + h4)))
+        profile.append(Vector((radius, 0, h1 + h2 + h3 + h4)))
 
     # based on the profile create the thread coords and indices
     pcount = len(profile)
@@ -200,18 +206,18 @@ def thread_generator2(segments=12, loops=1, outer_radius=1.2, inner_radius=1, h1
             # create the thread coords
             for pidx, co in enumerate(profile):
 
-                # the radius is always the x coord, except when adjusting the falloff for the first or last segments
+                # the radius for individual points is always the x coord, except when adjusting the falloff for the first or last segments
                 if loop == 0 and segment <= falloff and pidx in ([1, 2] if h2 else [1]):
-                    radius = inner_radius + depth * segment / falloff
+                    r = radius + depth * segment / falloff
                 elif loop == loops - 1 and segments - segment <= falloff and pidx in ([1, 2] if h2 else [1]):
-                    radius = inner_radius + depth * (segments - segment) / falloff
+                    r = radius + depth * (segments - segment) / falloff
                 else:
-                    radius = co.x
+                    r = co.x
 
                 # slightly increase each profile coords height per segment, and offset it per loop too
                 z = co.z + (segment / segments) * height + (height * loop)
 
-                coords.append(Vector((radius * cos(angle), radius * sin(angle), z)))
+                coords.append(Vector((r * cos(angle), r * sin(angle), z)))
 
             # for each segment - starting with the second one - create the face indices
             if segment > 0:
