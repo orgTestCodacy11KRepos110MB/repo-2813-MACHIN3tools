@@ -1,4 +1,5 @@
 import bpy
+from bpy.props import IntProperty, FloatProperty
 import bmesh
 from math import pi, cos, sin
 from mathutils import Vector
@@ -11,12 +12,39 @@ class Threads(bpy.types.Operator):
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO'}
 
+    segments: IntProperty(name="Segments", min=5, default=12)
+    loops: IntProperty(name="Loops", min=1, default=2)
+    falloff: IntProperty(name="Falloff", min=1, default=2)
+
+    h1: FloatProperty(name="Under Side", min=0, default=0.3, step=0.1)
+    h2: FloatProperty(name="Width", min=0, default=0.0, step=0.1)
+    h3: FloatProperty(name="Upper Side", min=0, default=0.1, step=0.1)
+    h4: FloatProperty(name="Space", min=0, default=0.0, step=0.1)
+
     @classmethod
     def poll(cls, context):
         if context.mode == 'EDIT_MESH':
             bm = bmesh.from_edit_mesh(context.active_object.data)
             # return [f for f in bm.faces if f.select]
             return True
+
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.prop(self, 'segments')
+        row.prop(self, 'loops')
+        row.prop(self, 'falloff')
+
+        row = column.row(align=True)
+        row.prop(self, 'h1', text='')
+        row.prop(self, 'h3', text='')
+        row.prop(self, 'h2', text='')
+        row.prop(self, 'h4', text='')
+
+
 
     def execute(self, context):
         active = context.active_object
@@ -31,7 +59,9 @@ class Threads(bpy.types.Operator):
         # draw_points(coords, size=6, color=(1, 0, 0), alpha=0.5, modal=False)
 
 
-        coords, indices = thread_generator2()
+        coords, indices = thread_generator2(segments=self.segments, loops=self.loops, outer_radius=1.2, inner_radius=1, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, falloff=self.falloff)
+
+
         # draw_points(coords, size=3, color=(0, 1, 0), modal=False)
 
         # """
@@ -41,8 +71,22 @@ class Threads(bpy.types.Operator):
             v = bm.verts.new(mxi @ co)
             verts.append(v)
 
+
+        faces = []
+
         for ids in indices:
-            bm.faces.new([verts[idx] for idx in ids])
+            f = bm.faces.new([verts[idx] for idx in ids])
+            faces.append(f)
+
+        # bmesh.ops.remove_doubles(bm, verts=verts, dist=0.0001)
+
+        for v in verts:
+            v.select_set(True)
+
+        # for f in faces:
+            # print(f)
+
+
         # """
 
         bm.normal_update()
@@ -97,11 +141,7 @@ def thread_generator(verts_per_loop=12, loops=2, outer_radius=1.2, inner_radius=
 
             # falloff applies to outer rings only
             u = i / (verts_per_loop * loops)
-            # radius = inner_radius + (outer_radius - inner_radius) * (1 - 6 * (pow(2 * u - 1, falloff_rate * 4) / 2 - pow(2 * u - 1, falloff_rate * 6) / 3)) if profile[j][0] == outer_radius else inner_radius
-
-            # radius = inner_radius + (outer_radius - inner_radius) * 1 if profile[j][0] == outer_radius else inner_radius
-            radius = profile[j][0]
-
+            radius = inner_radius + (outer_radius - inner_radius) * (1 - 6 * (pow(2 * u - 1, falloff_rate * 4) / 2 - pow(2 * u - 1, falloff_rate * 6) / 3)) if profile[j][0] == outer_radius else inner_radius
 
             x = radius * cos(angle)
             y = radius * sin(angle)
@@ -123,7 +163,7 @@ def thread_generator(verts_per_loop=12, loops=2, outer_radius=1.2, inner_radius=
     return coords, indices
 
 
-def thread_generator2(segments=12, loops=1, outer_radius=1.2, inner_radius=1, h1=0.3, h2=0.05, h3=0.1, h4=0.05, falloff_rate=5):
+def thread_generator2(segments=12, loops=1, outer_radius=1.2, inner_radius=1, h1=0.3, h2=0.05, h3=0.1, h4=0.05, falloff=2):
     '''
     thread profile
     # |   h4
@@ -133,6 +173,7 @@ def thread_generator2(segments=12, loops=1, outer_radius=1.2, inner_radius=1, h1
     '''
 
     height = h1 + h2 + h3 + h4
+    depth = outer_radius - inner_radius
 
     # create profile coords, there are 3-5 coords, depending on the h2 and h4 "spacer values"
     profile = [Vector((inner_radius, 0, 0))]
@@ -157,17 +198,22 @@ def thread_generator2(segments=12, loops=1, outer_radius=1.2, inner_radius=1, h1
             angle = segment * 2 * pi / segments
 
             # create the thread coords
-            for co in profile:
+            for pidx, co in enumerate(profile):
 
-                # the radius is always the x coord
-                radius = co.x
+                # the radius is always the x coord, except when adjusting the falloff for the first or last segments
+                if loop == 0 and segment <= falloff and pidx in ([1, 2] if h2 else [1]):
+                    radius = inner_radius + depth * segment / falloff
+                elif loop == loops - 1 and segments - segment <= falloff and pidx in ([1, 2] if h2 else [1]):
+                    radius = inner_radius + depth * (segments - segment) / falloff
+                else:
+                    radius = co.x
 
                 # slightly increase each profile coords height per segment, and offset it per loop too
                 z = co.z + (segment / segments) * height + (height * loop)
 
                 coords.append(Vector((radius * cos(angle), radius * sin(angle), z)))
 
-            # create the indices
+            # for each segment - starting with the second one - create the face indices
             if segment > 0:
 
                 # create pcount - 1 rows of face indices
