@@ -368,7 +368,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         row = column.split(factor=0.25)
         row.prop(self, "activate_select", toggle=True)
-        row.label(text="Selection helpers.")
+        row.label(text="Select Center Objects, Wire Objects and a MESHmachine Loop/Sharp Select Wrapper.")
 
         row = column.split(factor=0.25)
         row.prop(self, "activate_mesh_cut", toggle=True)

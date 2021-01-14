@@ -1,6 +1,8 @@
 import bpy
-from bpy.props import EnumProperty
+import bmesh
+from bpy.props import EnumProperty, BoolProperty, IntProperty
 from mathutils import Vector
+from .. utils.registration import get_addon
 
 
 axis_items = [("0", "X", ""),
@@ -79,3 +81,73 @@ class SelectWireObjects(bpy.types.Operator):
                 obj.select_set(True)
 
         return {'FINISHED'}
+
+
+class SelectLoop(bpy.types.Operator):
+    bl_idname = "machin3.select_loop"
+    bl_label = "MACHIN3: Select Loop"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    loop: BoolProperty(name="Loop Select", default=False)
+    min_angle: IntProperty(name="Min Angle", default=120)
+
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column()
+
+        row = column.row(align=True)
+        row.prop(self, "loop", text="Loop Select" if self.loop else "Sharp Select", toggle=True)
+
+        r = row.row(align=True)
+        r.active = self.loop
+        r.prop(self, 'min_angle')
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'EDIT_MESH'
+
+    def invoke(self, context, event):
+        self.loop = False
+
+        self.select_type = self.get_meshmachine_select(context)
+
+        if self.select_type:
+            if self.select_type == 'LOOP':
+                self.loop = True
+                bpy.ops.machin3.lselect(min_angle=self.min_angle)
+            elif self.select_type == 'SHARP':
+                bpy.ops.machin3.sselect()
+            return {'FINISHED'}
+
+        else:
+            return {'PASS_THROUGH'}
+
+    def execute(self, context):
+        if self.select_type:
+
+            # force loop select, so the user can't toggle from loop to sharp, if the selected edge isn't sharp
+            if self.select_type == 'LOOP' and not self.loop:
+                self.loop = True
+
+            if self.loop:
+                bpy.ops.machin3.lselect(min_angle=self.min_angle)
+            else:
+                bpy.ops.machin3.sselect()
+            return {'FINISHED'}
+
+        else:
+            return {'PASS_THROUGH'}
+
+    def get_meshmachine_select(self, context):
+        meshmachine = get_addon('MESHmachine')[0]
+
+        if meshmachine:
+            if tuple(context.scene.tool_settings.mesh_select_mode) == (False, True, False):
+                bm = bmesh.from_edit_mesh(context.active_object.data)
+
+                edges = [e for e in bm.edges if e.select]
+
+                if len(edges) == 1:
+                    return 'LOOP' if edges[0].smooth else 'SHARP'
