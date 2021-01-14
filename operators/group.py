@@ -669,7 +669,7 @@ class ToggleGroupMode(bpy.types.Operator):
             space.use_filter_object_armature = True
             space.use_filter_object_light = True
             space.use_filter_object_camera = True
-            space.use_filter_object_others = False
+            space.use_filter_object_others = True
 
         return {'FINISHED'}
 
