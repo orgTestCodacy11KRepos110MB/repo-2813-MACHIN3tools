@@ -28,10 +28,7 @@ class Threads(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if context.mode == 'EDIT_MESH':
-            bm = bmesh.from_edit_mesh(context.active_object.data)
-            # return [f for f in bm.faces if f.select]
-            return True
+        return context.mode == 'EDIT_MESH'
 
     def draw(self, context):
         layout = self.layout
@@ -39,10 +36,7 @@ class Threads(bpy.types.Operator):
         column = layout.column(align=True)
 
         row = column.row(align=True)
-        row.prop(self, 'segments')
         row.prop(self, 'loops')
-
-        row = column.row(align=True)
         row.prop(self, 'depth')
         row.prop(self, 'fade')
 
@@ -54,18 +48,16 @@ class Threads(bpy.types.Operator):
 
     def execute(self, context):
         active = context.active_object
-        mx = active.matrix_world
-        mxi = mx.inverted_safe()
 
         bm = bmesh.from_edit_mesh(active.data)
         bm.normal_update()
 
-        verts = [v for v in bm.verts if v.select]
-        faces = [f for f in bm.faces if f.select]
+        selverts = [v for v in bm.verts if v.select]
+        selfaces = [f for f in bm.faces if f.select]
 
-        if faces:
-            boundary = get_boundary_edges(faces)
-            sequences = get_edges_vert_sequences(verts, boundary, debug=False)
+        if selfaces:
+            boundary = get_boundary_edges(selfaces)
+            sequences = get_edges_vert_sequences(selverts, boundary, debug=False)
 
             # if there are 2 sequences
             if len(sequences) == 2:
@@ -76,6 +68,16 @@ class Threads(bpy.types.Operator):
 
                 # if they are both cyclic and have the same amount of verts,and at least 5
                 if cyclic1 == cyclic2 and cyclic1 is True and len(verts1) == len(verts2) and len(verts1) >= 5:
+                    smooth = selfaces[0].smooth
+
+                    if smooth:
+                        active.data.use_auto_smooth = True
+
+                    # deselect verts
+                    for v in verts1 + verts2:
+                        v.select_set(False)
+
+                    bm.select_flush(False)
 
                     # set amount of segments
                     self.segments = len(verts1)
@@ -83,9 +85,6 @@ class Threads(bpy.types.Operator):
                     # get selection mid points
                     center1 = average_locations([v.co for v in verts1])
                     center2 = average_locations([v.co for v in verts2])
-
-                    draw_point(center1, mx=mx, color=(0, 1, 0), modal=False)
-                    draw_point(center2, mx=mx, color=(1, 0, 0), modal=False)
 
                     # get the radii, and set the radius as an average
                     radius1 = (center1 - verts1[0].co).length
@@ -96,7 +95,7 @@ class Threads(bpy.types.Operator):
                     threads, bottom, top, height = generate_threads(segments=self.segments, loops=self.loops, radius=self.radius, depth=self.depth / 100, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade / 100)
 
                     # build the faces from those coords and indices
-                    verts, faces = self.build_faces(bm, threads, bottom, top)
+                    verts, faces = self.build_faces(bm, threads, bottom, top, smooth=smooth)
 
                     # scale the thread geometry to fit the selection height
                     selheight = (center1 - center2).length
@@ -107,39 +106,31 @@ class Threads(bpy.types.Operator):
 
                     # then rotate it into alignment too, this is done in two steps, first the up vectors are aligned
                     selup = (center2 - center1).normalized()
-                    draw_vector(selup, origin=center1, mx=mx, color=(0, 0, 1), modal=False)
 
                     selrot = Vector((0, 0, 1)).rotation_difference(selup)
                     bmesh.ops.rotate(bm, cent=center1, matrix=selrot.to_matrix(), verts=verts, space=Matrix())
 
                     # then the first verts are aligned too
-                    t1vec = verts[0].co - center1
-                    s1vec = verts1[0].co - center1
+                    threadvec = verts[0].co - center1
+                    selvec = verts1[0].co - center1
 
-                    draw_vector(t1vec, origin=center1, mx=mx, color=(0, 1, 0), modal=False)
-                    draw_vector(s1vec, origin=center1, mx=mx, color=(1, 0, 0), modal=False)
-
-                    matchrot = t1vec.rotation_difference(s1vec)
+                    matchrot = threadvec.rotation_difference(selvec)
                     bmesh.ops.rotate(bm, cent=center1, matrix=matchrot.to_matrix(), verts=verts, space=Matrix())
 
-                    # TODO: remove original selection
-                    # TODO: remove doubles
+                    # remove doubles
+                    bmesh.ops.remove_doubles(bm, verts=verts + verts1 + verts2, dist=0.00001)
 
-                    # TODO: set correct sharps
+                    # remove the initially selected faces
+                    bmesh.ops.delete(bm, geom=selfaces, context='FACES')
 
+                    bmesh.ops.recalc_face_normals(bm, faces=faces)
 
+                    bmesh.update_edit_mesh(active.data)
 
+                    return {'FINISHED'}
+        return {'CANCELLED'}
 
-
-
-        bm.normal_update()
-
-        bmesh.update_edit_mesh(active.data)
-
-        context.area.tag_redraw()
-        return {'FINISHED'}
-
-    def build_faces(self, bm, threads, bottom, top):
+    def build_faces(self, bm, threads, bottom, top, smooth=False):
         verts = []
 
         for co in threads[0]:
@@ -150,7 +141,12 @@ class Threads(bpy.types.Operator):
 
         for ids in threads[1]:
             f = bm.faces.new([verts[idx] for idx in ids])
+            f.smooth = smooth
             faces.append(f)
+
+            if smooth:
+                f.edges[0].smooth = False
+                f.edges[-2].smooth = False
 
         bottom_verts = []
 
@@ -162,7 +158,14 @@ class Threads(bpy.types.Operator):
 
         for ids in bottom[1]:
             f = bm.faces.new([bottom_verts[idx] for idx in ids])
+            f.smooth = smooth
             bottom_faces.append(f)
+
+            if smooth:
+                if len(ids) == 4:
+                    f.edges[-2].smooth = False
+                else:
+                    f.edges[-1].smooth = False
 
         top_verts = []
 
@@ -174,9 +177,14 @@ class Threads(bpy.types.Operator):
 
         for ids in top[1]:
             f = bm.faces.new([top_verts[idx] for idx in ids])
+            f.smooth = smooth
             top_faces.append(f)
 
-        # bmesh.ops.remove_doubles(bm, verts=verts + bottom_verts + top_verts, dist=0.000001)
+            if smooth:
+                if len(ids) == 4:
+                    f.edges[0].smooth = False
+                else:
+                    f.edges[-1].smooth = False
 
         return [v for v in verts + bottom_verts + top_verts if v.is_valid], faces + bottom_faces + top_faces
 
