@@ -2,8 +2,10 @@ import bpy
 from bpy.props import IntProperty, FloatProperty
 import bmesh
 from math import pi, cos, sin, sqrt
-from mathutils import Vector
-from .. utils.draw import draw_points
+from mathutils import Vector, Matrix
+from .. utils.draw import draw_points, draw_point, draw_vector
+from .. utils.selection import get_boundary_edges, get_edges_vert_sequences
+from .. utils.math import average_locations
 
 
 class Threads(bpy.types.Operator):
@@ -12,16 +14,17 @@ class Threads(bpy.types.Operator):
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO'}
 
-    segments: IntProperty(name="Segments", min=5, default=12)
-    loops: IntProperty(name="Loops", min=1, default=2)
+    radius: FloatProperty(name="Radius", min=0, default=1)
+    segments: IntProperty(name="Segments", min=5, default=32)
+    loops: IntProperty(name="Loops", min=1, default=4)
 
-    depth: FloatProperty(name="Depth", min=0, max=100, default=20, description="Depth in Percentage of minor Diamater", subtype='PERCENTAGE')
-    fade: FloatProperty(name="Fade", description="Percentage of Segments fading into inner Diameter", min=1, max=50, default=25, subtype='PERCENTAGE')
+    depth: FloatProperty(name="Depth", description="Depth in Percentage of minor Diamater", min=0, max=100, default=10, subtype='PERCENTAGE')
+    fade: FloatProperty(name="Fade", description="Percentage of Segments fading into inner Diameter", min=1, max=50, default=15, subtype='PERCENTAGE')
 
-    h1: FloatProperty(name="Under Side", min=0, default=0.3, step=0.1)
-    h2: FloatProperty(name="Width", min=0, default=0.0, step=0.1)
-    h3: FloatProperty(name="Upper Side", min=0, default=0.1, step=0.1)
-    h4: FloatProperty(name="Space", min=0, default=0.0, step=0.1)
+    h1: FloatProperty(name="Under Side", min=0, default=0.2, step=0.1)
+    h2: FloatProperty(name="Width", min=0, default=0.05, step=0.1)
+    h3: FloatProperty(name="Upper Side", min=0, default=0.2, step=0.1)
+    h4: FloatProperty(name="Space", min=0, default=0.05, step=0.1)
 
     @classmethod
     def poll(cls, context):
@@ -49,32 +52,99 @@ class Threads(bpy.types.Operator):
         row.prop(self, 'h2', text='')
         row.prop(self, 'h4', text='')
 
-
     def execute(self, context):
         active = context.active_object
-        mxi = active.matrix_world.inverted_safe()
+        mx = active.matrix_world
+        mxi = mx.inverted_safe()
 
         bm = bmesh.from_edit_mesh(active.data)
         bm.normal_update()
 
-        # faces = [f for f in bm.faces if f.select]
+        verts = [v for v in bm.verts if v.select]
+        faces = [f for f in bm.faces if f.select]
 
-        # coords, indices = thread_generator()
-        # draw_points(coords, size=6, color=(1, 0, 0), alpha=0.5, modal=False)
+        if faces:
+            boundary = get_boundary_edges(faces)
+            sequences = get_edges_vert_sequences(verts, boundary, debug=False)
+
+            # if there are 2 sequences
+            if len(sequences) == 2:
+                seq1, seq2 = sequences
+
+                verts1, cyclic1 = seq1
+                verts2, cyclic2 = seq2
+
+                # if they are both cyclic and have the same amount of verts,and at least 5
+                if cyclic1 == cyclic2 and cyclic1 is True and len(verts1) == len(verts2) and len(verts1) >= 5:
+
+                    # set amount of segments
+                    self.segments = len(verts1)
+
+                    # get selection mid points
+                    center1 = average_locations([v.co for v in verts1])
+                    center2 = average_locations([v.co for v in verts2])
+
+                    draw_point(center1, mx=mx, color=(0, 1, 0), modal=False)
+                    draw_point(center2, mx=mx, color=(1, 0, 0), modal=False)
+
+                    # get the radii, and set the radius as an average
+                    radius1 = (center1 - verts1[0].co).length
+                    radius2 = (center2 - verts2[0].co).length
+                    self.radius = (radius1 + radius2) / 2
+
+                    # create point coordinates and face indices
+                    threads, bottom, top, height = generate_threads(segments=self.segments, loops=self.loops, radius=self.radius, depth=self.depth / 100, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade / 100)
+
+                    # build the faces from those coords and indices
+                    verts, faces = self.build_faces(bm, threads, bottom, top)
+
+                    # scale the thread geometry to fit the selection height
+                    selheight = (center1 - center2).length
+                    bmesh.ops.scale(bm, vec=Vector((1, 1, selheight / height)), space=Matrix(), verts=verts)
+
+                    # move the thread geometry into alignment with the first selection center
+                    bmesh.ops.translate(bm, vec=center1, space=Matrix(), verts=verts)
+
+                    # then rotate it into alignment too, this is done in two steps, first the up vectors are aligned
+                    selup = (center2 - center1).normalized()
+                    draw_vector(selup, origin=center1, mx=mx, color=(0, 0, 1), modal=False)
+
+                    selrot = Vector((0, 0, 1)).rotation_difference(selup)
+                    bmesh.ops.rotate(bm, cent=center1, matrix=selrot.to_matrix(), verts=verts, space=Matrix())
+
+                    # then the first verts are aligned too
+                    t1vec = verts[0].co - center1
+                    s1vec = verts1[0].co - center1
+
+                    draw_vector(t1vec, origin=center1, mx=mx, color=(0, 1, 0), modal=False)
+                    draw_vector(s1vec, origin=center1, mx=mx, color=(1, 0, 0), modal=False)
+
+                    matchrot = t1vec.rotation_difference(s1vec)
+                    bmesh.ops.rotate(bm, cent=center1, matrix=matchrot.to_matrix(), verts=verts, space=Matrix())
+
+                    # TODO: remove original selection
+                    # TODO: remove doubles
+
+                    # TODO: set correct sharps
 
 
-        threads, bottom, top = thread_generator2(segments=self.segments, loops=self.loops, radius=1, depth=self.depth / 100, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade / 100)
 
 
-        # draw_points(coords, size=3, color=(0, 1, 0), modal=False)
 
-        # """
+
+        bm.normal_update()
+
+        bmesh.update_edit_mesh(active.data)
+
+        context.area.tag_redraw()
+        return {'FINISHED'}
+
+    def build_faces(self, bm, threads, bottom, top):
         verts = []
 
         for co in threads[0]:
-            v = bm.verts.new(mxi @ co)
+            v = bm.verts.new(co)
             verts.append(v)
-
 
         faces = []
 
@@ -82,28 +152,22 @@ class Threads(bpy.types.Operator):
             f = bm.faces.new([verts[idx] for idx in ids])
             faces.append(f)
 
-            # v.select_set(True)
-
-
         bottom_verts = []
 
         for co in bottom[0]:
-            v = bm.verts.new(mxi @ co)
+            v = bm.verts.new(co)
             bottom_verts.append(v)
 
         bottom_faces = []
 
         for ids in bottom[1]:
-            # print(ids)
-
             f = bm.faces.new([bottom_verts[idx] for idx in ids])
             bottom_faces.append(f)
-
 
         top_verts = []
 
         for co in top[0]:
-            v = bm.verts.new(mxi @ co)
+            v = bm.verts.new(co)
             top_verts.append(v)
 
         top_faces = []
@@ -112,94 +176,19 @@ class Threads(bpy.types.Operator):
             f = bm.faces.new([top_verts[idx] for idx in ids])
             top_faces.append(f)
 
+        # bmesh.ops.remove_doubles(bm, verts=verts + bottom_verts + top_verts, dist=0.000001)
 
-        bmesh.ops.remove_doubles(bm, verts=verts + bottom_verts + top_verts, dist=0.0001)
-
-
-
-        # """
-
-        bm.normal_update()
-
-        bmesh.update_edit_mesh(active.data)
+        return [v for v in verts + bottom_verts + top_verts if v.is_valid], faces + bottom_faces + top_faces
 
 
-
-        context.area.tag_redraw()
-        return {'FINISHED'}
-
-
-def thread_generator(verts_per_loop=12, loops=2, outer_radius=1.2, inner_radius=1, h1=0.3, h2=0.05, h3=0.1, h4=0.05, falloff_rate=5):
+def generate_threads(segments=32, loops=4, radius=1, depth=0.1, h1=0.2, h2=0.0, h3=0.2, h4=0.0, fade=0.15):
     '''
     thread profile
     # |   h4
     #  \  h3
     #  |  h2
     #  /  h1
-    '''
-
-    height = h1 + h2 + h3 + h4
-
-    # create profile coords
-    profile = []
-    profile.append([inner_radius, 0, 0])
-    profile.append([outer_radius, 0, h1])
-
-    # the profile can have 3-5 coords, depending on the h2 and h4 "spacer values"
-    if h2 > 0:
-        profile.append([outer_radius, 0, h1 + h2])
-
-    profile.append([inner_radius, 0, h1 + h2 + h3])
-
-    if h4 > 0:
-        profile.append([inner_radius, 0, h1 + h2 + h3 + h4])
-
-    profile_count = len(profile)
-
-    # init list of coords and indices
-    coords = [[0, 0, 0] for _ in range(profile_count * (verts_per_loop + 1) * loops)]
-    indices = [[0, 0, 0, 0] for _ in range((profile_count - 1) * verts_per_loop * loops)]
-
-    # go around a cirle. for each point in ProfilePoints array, create a vertex
-    angle = 0
-
-
-    for i in range(verts_per_loop * loops + 1):
-        angle = i * 2 * pi / verts_per_loop
-
-        for j in range(profile_count):
-
-            # falloff applies to outer rings only
-            u = i / (verts_per_loop * loops)
-            radius = inner_radius + (outer_radius - inner_radius) * (1 - 6 * (pow(2 * u - 1, falloff_rate * 4) / 2 - pow(2 * u - 1, falloff_rate * 6) / 3)) if profile[j][0] == outer_radius else inner_radius
-
-            x = radius * cos(angle)
-            y = radius * sin(angle)
-            z = profile[j][2] + i / verts_per_loop * height
-
-            coords[profile_count * i + j][0] = x
-            coords[profile_count * i + j][1] = y
-            coords[profile_count * i + j][2] = z
-
-
-    # now build face array
-    for i in range(verts_per_loop * loops):
-        for j in range(profile_count - 1):
-            indices[(profile_count - 1) * i + j][0] = profile_count * i + j
-            indices[(profile_count - 1) * i + j][1] = profile_count * i + 1 + j
-            indices[(profile_count - 1) * i + j][2] = profile_count * (i + 1) + 1 + j
-            indices[(profile_count - 1) * i + j][3] = profile_count * (i + 1) + j
-
-    return coords, indices
-
-
-def thread_generator2(segments=12, loops=1, radius=1, depth=0.2, h1=0.3, h2=0.05, h3=0.1, h4=0.05, fade=0.25):
-    '''
-    thread profile
-    # |   h4
-    #  \  h3
-    #  |  h2
-    #  /  h1
+    return coords and indices tuples for thread, bottom and top faces, as well as the total height of the thread
     '''
 
     height = h1 + h2 + h3 + h4
@@ -300,4 +289,4 @@ def thread_generator2(segments=12, loops=1, radius=1, depth=0.2, h1=0.3, h2=0.05
                     else:
                         top_indices.append([len(top_coords) + i for i in [-4, -2, -1, -3]])
 
-    return (coords, indices), (bottom_coords, bottom_indices), (top_coords, top_indices)
+    return (coords, indices), (bottom_coords, bottom_indices), (top_coords, top_indices), height + height * loops

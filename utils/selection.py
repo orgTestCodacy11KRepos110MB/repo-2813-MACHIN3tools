@@ -1,5 +1,7 @@
 
 
+# SORTING
+
 def get_selected_vert_sequences(verts, ensure_seq_len=False, debug=False):
     """
     return sorted lists of vertices, where vertices are considered connected if their edges are selected, and faces are not selected
@@ -69,3 +71,80 @@ def get_selected_vert_sequences(verts, ensure_seq_len=False, debug=False):
             print(cyclic, [v.index for v in seq])
 
     return sequences
+
+
+def get_edges_vert_sequences(verts, edges, debug=False):
+    """
+    return sorted lists of vertices, where vertices are considered connected if they are verts of the passed in edges
+    selection states are completely ignored.
+    """
+    sequences = []
+
+    # if edge loops are non-cyclic, it matters at what vert you start the sorting
+    noncyclicstartverts = [v for v in verts if len([e for e in v.link_edges if e in edges]) == 1]
+
+    if noncyclicstartverts:
+        v = noncyclicstartverts[0]
+
+    # in cyclic edge loops, any vert works
+    else:
+        v = verts[0]
+
+    seq = []
+
+    while verts:
+        seq.append(v)
+        verts.remove(v)
+
+        if v in noncyclicstartverts:
+            noncyclicstartverts.remove(v)
+
+        nextv = [e.other_vert(v) for e in v.link_edges if e in edges and e.other_vert(v) not in seq]
+
+        # next vert in sequence
+        if nextv:
+            v = nextv[0]
+
+        # finished a sequence
+        else:
+            # determine cyclicity
+            cyclic = True if len([e for e in v.link_edges if e in edges]) == 2 else False
+
+            # store sequence and cyclicity
+            sequences.append((seq, cyclic))
+
+            # start a new sequence, if there are still verts left
+            if verts:
+                if noncyclicstartverts:
+                    v = noncyclicstartverts[0]
+                else:
+                    v = verts[0]
+
+                seq = []
+
+    if debug:
+        for verts, cyclic in sequences:
+            print(cyclic, [v.index for v in verts])
+
+    return sequences
+
+
+# REGIONS
+
+def get_boundary_edges(faces, region_to_loop=False):
+    """
+    return boundary edges of selected faces
+    as boundary, non-manifold edges, as well as edges, haveing any unselected face
+    this is faster than mesh.region_to_loop() btw, even with region_to_loop True
+    """
+
+    boundary_edges = [e for f in faces for e in f.edges if (not e.is_manifold) or (any(not f.select for f in e.link_faces))]
+
+    if region_to_loop:
+        for f in faces:
+            f.select_set(False)
+
+        for e in boundary_edges:
+            e.select_set(True)
+
+    return boundary_edges
