@@ -15,8 +15,8 @@ class Threads(bpy.types.Operator):
     segments: IntProperty(name="Segments", min=5, default=12)
     loops: IntProperty(name="Loops", min=1, default=2)
 
-    depth: FloatProperty(name="Depth", min=0, max=1, default=0.2, description="Depth in Percentage of minor Diamater", subtype='PERCENTAGE')
-    fade: FloatProperty(name="Fade", description="Percentage of Segments fading into inner Diameter", min=0.01, max=0.5, default=0.25, subtype='PERCENTAGE')
+    depth: FloatProperty(name="Depth", min=0, max=100, default=20, description="Depth in Percentage of minor Diamater", subtype='PERCENTAGE')
+    fade: FloatProperty(name="Fade", description="Percentage of Segments fading into inner Diameter", min=1, max=50, default=25, subtype='PERCENTAGE')
 
     h1: FloatProperty(name="Under Side", min=0, default=0.3, step=0.1)
     h2: FloatProperty(name="Width", min=0, default=0.0, step=0.1)
@@ -63,7 +63,7 @@ class Threads(bpy.types.Operator):
         # draw_points(coords, size=6, color=(1, 0, 0), alpha=0.5, modal=False)
 
 
-        threads, bottom, top = thread_generator2(segments=self.segments, loops=self.loops, radius=1, depth=self.depth, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade)
+        threads, bottom, top = thread_generator2(segments=self.segments, loops=self.loops, radius=1, depth=self.depth / 100, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade / 100)
 
 
         # draw_points(coords, size=3, color=(0, 1, 0), modal=False)
@@ -293,7 +293,7 @@ def thread_generator2(segments=12, loops=1, radius=1, depth=0.2, h1=0.3, h2=0.05
                         bottom_indices.append([len(bottom_coords) + i for i in [-1 - pcount, -2 - pcount] + [i - pcount for i in range(pcount)]])
 
                 # create bottom face indices
-                elif loop == loops -1:
+                if loop == loops - 1:
                     # the first face will have 5-7 verts, depending on h2 and h4
                     if segment == 1:
                         top_indices.append([len(top_coords) + i for i in [-2, -1] + [-3 - i for i in range(pcount)]])
