@@ -12,7 +12,7 @@ class Threads(bpy.types.Operator):
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO'}
 
-    segments: IntProperty(name="Segments", min=5, default=92)
+    segments: IntProperty(name="Segments", min=5, default=12)
     loops: IntProperty(name="Loops", min=1, default=2)
 
     depth: FloatProperty(name="Depth", min=0, max=1, default=0.2, description="Depth in Percentage of minor Diamater", subtype='PERCENTAGE')
@@ -63,7 +63,7 @@ class Threads(bpy.types.Operator):
         # draw_points(coords, size=6, color=(1, 0, 0), alpha=0.5, modal=False)
 
 
-        coords, indices = thread_generator2(segments=self.segments, loops=self.loops, radius=1, depth=self.depth, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade)
+        threads, bottom, top = thread_generator2(segments=self.segments, loops=self.loops, radius=1, depth=self.depth, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade)
 
 
         # draw_points(coords, size=3, color=(0, 1, 0), modal=False)
@@ -71,24 +71,50 @@ class Threads(bpy.types.Operator):
         # """
         verts = []
 
-        for co in coords:
+        for co in threads[0]:
             v = bm.verts.new(mxi @ co)
             verts.append(v)
 
 
         faces = []
 
-        for ids in indices:
+        for ids in threads[1]:
             f = bm.faces.new([verts[idx] for idx in ids])
             faces.append(f)
 
-        # bmesh.ops.remove_doubles(bm, verts=verts, dist=0.0001)
+            # v.select_set(True)
 
-        for v in verts:
-            v.select_set(True)
 
-        # for f in faces:
-            # print(f)
+        bottom_verts = []
+
+        for co in bottom[0]:
+            v = bm.verts.new(mxi @ co)
+            bottom_verts.append(v)
+
+        bottom_faces = []
+
+        for ids in bottom[1]:
+            # print(ids)
+
+            f = bm.faces.new([bottom_verts[idx] for idx in ids])
+            bottom_faces.append(f)
+
+
+        top_verts = []
+
+        for co in top[0]:
+            v = bm.verts.new(mxi @ co)
+            top_verts.append(v)
+
+        top_faces = []
+
+        for ids in top[1]:
+            f = bm.faces.new([top_verts[idx] for idx in ids])
+            top_faces.append(f)
+
+
+        bmesh.ops.remove_doubles(bm, verts=verts + bottom_verts + top_verts, dist=0.0001)
+
 
 
         # """
@@ -199,6 +225,13 @@ def thread_generator2(segments=12, loops=1, radius=1, depth=0.2, h1=0.3, h2=0.05
     coords = []
     indices = []
 
+    bottom_coords = []
+    bottom_indices = []
+
+    top_coords = []
+    top_indices = []
+
+
     for loop in range(loops):
         for segment in range(segments + 1):
             angle = segment * 2 * pi / segments
@@ -217,13 +250,54 @@ def thread_generator2(segments=12, loops=1, radius=1, depth=0.2, h1=0.3, h2=0.05
                 # slightly increase each profile coords height per segment, and offset it per loop too
                 z = co.z + (segment / segments) * height + (height * loop)
 
+                # add thread coords
                 coords.append(Vector((r * cos(angle), r * sin(angle), z)))
+
+                # add bottom coords, to close off the thread faces into a full cylinder
+                if loop == 0 and pidx == 0:
+
+                    # the last segment, has coords for all the verts of the profile!
+                    if segment == segments:
+                        bottom_coords.extend([Vector((radius, 0, co.z)) for co in profile])
+
+                    # every other segment has a point at z == 0 and the first point in the profile
+                    else:
+                        bottom_coords.extend([Vector((r * cos(angle), r * sin(angle), 0)), Vector((r * cos(angle), r * sin(angle), z))])
+
+                elif loop == loops - 1 and pidx == len(profile) - 1:
+
+                    # the first segment, has coords for all the verts of the profile!
+                    if segment == 0:
+                        top_coords.extend([Vector((radius, 0, co.z + height + height * loop)) for co in profile])
+
+                    # every other segment has a point at max height and the last point in the profile
+                    else:
+                        # top_coords.extend([Vector((r * cos(angle), r * sin(angle), 2 * height + height * loop)), Vector((r * cos(angle), r * sin(angle), z))])
+                        top_coords.extend([Vector((r * cos(angle), r * sin(angle), z)), Vector((r * cos(angle), r * sin(angle), 2 * height + height * loop))])
+
 
             # for each segment - starting with the second one - create the face indices
             if segment > 0:
 
-                # create pcount - 1 rows of face indices
+                # create thread face indices, pcount - 1 rows of them
                 for p in range(pcount - 1):
                     indices.append([len(coords) + i + p for i in [-pcount * 2, -pcount, -pcount + 1, -pcount * 2 + 1]])
 
-    return coords, indices
+                # create bottom face indices
+                if loop == 0:
+                    if segment < segments:
+                        bottom_indices.append([len(bottom_coords) + i for i in [-4, -2, -1, -3]])
+
+                    # the last face will have 5-7 verts, depending on h2 and h4
+                    else:
+                        bottom_indices.append([len(bottom_coords) + i for i in [-1 - pcount, -2 - pcount] + [i - pcount for i in range(pcount)]])
+
+                # create bottom face indices
+                elif loop == loops -1:
+                    # the first face will have 5-7 verts, depending on h2 and h4
+                    if segment == 1:
+                        top_indices.append([len(top_coords) + i for i in [-2, -1] + [-3 - i for i in range(pcount)]])
+                    else:
+                        top_indices.append([len(top_coords) + i for i in [-4, -2, -1, -3]])
+
+    return (coords, indices), (bottom_coords, bottom_indices), (top_coords, top_indices)
