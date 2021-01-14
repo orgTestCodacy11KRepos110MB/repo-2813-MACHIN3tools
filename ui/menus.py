@@ -36,8 +36,8 @@ class MenuMACHIN3toolsMeshContextMenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
 
-        if get_prefs().activate_threads:
-            layout.operator("machin3.add_threads", text="Add Threads")
+        if get_prefs().activate_thread:
+            layout.operator("machin3.add_thread", text="Add Thread")
 
 
 # AppendMaterilas SUB MENU
@@ -257,7 +257,7 @@ def object_context_menu(self, context):
 def mesh_context_menu(self, context):
     layout = self.layout
 
-    if get_prefs().activate_threads:
+    if get_prefs().activate_thread:
         layout.menu("MACHIN3_MT_machin3tools_mesh_context_menu")
         layout.separator()
 

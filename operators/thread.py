@@ -4,12 +4,12 @@ import bmesh
 from mathutils import Vector, Matrix
 from .. utils.selection import get_boundary_edges, get_edges_vert_sequences
 from .. utils.math import average_locations
-from .. utils.geometry import calculate_threads
+from .. utils.geometry import calculate_thread
 
 
-class Threads(bpy.types.Operator):
-    bl_idname = "machin3.add_threads"
-    bl_label = "MACHIN3: Threads"
+class Thread(bpy.types.Operator):
+    bl_idname = "machin3.add_thread"
+    bl_label = "MACHIN3: Add Thread"
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -91,10 +91,10 @@ class Threads(bpy.types.Operator):
                     self.radius = (radius1 + radius2) / 2
 
                     # create point coordinates and face indices
-                    threads, bottom, top, height = calculate_threads(segments=self.segments, loops=self.loops, radius=self.radius, depth=self.depth / 100, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade / 100)
+                    thread, bottom, top, height = calculate_thread(segments=self.segments, loops=self.loops, radius=self.radius, depth=self.depth / 100, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade / 100)
 
                     # build the faces from those coords and indices
-                    verts, faces = self.build_faces(bm, threads, bottom, top, smooth=smooth)
+                    verts, faces = self.build_faces(bm, thread, bottom, top, smooth=smooth)
 
                     # scale the thread geometry to fit the selection height
                     selheight = (center1 - center2).length
@@ -132,7 +132,7 @@ class Threads(bpy.types.Operator):
                     # remove the initially selected faces
                     bmesh.ops.delete(bm, geom=selfaces, context='FACES')
 
-                    # recalculate the normals, usefull when doing inverted threads
+                    # recalculate the normals, usefull when doing inverted thread
                     bmesh.ops.recalc_face_normals(bm, faces=faces)
 
                     bmesh.update_edit_mesh(active.data)
@@ -140,16 +140,16 @@ class Threads(bpy.types.Operator):
                     return {'FINISHED'}
         return {'CANCELLED'}
 
-    def build_faces(self, bm, threads, bottom, top, smooth=False):
+    def build_faces(self, bm, thread, bottom, top, smooth=False):
         verts = []
 
-        for co in threads[0]:
+        for co in thread[0]:
             v = bm.verts.new(co)
             verts.append(v)
 
         faces = []
 
-        for ids in threads[1]:
+        for ids in thread[1]:
             f = bm.faces.new([verts[idx] for idx in ids])
             f.smooth = smooth
             faces.append(f)

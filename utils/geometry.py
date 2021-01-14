@@ -2,7 +2,7 @@ from math import cos, sin, pi
 from mathutils import Vector
 
 
-def calculate_threads(segments=12, loops=2, radius=1, depth=0.1, h1=0.2, h2=0.0, h3=0.2, h4=0.0, fade=0.15):
+def calculate_thread(segments=12, loops=2, radius=1, depth=0.1, h1=0.2, h2=0.0, h3=0.2, h4=0.0, fade=0.15):
     '''
     create thread coordinates and face indices using the folowing profile
     thread profile

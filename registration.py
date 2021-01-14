@@ -51,7 +51,7 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                                           ('ToggleChildren', 'toggle_outliner_children'),
                                           ('ExpandOutliner', 'expand_outliner'),
                                           ('CollapseOutliner', 'collapse_outliner')])],
-           'THREADS': [('operators.threads', [('Threads', 'add_threads')])],
+           'THREAD': [('operators.thread', [('Thread', 'add_thread')])],
            'CUSTOMIZE': [('operators.customize', [('Customize', 'customize'),
                                                   ('RestoreKeymaps', 'restore_keymaps')])],
 
