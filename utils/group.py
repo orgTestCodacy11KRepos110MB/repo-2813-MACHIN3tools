@@ -146,7 +146,7 @@ def get_group_matrix(context, objects, location_type='AVERAGE', rotation_type='W
 # HIERARCHY
 
 def select_group_children(empty, recursive=False):
-    children = [c for c in empty.children if c.M3.is_group_object]
+    children = [c for c in empty.children if c.M3.is_group_object if c.visible_get()]
 
     for obj in children:
         obj.select_set(True)
