@@ -354,6 +354,11 @@ class Customize(bpy.types.Operator):
                         print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
+                if kmi.idname == "mesh.fill":
+                    print("  Deactivated", kmi_to_string(kmi))
+                    kmi.active = False
+
+
                 """
                 # not longer necessary as of 2.83, maybe earlier?
                 if kmi.idname == "mesh.select_all":
