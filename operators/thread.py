@@ -48,7 +48,10 @@ class Thread(bpy.types.Operator):
         row.prop(self, 'h3', text='')
         row.prop(self, 'h2', text='')
         row.prop(self, 'h4', text='')
-        row.prop(self, 'flip', toggle=True)
+
+        r = row.row(align=True)
+        r.active = True if self.h4 else False
+        r.prop(self, 'flip', toggle=True)
 
     def execute(self, context):
         active = context.active_object
