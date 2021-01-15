@@ -1,29 +1,32 @@
 import bpy
-from bpy.props import IntProperty, FloatProperty
+from bpy.props import IntProperty, FloatProperty, BoolProperty
 import bmesh
 from mathutils import Vector, Matrix
 from .. utils.selection import get_boundary_edges, get_edges_vert_sequences
 from .. utils.math import average_locations
 from .. utils.geometry import calculate_thread
+from .. utils.draw import draw_vector
 
 
 class Thread(bpy.types.Operator):
     bl_idname = "machin3.add_thread"
     bl_label = "MACHIN3: Add Thread"
     bl_description = ""
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     radius: FloatProperty(name="Radius", min=0, default=1)
     segments: IntProperty(name="Segments", min=5, default=32)
-    loops: IntProperty(name="Loops", min=1, default=4)
+    loops: IntProperty(name="Threads", min=1, default=4)
 
-    depth: FloatProperty(name="Depth", description="Depth in Percentage of minor Diamater", min=0, max=100, default=5, subtype='PERCENTAGE')
+    depth: FloatProperty(name="Depth", description="Depth in Percentage of minor Diameter", min=0, max=100, default=5, subtype='PERCENTAGE')
     fade: FloatProperty(name="Fade", description="Percentage of Segments fading into inner Diameter", min=1, max=50, default=15, subtype='PERCENTAGE')
 
-    h1: FloatProperty(name="Under Side", min=0, default=0.2, step=0.1)
-    h2: FloatProperty(name="Width", min=0, default=0.05, step=0.1)
-    h3: FloatProperty(name="Upper Side", min=0, default=0.2, step=0.1)
-    h4: FloatProperty(name="Space", min=0, default=0.05, step=0.1)
+    h1: FloatProperty(name="Bottom Flank", min=0, default=0.2, step=0.1)
+    h2: FloatProperty(name="Crest", min=0, default=0.05, step=0.1)
+    h3: FloatProperty(name="Top Flank", min=0, default=0.2, step=0.1)
+    h4: FloatProperty(name="Root", min=0, default=0.05, step=0.1)
+
+    flip: BoolProperty(name="Flip", default=False)
 
     @classmethod
     def poll(cls, context):
@@ -33,6 +36,7 @@ class Thread(bpy.types.Operator):
         layout = self.layout
 
         column = layout.column(align=True)
+        column.separator()
 
         row = column.row(align=True)
         row.prop(self, 'loops')
@@ -44,6 +48,7 @@ class Thread(bpy.types.Operator):
         row.prop(self, 'h3', text='')
         row.prop(self, 'h2', text='')
         row.prop(self, 'h4', text='')
+        row.prop(self, 'flip', toggle=True)
 
     def execute(self, context):
         active = context.active_object
@@ -64,6 +69,11 @@ class Thread(bpy.types.Operator):
 
                 verts1, cyclic1 = seq1
                 verts2, cyclic2 = seq2
+
+                if self.flip:
+                    verts1, verts2 = verts2, verts1
+                    cyclic1, cyclic2 = cyclic2, cyclic1
+
 
                 # if they are both cyclic and have the same amount of verts,and at least 5
                 if cyclic1 == cyclic2 and cyclic1 is True and len(verts1) == len(verts2) and len(verts1) >= 5:
@@ -123,7 +133,7 @@ class Thread(bpy.types.Operator):
                     threadvec = verts[0].co - center1
                     selvec = v1.co - center1
 
-                    matchrot = threadvec.rotation_difference(selvec)
+                    matchrot = threadvec.rotation_difference(selvec).normalized()
                     bmesh.ops.rotate(bm, cent=center1, matrix=matchrot.to_matrix(), verts=verts, space=Matrix())
 
                     # remove doubles
@@ -136,7 +146,6 @@ class Thread(bpy.types.Operator):
                     bmesh.ops.recalc_face_normals(bm, faces=faces)
 
                     bmesh.update_edit_mesh(active.data)
-
                     return {'FINISHED'}
         return {'CANCELLED'}
 
@@ -174,8 +183,11 @@ class Thread(bpy.types.Operator):
             if smooth:
                 if len(ids) == 4:
                     f.edges[-2].smooth = False
+                    f.edges[0].smooth = False
                 else:
                     f.edges[-1].smooth = False
+                    f.edges[1].smooth = False
+
 
         top_verts = []
 
@@ -192,8 +204,10 @@ class Thread(bpy.types.Operator):
 
             if smooth:
                 if len(ids) == 4:
+                    f.edges[-2].smooth = False
                     f.edges[0].smooth = False
                 else:
                     f.edges[-1].smooth = False
+                    f.edges[1].smooth = False
 
         return [v for v in verts + bottom_verts + top_verts if v.is_valid], faces + bottom_faces + top_faces
