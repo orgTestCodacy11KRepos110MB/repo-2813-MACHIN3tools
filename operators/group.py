@@ -328,6 +328,10 @@ class Select(bpy.types.Operator):
             return [obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object]
 
     def invoke(self, context, event):
+
+        # cleanup all groups initially
+        clean_up_groups(context)
+
         empties = {obj for obj in context.selected_objects if obj.M3.is_group_empty}
         objects = [obj for obj in context.selected_objects if obj.M3.is_group_object and obj not in empties]
 

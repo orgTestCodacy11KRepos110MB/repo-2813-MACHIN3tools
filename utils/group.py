@@ -61,6 +61,10 @@ def clean_up_groups(context):
                 obj.M3.is_group_object = False
                 print(f"INFO: {obj.name} is no longer a group object, because it doesn't have any parent", obj.name)
 
+        elif not obj.M3.is_group_object and obj.parent and obj.parent.M3.is_group_empty:
+            obj.M3.is_group_object = True
+            print(f"INFO: {obj.name} is now a group object, because it was manually parented to {obj.parent.name}", obj.name)
+
 
 # CONTEXT
 
