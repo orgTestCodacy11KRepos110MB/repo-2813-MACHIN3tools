@@ -26,7 +26,7 @@ def update_group(none):
         # AUTO SELECT
 
         if context.scene.M3.group_select and active:
-            select_group_children(active, recursive=context.scene.M3.group_recursive_select)
+            select_group_children(context.view_layer, active, recursive=context.scene.M3.group_recursive_select)
 
 
         # STORE USER-SET EMPTY SIZE

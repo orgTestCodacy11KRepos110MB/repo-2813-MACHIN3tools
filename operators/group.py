@@ -345,7 +345,7 @@ class Select(bpy.types.Operator):
             if len(empties) == 1:
                 context.view_layer.objects.active = e
 
-            select_group_children(e, recursive=event.ctrl or context.scene.M3.group_recursive_select)
+            select_group_children(context.view_layer, e, recursive=event.ctrl or context.scene.M3.group_recursive_select)
 
         # fade group sizes
         if get_prefs().group_fade_sizes:
@@ -379,7 +379,7 @@ class Duplicate(bpy.types.Operator):
 
         for e in empties:
             e.select_set(True)
-            select_group_children(e, recursive=event.ctrl or context.scene.M3.group_recursive_select)
+            select_group_children(context.view_layer, e, recursive=event.ctrl or context.scene.M3.group_recursive_select)
 
         # fade group sizes
         if get_prefs().group_fade_sizes:
@@ -404,7 +404,6 @@ class Add(bpy.types.Operator):
 
     add_mirror: BoolProperty(name="Add Mirror Modifiers, if there are common ones among the existing Group's objects, that are missing from the new Objects", default=True)
     is_mirror: BoolProperty()
-
 
     @classmethod
     def poll(cls, context):
@@ -452,8 +451,9 @@ class Add(bpy.types.Operator):
 
         if objects:
 
-            # existing mesh object children, before any new objects are added
-            children = [c for c in active_group.children if c.type == 'MESH']
+            # existing mesh object children, before any new objects are added (ignore stashes, by checking presence in view_layer)
+            # NOTE: it's not quite clear how stashes can become group objects, so this needs to be investigaed and prevented
+            children = [c for c in active_group.children if c.M3.is_group_object and c.type == 'MESH' and c.name in context.view_layer.objects]
 
             for obj in objects:
                 # unparent existing group objects
@@ -512,6 +512,7 @@ class Add(bpy.types.Operator):
 
         # first check if all the children actually have mirror mods
         if all_mirrors and len(all_mirrors) == len(children):
+
 
             # get the mirror props of the object
             obj_props = [props for props in get_mods_as_dict(obj, types=['MIRROR'], skip_show_expanded=True).values()]

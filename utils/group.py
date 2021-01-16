@@ -149,14 +149,14 @@ def get_group_matrix(context, objects, location_type='AVERAGE', rotation_type='W
 
 # HIERARCHY
 
-def select_group_children(empty, recursive=False):
-    children = [c for c in empty.children if c.M3.is_group_object if c.visible_get()]
+def select_group_children(view_layer, empty, recursive=False):
+    children = [c for c in empty.children if c.M3.is_group_object and c.name in view_layer.objects]
 
     for obj in children:
         obj.select_set(True)
 
         if obj.M3.is_group_empty and recursive:
-            select_group_children(obj, recursive=True)
+            select_group_children(view_layer, obj, recursive=True)
 
 
 def get_child_depth(self, children, depth=0, init=False):
