@@ -1,6 +1,12 @@
+from mathutils import Vector
+
 axis_items = [('X', 'X', ''),
               ('Y', 'Y', ''),
               ('Z', 'Z', '')]
+
+axis_vector_mappings = {'X': Vector((1, 0, 0)),
+                        'Y': Vector((0, 1, 0)),
+                        'Z': Vector((0, 0, 1))}
 
 uv_axis_items = [('U', 'U', ''),
                  ('V', 'V', '')]

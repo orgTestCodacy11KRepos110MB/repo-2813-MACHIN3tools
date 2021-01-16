@@ -268,6 +268,12 @@ def add_object_buttons(self, context):
     self.layout.operator("machin3.quadsphere", text="Quad Sphere", icon='SPHERE')
 
 
+# CURSOR SPIN
+
+def cursor_spin(self, context):
+    self.layout.operator("machin3.cursor_spin", text="Cursor Spin")
+
+
 # MATERIAL PICKER HEADER
 
 def material_pick_button(self, context):

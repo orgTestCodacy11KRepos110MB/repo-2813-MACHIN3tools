@@ -13,8 +13,8 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                     ('ui.menus', [('MenuMACHIN3toolsObjectContextMenu', 'machin3tools_object_context_menu'),
                                   ('MenuMACHIN3toolsMeshContextMenu', 'machin3tools_mesh_context_menu'),
                                   ('MenuGroupObjectContextMenu', 'group_object_context_menu')]),
-                    ('operators.quadsphere', [('QuadSphere', 'quadsphere')])],
-
+                    ('operators.quadsphere', [('QuadSphere', 'quadsphere')]),
+                    ('operators.spin', [('CursorSpin', 'cursor_spin')])],
 
            'SMART_VERT': [('operators.smart_vert', [('SmartVert', 'smart_vert')])],
            'SMART_EDGE': [('operators.smart_edge', [('SmartEdge', 'smart_edge')])],
