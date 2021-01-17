@@ -152,6 +152,11 @@ def get_group_matrix(context, objects, location_type='AVERAGE', rotation_type='W
 def select_group_children(view_layer, empty, recursive=False):
     children = [c for c in empty.children if c.M3.is_group_object and c.name in view_layer.objects]
 
+    # unhide any hidden group emtpies you may encounter
+    if empty.hide_get():
+        empty.hide_set(False)
+        empty.select_set(True)
+
     for obj in children:
         obj.select_set(True)
 
