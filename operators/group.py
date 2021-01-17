@@ -405,6 +405,9 @@ class Add(bpy.types.Operator):
     add_mirror: BoolProperty(name="Add Mirror Modifiers, if there are common ones among the existing Group's objects, that are missing from the new Objects", default=True)
     is_mirror: BoolProperty()
 
+    add_color: BoolProperty(name="Add Object Color, from Group's Empty", default=True)
+    is_color: BoolProperty()
+
     @classmethod
     def poll(cls, context):
         return context.mode == 'OBJECT'
@@ -424,13 +427,17 @@ class Add(bpy.types.Operator):
         row.active = self.realign_group_empty
         row.prop(self, 'rotation', expand=True)
 
-        if self.is_mirror:
-            column.prop(self, 'add_mirror', text="Add Mirror", toggle=True)
+        row = column.row(align=True)
 
+        if self.is_color:
+            row.prop(self, 'add_color', text="Add Color", toggle=True)
+
+        if self.is_mirror:
+            row.prop(self, 'add_mirror', text="Add Mirror", toggle=True)
 
     def execute(self, context):
         debug = False
-        # debug = True
+        debug = True
 
         active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
 
@@ -455,6 +462,11 @@ class Add(bpy.types.Operator):
             # NOTE: it's not quite clear how stashes can become group objects, so this needs to be investigaed and prevented
             children = [c for c in active_group.children if c.M3.is_group_object and c.type == 'MESH' and c.name in context.view_layer.objects]
 
+            # set prop to determine how whether add_mirror is drawn
+            self.is_mirror = any(obj for obj in children for mod in obj.modifiers if mod.type == 'MIRROR')
+
+            self.is_color = any(obj.type == 'MESH' for obj in objects)
+
             for obj in objects:
                 # unparent existing group objects
                 if obj.parent:
@@ -465,12 +477,16 @@ class Add(bpy.types.Operator):
 
                 obj.M3.is_group_object = True
 
-                # set prop to determine how whether add_mirror is drawn
-                self.is_mirror = any(obj for obj in children for mod in obj.modifiers if mod.type == 'MIRROR')
+                # optionally add mirror mods and colorize the new object, but not for group empties
+                if obj.type == 'MESH':
 
-                # check if all group children have common mirror mods, and if so add those same mirros to the new objects!
-                if children and self.add_mirror:
-                    self.mirror(obj, active_group, children)
+                    # check if all group children have common mirror mods, and if so add those same mirros to the new objects!
+                    if children and self.add_mirror:
+                        self.mirror(obj, active_group, children)
+
+                    # colorize
+                    if self.add_color:
+                        obj.color = active_group.color
 
             # optionally re-align the goup empty
             if self.realign_group_empty:
