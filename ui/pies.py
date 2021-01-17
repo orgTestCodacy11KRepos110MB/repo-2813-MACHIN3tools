@@ -1110,6 +1110,7 @@ class PieShading(Menu):
                 r.operator("machin3.colorize_objects_from_active", text='Active', icon='OBJECT_DATA')
                 r.operator("machin3.colorize_objects_from_materials", text='Material', icon='MATERIAL')
                 r.operator("machin3.colorize_objects_from_collections", text='Collection', icon='OUTLINER_OB_GROUP_INSTANCE')
+                r.operator("machin3.colorize_objects_from_groups", text='Group', icon='GROUP_VERTEX')
 
 
         # WIREFRAME

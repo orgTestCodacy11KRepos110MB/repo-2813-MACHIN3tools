@@ -45,10 +45,12 @@ class ColorizeObjectsFromMaterials(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.selected_objects
+        return [obj for obj in context.selected_objects if obj.type != 'EMPTY']
 
     def execute(self, context):
-        for obj in context.selected_objects:
+        objects = [obj for obj in context.selected_objects if obj.type != 'EMPTY']
+
+        for obj in objects:
             mat = obj.active_material
 
             if mat:
@@ -69,21 +71,50 @@ class ColorizeObjectsFromMaterials(bpy.types.Operator):
 class ColorizeObjectsFromActive(bpy.types.Operator):
     bl_idname = "machin3.colorize_objects_from_active"
     bl_label = "MACHIN3: Colorize Objects from Active"
-    bl_description = "Set Object Viewport Colors from Active Object"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         return context.active_object and context.selected_objects
 
-    def execute(self, context):
-        activecolor = context.active_object.color
+    @classmethod
+    def description(cls, context, properties):
+        if context.active_object and context.active_object.M3.is_group_empty:
+            return"Set Object Viewport Colors from Active Object\nALT: Only set Color for active top-level Group\nCTRL: Set Group Colors recursively from each Group's Empty"
+        else:
+            return"Set Object Viewport Colors from Active Object"
 
-        for obj in context.selected_objects:
-            obj.color = activecolor
+    def invoke(self, context, event):
+
+        # colorize the active group's objects only, when ALT is pressed, also ignore any child empties, as they may be used to colorize their own object
+        if context.active_object and context.active_object.M3.is_group_empty and event.alt:
+            objects = [obj for obj in context.active_object.children if obj.M3.is_group_object and not obj.M3.is_group_empty]
+            self.colorize(context, objects)
+
+        # colorize group recursively, and use each group's empty as the source, instead of the active object
+        elif context.active_object and context.active_object.M3.is_group_empty and event.ctrl:
+            self.colorize_group_recursively(context, context.active_object)
+        else:
+            objects = context.selected_objects
+            self.colorize(context, objects)
 
         return {'FINISHED'}
 
+    def colorize(self, context, objects, color=None):
+        if not color:
+            color = context.active_object.color
+
+        for obj in objects:
+            obj.color = color
+
+    def colorize_group_recursively(self, context, empty):
+        objects = [c for c in empty.children if c.M3.is_group_object and not c.M3.is_group_empty]
+        groups = [c for c in empty.children if c.M3.is_group_empty]
+
+        self.colorize(context, objects, color=empty.color)
+
+        for group in groups:
+            self.colorize_group_recursively(context, group)
 
 
 multi_collection_items = [("LEAST", "Least", ""),
@@ -94,6 +125,8 @@ decal_collection_items = [("TYPE", "Type", ""),
                           ("PARENT", "Parent", ""),
                           ("IGNORE", "Ignore", "")]
 
+
+# TODO: colorize objects from Groups
 
 class ColorizeObjectsFromCollections(bpy.types.Operator):
     bl_idname = "machin3.colorize_objects_from_collections"
@@ -181,3 +214,31 @@ class ColorizeObjectsFromCollections(bpy.types.Operator):
         # print(self.msg)
 
         return {'FINISHED'}
+
+
+class ColorizeObjectsFromGroups(bpy.types.Operator):
+    bl_idname = "machin3.colorize_objects_from_groups"
+    bl_label = "MACHIN3: Colorize Objects from Groups"
+    bl_description = "Set Object Viewport Colors of selected Objects based on Group Membership"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object and context.active_object.M3.is_group_empty
+
+    def execute(self, context):
+        group = context.active_object
+
+        self.colorize_group_recursively(group)
+        return {'FINISHED'}
+
+    def colorize_group_recursively(self, empty):
+        children = [c for c in empty.children if c.M3.is_group_object]
+
+        empty.color = (random.random(), random.random(), random.random(), 1)
+
+        for c in children:
+            if c.M3.is_group_empty:
+                self.colorize_group_recursively(c)
+            else:
+                c.color = empty.color
