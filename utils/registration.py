@@ -200,9 +200,6 @@ def unregister_icons(icons):
 
 # MSGBUS
 
-# def notify_name_change():
-    # print("name has changed:", bpy.context.active_object.name)
-
 
 def register_msgbus(owner):
     bpy.msgbus.subscribe_rna(key=(bpy.types.Object, 'color'), owner=owner, args=(), notify=group_color_change)

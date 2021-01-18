@@ -198,6 +198,12 @@ class ColorizeObjectsFromGroups(bpy.types.Operator):
     def poll(cls, context):
         return context.active_object and context.active_object.M3.is_group_empty
 
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column()
+        column.prop(self, 'random_color', toggle=True)
+
     def invoke(self, context, event):
         self.random_color = not event.ctrl
         return self.execute(context)
