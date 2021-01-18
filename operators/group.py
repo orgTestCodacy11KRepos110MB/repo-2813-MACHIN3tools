@@ -40,14 +40,7 @@ class Group(bpy.types.Operator):
     def invoke(self, context, event):
         self.coords = (event.mouse_region_x, event.mouse_region_y)
 
-        # get selection, but ignore objects that are regularly parented(as opposed to grouped)
-        sel = {obj for obj in context.selected_objects if (obj.parent and obj.parent.M3.is_group_empty) or not obj.parent}
-
-        if sel:
-            self.group(context, sel)
-
-            return {'FINISHED'}
-        return {'CANCELLED'}
+        return self.execute(context)
 
     def execute(self, context):
         # get selection, but ignore objects that are regularly parented(as opposed to grouped)
@@ -200,20 +193,7 @@ class UnGroup(bpy.types.Operator):
         self.ungroup_all_selected = event.alt
         self.ungroup_entire_hierarchy = event.ctrl
 
-        empties, all_empties = self.get_group_empties(context)
-
-        if empties:
-            self.ungroup(empties, all_empties)
-
-            # cleanup
-            clean_up_groups(context)
-
-            # fade group sizes
-            if get_prefs().group_fade_sizes:
-                fade_group_sizes(context, init=True)
-
-            return {'FINISHED'}
-        return {'CANCELLED'}
+        return self.execute(context)
 
     def execute(self, context):
         empties, all_empties = self.get_group_empties(context)
@@ -437,7 +417,7 @@ class Add(bpy.types.Operator):
 
     def execute(self, context):
         debug = False
-        debug = True
+        # debug = True
 
         active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
 
