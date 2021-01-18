@@ -175,19 +175,21 @@ def get_child_depth(self, children, depth=0, init=False):
     return self.depth
 
 
-def fade_group_sizes(context, size=None, factor=0.8, groups=[], init=False):
+def fade_group_sizes(context, size=None, groups=[], init=False):
     if init:
         groups = [obj for obj in context.scene.objects if obj.M3.is_group_empty and not obj.parent]
 
     for group in groups:
         if size:
+            factor = r.get_prefs().group_fade_factor
+
             group.empty_display_size = factor * size
             group.M3.group_size = group.empty_display_size
 
         sub_groups = [c for c in group.children if c.M3.is_group_empty]
 
         if sub_groups:
-            fade_group_sizes(context, size=group.M3.group_size, factor=factor, groups=sub_groups, init=False)
+            fade_group_sizes(context, size=group.M3.group_size, groups=sub_groups, init=False)
 
 
 # NAMING

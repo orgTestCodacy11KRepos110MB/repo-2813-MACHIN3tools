@@ -476,7 +476,7 @@ class M3ObjectProperties(bpy.types.PropertyGroup):
 
     is_group_empty: BoolProperty()
     is_group_object: BoolProperty()
-    group_size: FloatProperty(default=0.1)
+    group_size: FloatProperty(default=0.2)
 
     # hidden
 

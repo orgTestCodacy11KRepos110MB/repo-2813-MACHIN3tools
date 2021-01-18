@@ -238,8 +238,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     group_basename: StringProperty(name="Group Basename", default="GROUP")
     group_prefix: StringProperty(name="Prefix to add to Group Names", default="_")
     group_suffix: StringProperty(name="Suffix to add to Group Names", default="_grp")
-    group_size: FloatProperty(name="Group Empty Draw Size", default=0.2)
-    group_fade_sizes: BoolProperty(name="Fade Group Empty Sizes", default=True)
+    group_size: FloatProperty(name="Group Empty Draw Size", description="Default Group Size", default=0.2)
+    group_fade_sizes: BoolProperty(name="Fade Group Empty Sizes", description="Make Sub Group's Emtpies smaller than their Parents", default=True)
+    group_fade_factor: FloatProperty(name="Fade Group Size Factor", description="Factor by which to decrease each Group Empty's Size", default=0.8, min=0.1, max=0.9)
 
 
     # MACHIN3tools
@@ -548,7 +549,12 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             r = row.split(factor=0.2)
             r.prop(self, "group_size", text="")
             r.label(text="Default Empty Draw Size")
+
+
             r.prop(self, "group_fade_sizes", text='Fade Sub Group Sizes')
+            rr = r.row()
+            rr.active = self.group_fade_sizes
+            rr.prop(self, "group_fade_factor", text='Factor')
 
 
         # CUSTOMIZE
