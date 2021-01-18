@@ -1,12 +1,17 @@
 import bpy
 from bpy.app.handlers import persistent
 from . utils.draw import remove_object_axes_drawing_handler, draw_focus_HUD, draw_surface_slide_HUD
-from . utils.registration import get_prefs
+from . utils.registration import get_prefs, reload_msgbus
 from . utils.group import update_group_name, select_group_children
 
 
 focusHUD = None
 surfaceslideHUD = None
+
+
+@persistent
+def update_msgbus(none):
+    reload_msgbus()
 
 
 @persistent

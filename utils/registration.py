@@ -197,6 +197,38 @@ def unregister_icons(icons):
     previews.remove(icons)
 
 
+# MSGBUS
+
+# def notify_name_change():
+    # print("name has changed:", bpy.context.active_object.name)
+
+
+def notify_group_color_change():
+    active = bpy.context.active_object
+
+    if active and active.M3.is_group_empty:
+        objects = [obj for obj in active.children if obj.M3.is_group_object and not obj.M3.is_group_empty]
+
+        for obj in objects:
+            obj.color = active.color
+
+
+def register_msgbus(owner):
+    bpy.msgbus.subscribe_rna(key=(bpy.types.Object, 'color'), owner=owner, args=(), notify=notify_group_color_change)
+    # bpy.msgbus.subscribe_rna(key=(bpy.types.Object, 'name'), owner=owner, args=(), notify=notify_name_change)
+
+
+def unregister_msgbus(owner):
+    bpy.msgbus.clear_by_owner(owner)
+
+
+def reload_msgbus():
+    from .. import owner
+
+    unregister_msgbus(owner)
+    register_msgbus(owner)
+
+
 # RUNTIME TOOL (DE)ACTIVATION
 
 def activate(self, register, tool):
