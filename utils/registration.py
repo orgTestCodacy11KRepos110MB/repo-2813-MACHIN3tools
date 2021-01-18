@@ -3,6 +3,7 @@ from bpy.utils import register_class, unregister_class, previews
 import os
 from .. registration import keys as keysdict
 from .. registration import classes as classesdict
+from .. msgbus import group_name_change, group_color_change
 
 
 def get_path():
@@ -203,19 +204,9 @@ def unregister_icons(icons):
     # print("name has changed:", bpy.context.active_object.name)
 
 
-def notify_group_color_change():
-    active = bpy.context.active_object
-
-    if active and active.M3.is_group_empty:
-        objects = [obj for obj in active.children if obj.M3.is_group_object and not obj.M3.is_group_empty]
-
-        for obj in objects:
-            obj.color = active.color
-
-
 def register_msgbus(owner):
-    bpy.msgbus.subscribe_rna(key=(bpy.types.Object, 'color'), owner=owner, args=(), notify=notify_group_color_change)
-    # bpy.msgbus.subscribe_rna(key=(bpy.types.Object, 'name'), owner=owner, args=(), notify=notify_name_change)
+    bpy.msgbus.subscribe_rna(key=(bpy.types.Object, 'color'), owner=owner, args=(), notify=group_color_change)
+    bpy.msgbus.subscribe_rna(key=(bpy.types.Object, 'name'), owner=owner, args=(), notify=group_name_change)
 
 
 def unregister_msgbus(owner):

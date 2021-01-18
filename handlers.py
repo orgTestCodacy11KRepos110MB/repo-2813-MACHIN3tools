@@ -64,12 +64,6 @@ def update_group(none):
                     group.empty_display_size = 0.0001
 
 
-        # AUTO NAME
-
-        if active and get_prefs().group_auto_name:
-            update_group_name(active)
-
-
 @persistent
 def focus_HUD(scene):
     global focusHUD

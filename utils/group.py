@@ -2,7 +2,7 @@ import bpy
 from mathutils import Vector, Quaternion
 from . object import parent, unparent
 from . math import average_locations, get_loc_matrix, get_rot_matrix
-from . registration import get_prefs
+from . import registration as r
 
 
 # CREATION / DESTRUCTION
@@ -21,9 +21,9 @@ def group(context, sel, location='AVERAGE', rotation='WORLD'):
     empty.empty_display_type = 'CUBE'
 
     empty.show_name = True
-    empty.empty_display_size = get_prefs().group_size
+    empty.empty_display_size = r.get_prefs().group_size
 
-    empty.M3.group_size = get_prefs().group_size
+    empty.M3.group_size = r.get_prefs().group_size
 
     for obj in sel:
         parent(obj, empty)
@@ -193,9 +193,9 @@ def fade_group_sizes(context, size=None, factor=0.8, groups=[], init=False):
 # NAMING
 
 def get_base_group_name():
-    p = get_prefs()
+    p = r.get_prefs()
 
-    if get_prefs().group_auto_name:
+    if r.get_prefs().group_auto_name:
         name = f"{p.group_prefix}{p.group_basename + '_001'}{p.group_suffix}"
 
         c = 0
@@ -217,7 +217,7 @@ def get_base_group_name():
 
 
 def update_group_name(group):
-    p = get_prefs()
+    p = r.get_prefs()
     prefix = p.group_prefix
     suffix = p.group_suffix
 
