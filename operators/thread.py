@@ -106,49 +106,51 @@ class Thread(bpy.types.Operator):
                     # create point coordinates and face indices
                     thread, bottom, top, height = calculate_thread(segments=self.segments, loops=self.loops, radius=self.radius, depth=self.depth / 100, h1=self.h1, h2=self.h2, h3=self.h3, h4=self.h4, fade=self.fade / 100)
 
-                    # build the faces from those coords and indices
-                    verts, faces = self.build_faces(bm, thread, bottom, top, smooth=smooth)
+                    if height != 0:
 
-                    # scale the thread geometry to fit the selection height
-                    selheight = (center1 - center2).length
-                    bmesh.ops.scale(bm, vec=Vector((1, 1, selheight / height)), space=Matrix(), verts=verts)
+                        # build the faces from those coords and indices
+                        verts, faces = self.build_faces(bm, thread, bottom, top, smooth=smooth)
 
-                    # move the thread geometry into alignment with the first selection center
-                    bmesh.ops.translate(bm, vec=center1, space=Matrix(), verts=verts)
+                        # scale the thread geometry to fit the selection height
+                        selheight = (center1 - center2).length
+                        bmesh.ops.scale(bm, vec=Vector((1, 1, selheight / height)), space=Matrix(), verts=verts)
 
-                    # then rotate it into alignment too, this is done in two steps, first the up vectors are aligned
-                    selup = (center2 - center1).normalized()
+                        # move the thread geometry into alignment with the first selection center
+                        bmesh.ops.translate(bm, vec=center1, space=Matrix(), verts=verts)
 
-                    selrot = Vector((0, 0, 1)).rotation_difference(selup)
-                    bmesh.ops.rotate(bm, cent=center1, matrix=selrot.to_matrix(), verts=verts, space=Matrix())
+                        # then rotate it into alignment too, this is done in two steps, first the up vectors are aligned
+                        selup = (center2 - center1).normalized()
 
-                    # then the first verts are aligned too, get the first vert from the active face if its part of the selection
-                    if bm.faces.active and bm.faces.active in selfaces:
-                        active_loops = [loop for v in bm.faces.active.verts if v in verts1 for loop in v.link_loops if loop.face == bm.faces.active]
+                        selrot = Vector((0, 0, 1)).rotation_difference(selup)
+                        bmesh.ops.rotate(bm, cent=center1, matrix=selrot.to_matrix(), verts=verts, space=Matrix())
 
-                        if active_loops[0].link_loop_next.vert == active_loops[1].vert:
-                            v1 = active_loops[1].vert
+                        # then the first verts are aligned too, get the first vert from the active face if its part of the selection
+                        if bm.faces.active and bm.faces.active in selfaces:
+                            active_loops = [loop for v in bm.faces.active.verts if v in verts1 for loop in v.link_loops if loop.face == bm.faces.active]
+
+                            if active_loops[0].link_loop_next.vert == active_loops[1].vert:
+                                v1 = active_loops[1].vert
+                            else:
+                                v1 = active_loops[0].vert
                         else:
-                            v1 = active_loops[0].vert
-                    else:
-                        v1 = verts1[0]
+                            v1 = verts1[0]
 
-                    threadvec = verts[0].co - center1
-                    selvec = v1.co - center1
+                        threadvec = verts[0].co - center1
+                        selvec = v1.co - center1
 
-                    matchrot = threadvec.rotation_difference(selvec).normalized()
-                    bmesh.ops.rotate(bm, cent=center1, matrix=matchrot.to_matrix(), verts=verts, space=Matrix())
+                        matchrot = threadvec.rotation_difference(selvec).normalized()
+                        bmesh.ops.rotate(bm, cent=center1, matrix=matchrot.to_matrix(), verts=verts, space=Matrix())
 
-                    # remove doubles
-                    bmesh.ops.remove_doubles(bm, verts=verts + verts1 + verts2, dist=0.00001)
+                        # remove doubles
+                        bmesh.ops.remove_doubles(bm, verts=verts + verts1 + verts2, dist=0.00001)
 
-                    # remove the initially selected faces
-                    bmesh.ops.delete(bm, geom=selfaces, context='FACES')
+                        # remove the initially selected faces
+                        bmesh.ops.delete(bm, geom=selfaces, context='FACES')
 
-                    # recalculate the normals, usefull when doing inverted thread
-                    bmesh.ops.recalc_face_normals(bm, faces=faces)
+                        # recalculate the normals, usefull when doing inverted thread
+                        bmesh.ops.recalc_face_normals(bm, faces=[f for f in faces if f.is_valid])
 
-                    bmesh.update_edit_mesh(active.data)
+                        bmesh.update_edit_mesh(active.data)
                     return {'FINISHED'}
         return {'CANCELLED'}
 
