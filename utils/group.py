@@ -70,13 +70,15 @@ def clean_up_groups(context):
 
 def get_group_polls(context):
     active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
-    active_child = context.active_object if context.active_object and context.active_object.M3.is_group_object and context.active_object.select_get() else None
+    active_child = context.active_object if context.active_object and context.active_object.parent and context.active_object.M3.is_group_object and context.active_object.select_get() else None
 
     group_empties = bool([obj for obj in context.visible_objects if obj.M3.is_group_empty])
     groupable = bool([obj for obj in context.selected_objects if (obj.parent and obj.parent.M3.is_group_empty) or not obj.parent])
     ungroupable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty]) if group_empties else False
 
     addable = bool([obj for obj in context.selected_objects if obj != (active_group if active_group else active_child.parent) and obj not in (active_group.children if active_group else active_child.parent.children) and (not obj.parent or (obj.parent and obj.parent.M3.is_group_empty and not obj.parent.select_get()))]) if active_group or active_child else False
+
+
     removable = bool([obj for obj in context.selected_objects if obj.M3.is_group_object])
     selectable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty or obj.M3.is_group_object])
     duplicatable = bool([obj for obj in context.selected_objects if obj.M3.is_group_empty])
