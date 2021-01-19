@@ -37,6 +37,7 @@ class SetToolByName(bpy.types.Operator):
     def prettify(self, name):
         if name in tool_name_mapping_dict:
             return tool_name_mapping_dict[name]
+        return name
 
 
 boxcutter = None

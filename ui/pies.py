@@ -2567,7 +2567,7 @@ class PieTools(Menu):
             # 4 - LEFT
             if boxcutter in tools:
                 tool = tools[boxcutter]
-                # NOTE: without adding the spaces, the icon will overlap the text, but only for my own op, not fr wm.tool_set_by_id
+                # NOTE: without adding the spaces, the icon will overlap the text, but only for my own op, not for wm.tool_set_by_id, hmm
                 # pie.operator("wm.tool_set_by_id", text=tool['label'], icon_value=tool['icon_value']).name = boxcutter
                 pie.operator("machin3.set_tool_by_name", text="   " + tool['label'], depress=tool['active'], icon_value=tool['icon_value']).name = boxcutter
             else:
