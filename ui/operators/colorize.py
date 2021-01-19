@@ -197,7 +197,8 @@ class ColorizeObjectsFromGroups(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object and context.active_object.M3.is_group_empty
+        if context.mode == 'OBJECT':
+            return [obj for obj in context.selected_objects if obj.M3.is_group_empty]
 
     def draw(self, context):
         layout = self.layout
@@ -211,9 +212,13 @@ class ColorizeObjectsFromGroups(bpy.types.Operator):
 
     def execute(self, context):
         self.colors = group_colors.copy()
-        group = context.active_object
 
-        self.colorize_group_recursively(group)
+        all_empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+        top_level = [obj for obj in all_empties if obj.parent not in all_empties]
+
+        for group in top_level:
+            self.colorize_group_recursively(group)
+
         return {'FINISHED'}
 
     def colorize_group_recursively(self, empty):
