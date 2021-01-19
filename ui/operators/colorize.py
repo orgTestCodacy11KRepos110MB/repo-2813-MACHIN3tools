@@ -190,38 +190,57 @@ class ColorizeObjectsFromCollections(bpy.types.Operator):
 class ColorizeObjectsFromGroups(bpy.types.Operator):
     bl_idname = "machin3.colorize_objects_from_groups"
     bl_label = "MACHIN3: Colorize Objects from Groups"
-    bl_description = "Set Random Object Viewport Colors for selected Objects based on Group Membership\nCTRL: Set Group Member Colors based on existing Group Empy Colors "
     bl_options = {'REGISTER', 'UNDO'}
 
     random_color: BoolProperty(name="Random Color", default=True)
+    active_only: BoolProperty(name="Active Group Only", default=False)
 
     @classmethod
     def poll(cls, context):
         if context.mode == 'OBJECT':
             return [obj for obj in context.selected_objects if obj.M3.is_group_empty]
 
+    @classmethod
+    def description(cls, context, properties):
+        if context.active_object and context.active_object.M3.is_group_empty:
+            return "Recursively Set Random Object Viewport Colors for Group Objects based on Group Membership\nALT: Set Group Member Colors based on existing Group Empy Colors\nCTRL: Only Colorize the Active Group"
+        else:
+            return "Recursively Set Random Object Viewport Colors for Group Objects based on Group Membership\nALT: Set Group Member Colors based on existing Group Empy Colors"
+
     def draw(self, context):
         layout = self.layout
 
         column = layout.column()
-        column.prop(self, 'random_color', toggle=True)
+        row = column.row(align=True)
+        row.prop(self, 'random_color', toggle=True)
+
+        if context.active_object and context.active_object.M3.is_group_empty:
+            row.prop(self, 'active_only', toggle=True)
 
     def invoke(self, context, event):
-        self.random_color = not event.ctrl
+        self.random_color = not event.alt
+        self.active_only = event.ctrl
         return self.execute(context)
 
     def execute(self, context):
         self.colors = group_colors.copy()
+        active_group = context.active_object if context.active_object and context.active_object.M3.is_group_empty else None
 
-        all_empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
-        top_level = [obj for obj in all_empties if obj.parent not in all_empties]
+        # colorize active group only
+        if active_group and self.active_only:
+            self.colorize_group(active_group, recursive=False)
 
-        for group in top_level:
-            self.colorize_group_recursively(group)
+        # colorize all groups recursively, from the top levels down
+        else:
+            all_empties = [obj for obj in context.selected_objects if obj.M3.is_group_empty]
+            top_level = [obj for obj in all_empties if obj.parent not in all_empties]
+
+            for group in top_level:
+                self.colorize_group(group, recursive=True)
 
         return {'FINISHED'}
 
-    def colorize_group_recursively(self, empty):
+    def colorize_group(self, empty, recursive=False):
         children = [c for c in empty.children if c.M3.is_group_object]
 
         color = self.get_random_color() if self.random_color else empty.color
@@ -231,7 +250,8 @@ class ColorizeObjectsFromGroups(bpy.types.Operator):
 
         for c in children:
             if c.M3.is_group_empty:
-                self.colorize_group_recursively(c)
+                if recursive:
+                    self.colorize_group(c, recursive=recursive)
             else:
                 c.color = color
 
