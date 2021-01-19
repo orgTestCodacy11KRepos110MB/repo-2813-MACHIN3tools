@@ -11,21 +11,22 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
+        p = get_prefs()
 
-        if get_prefs().activate_mirror:
+        if p.activate_mirror:
             layout.operator("machin3.unmirror", text="Un-Mirror")
 
-        if get_prefs().activate_select:
+        if p.activate_select:
             layout.operator("machin3.select_center_objects", text="Select Center Objects")
             layout.operator("machin3.select_wire_objects", text="Select Wire Objects")
 
-        if get_prefs().activate_apply:
+        if p.activate_apply:
             layout.operator("machin3.apply_transformations", text="Apply Transformations")
 
-        if get_prefs().activate_mesh_cut:
+        if p.activate_mesh_cut:
             layout.operator("machin3.mesh_cut", text="Mesh Cut")
 
-        if get_prefs().activate_material_picker:
+        if p.activate_material_picker:
             layout.operator("machin3.material_picker", text="Material Picker")
 
 
@@ -151,14 +152,15 @@ class MenuGroupObjectContextMenu(bpy.types.Menu):
 def object_context_menu(self, context):
     layout = self.layout
     m3 = context.scene.M3
+    p = get_prefs()
 
-    if get_prefs().activate_object_context_menu:
+    if any([p.activate_mirror, p.activate_select, p.activate_apply, p.activate_mesh_cut, p.activate_material_picker]):
         layout.menu("MACHIN3_MT_machin3tools_object_context_menu")
         layout.separator()
 
-    if get_prefs().activate_group:
+    if p.activate_group:
 
-        if get_prefs().use_group_sub_menu:
+        if p.use_group_sub_menu:
             layout.menu("MACHIN3_MT_group_object_context_menu")
             layout.separator()
 
@@ -256,8 +258,9 @@ def object_context_menu(self, context):
 
 def mesh_context_menu(self, context):
     layout = self.layout
+    p = get_prefs()
 
-    if get_prefs().activate_thread:
+    if any([p.activate_thread]):
         layout.menu("MACHIN3_MT_machin3tools_mesh_context_menu")
         layout.separator()
 
@@ -268,7 +271,7 @@ def add_object_buttons(self, context):
     self.layout.operator("machin3.quadsphere", text="Quad Sphere", icon='SPHERE')
 
 
-# CURSOR SPIN
+# EXTRUDE - CURSOR SPIN
 
 def cursor_spin(self, context):
     self.layout.operator("machin3.cursor_spin", text="Cursor Spin")

@@ -209,7 +209,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
     sync_tools: BoolProperty(name="Sync Tool if possible, when switching Modes", default=True)
-    focus_view_transition: BoolProperty(name="Viewport Transitional Motion", default=True)
+    focus_view_transition: BoolProperty(name="Viewport Tweening", default=True)
 
     tools_show_boxcutter_presets: BoolProperty(name="Show BoxCutter Presets", default=True)
     tools_show_hardops_menu: BoolProperty(name="Show Hard Ops Menu", default=True)
@@ -283,7 +283,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     # SUB MENUS
 
-    activate_object_context_menu: BoolProperty(name="Object Context Menu", default=False)
     use_group_sub_menu: BoolProperty(name="Use Group Sub-Menu", default=False)
     use_group_outliner_toggles: BoolProperty(name="Show Group Outliner Toggles", default=True)
 
@@ -462,29 +461,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row.label(text="Switch Tools, used primarily for BoxCutter/HardOps.")
 
 
-        # SUB MENUS
-
-        if any([self.activate_mirror, self.activate_mesh_cut, self.activate_apply, self.activate_select, self.activate_material_picker, self.activate_group]):
-
-            bb = b.box()
-            bb.label(text="Menus")
-
-            column = bb.column()
-
-            if any([self.activate_mirror, self.activate_mesh_cut, self.activate_apply, self.activate_select, self.activate_material_picker]):
-                row = column.split(factor=0.25)
-                row.prop(self, "activate_object_context_menu", toggle=True)
-                row.label(text="Object Context Menu, access tools, that aren't keymapped.")
-
-            if self.activate_group:
-                row = column.split(factor=0.25)
-                row.prop(self, "use_group_sub_menu", toggle=True)
-                row.label(text="Use Group Sub Menu in Object Context Menu.")
-
-                row = column.split(factor=0.25)
-                row.prop(self, "use_group_outliner_toggles", toggle=True)
-                row.label(text="Show Group Toggles in Outliner Header.")
-
         # RIGHT
 
         b = split.box()
@@ -531,6 +507,16 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             column = bb.column()
 
+            row = column.split(factor=0.2)
+            row.prop(self, "use_group_sub_menu", text='Sub Menu', toggle=True)
+            row.label(text="Use Group Sub Menu in Object Context Menu.")
+
+            row = column.split(factor=0.2)
+            row.prop(self, "use_group_outliner_toggles", text='Outliner Toggles', toggle=True)
+            row.label(text="Show Group Toggles in Outliner Header.")
+
+            column.separator()
+
             row = column.row()
             r = row.split(factor=0.2)
             r.label(text="Basename")
@@ -545,11 +531,12 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             rr.prop(self, "group_prefix", text="Prefix")
             rr.prop(self, "group_suffix", text="Suffix")
 
+            column.separator()
+
             row = column.row()
             r = row.split(factor=0.2)
             r.prop(self, "group_size", text="")
             r.label(text="Default Empty Draw Size")
-
 
             r.prop(self, "group_fade_sizes", text='Fade Sub Group Sizes')
             rr = r.row()
