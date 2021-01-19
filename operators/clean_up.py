@@ -30,6 +30,7 @@ class CleanUp(bpy.types.Operator):
 
     select: BoolProperty(name="Select", default=True)
     select_type: EnumProperty(name="Select", items=cleanup_select_items, default="NON-MANIFOLD")
+    planar_threshold: FloatProperty(name="Non-Planar Face Threshold", default=0.001, min=0, step=0.0001, precision=6)
 
     view_selected: BoolProperty(name="View Selected", default=False)
 
@@ -71,7 +72,7 @@ class CleanUp(bpy.types.Operator):
         r.prop(self, "flip_normals", text="Flip", toggle=True)
 
         box = layout.box()
-        col = box.column()
+        col = box.column(align=True)
 
         row = col.row()
         row.prop(self, "select")
@@ -79,9 +80,15 @@ class CleanUp(bpy.types.Operator):
         r.active = self.select
         r.prop(self, "view_selected")
 
-        row = col.row()
+        row = col.row(align=True)
         row.active = self.select
         row.prop(self, "select_type", expand=True)
+
+        if self.select_type == 'NON-PLANAR':
+            row = col.row(align=True)
+            row.active = self.select
+            row.prop(self, "planar_threshold", text='Threshold')
+
 
     @classmethod
     def poll(cls, context):
@@ -199,9 +206,9 @@ class CleanUp(bpy.types.Operator):
             faces = [f for f in bm.faces if len(f.verts) > 3]
 
             for f in faces:
-                distances = [round(distance_point_to_plane(v.co, f.calc_center_median(), f.normal), 6) for v in f.verts]
+                distances = [distance_point_to_plane(v.co, f.calc_center_median(), f.normal) for v in f.verts]
 
-                if any(distances):
+                if any([d for d in distances if abs(d) > self.planar_threshold]):
                     f.select_set(True)
 
         elif self.select_type == "TRIS":
