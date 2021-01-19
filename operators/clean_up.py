@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import BoolProperty, EnumProperty, FloatProperty
 import bmesh
+from mathutils.geometry import distance_point_to_plane
 import math
 from .. items import cleanup_select_items
 
@@ -193,6 +194,15 @@ class CleanUp(bpy.types.Operator):
 
             for e in edges:
                 e.select = True
+
+        elif self.select_type == "NON-PLANAR":
+            faces = [f for f in bm.faces if len(f.verts) > 3]
+
+            for f in faces:
+                distances = [round(distance_point_to_plane(v.co, f.calc_center_median(), f.normal), 6) for v in f.verts]
+
+                if any(distances):
+                    f.select_set(True)
 
         elif self.select_type == "TRIS":
             faces = [f for f in bm.faces if len(f.verts) == 3]

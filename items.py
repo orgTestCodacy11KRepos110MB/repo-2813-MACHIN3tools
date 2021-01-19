@@ -60,6 +60,7 @@ obj_align_mode_items = [('ORIGIN', 'Origin', ''),
                         ('FLOOR', 'Floor', '')]
 
 cleanup_select_items = [("NON-MANIFOLD", "Non-Manifold", ""),
+                        ("NON-PLANAR", "Non-Planar", ""),
                         ("TRIS", "Tris", ""),
                         ("NGONS", "Ngons", "")]
 
