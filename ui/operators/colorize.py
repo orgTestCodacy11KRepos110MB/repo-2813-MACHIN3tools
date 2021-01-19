@@ -3,6 +3,7 @@ from bpy.props import FloatProperty, EnumProperty, BoolProperty
 import random
 from ... utils.registration import get_addon
 from ... utils.material import get_last_node, lighten_color
+from ... colors import group_colors
 
 
 # TODO: unique preset colors for decal types
@@ -209,6 +210,7 @@ class ColorizeObjectsFromGroups(bpy.types.Operator):
         return self.execute(context)
 
     def execute(self, context):
+        self.colors = group_colors.copy()
         group = context.active_object
 
         self.colorize_group_recursively(group)
@@ -217,7 +219,7 @@ class ColorizeObjectsFromGroups(bpy.types.Operator):
     def colorize_group_recursively(self, empty):
         children = [c for c in empty.children if c.M3.is_group_object]
 
-        color = (random.random(), random.random(), random.random(), 1) if self.random_color else empty.color
+        color = self.get_random_color() if self.random_color else empty.color
 
         if self.random_color:
             empty.color = color
@@ -227,3 +229,16 @@ class ColorizeObjectsFromGroups(bpy.types.Operator):
                 self.colorize_group_recursively(c)
             else:
                 c.color = color
+
+    def get_random_color(self):
+        '''
+        pick random colors from list of nice colors
+        only when all the list's colors are used, create new truly random ones
+        '''
+
+        if self.colors:
+            random_color = self.colors.pop(random.randint(0, len(self.colors) - 1))
+        else:
+            random_color = (random.random(), random.random(), random.random())
+
+        return tuple(list(random_color) + [1])
