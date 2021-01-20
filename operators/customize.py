@@ -327,6 +327,12 @@ class Customize(bpy.types.Operator):
                     print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
+            for kmi in km.keymap_items:
+                if kmi.idname == "image.view_selected":
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.type = "F"
+                    print("       to", kmi_to_string(kmi))
+
             # MESH
 
             km = kc.keymaps.get("Mesh")
@@ -601,14 +607,6 @@ class Customize(bpy.types.Operator):
                         print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
-            km = kc.keymaps.get("Image")
-            print("\n Image Keymap")
-
-            for kmi in km.keymap_items:
-                if kmi.idname == "image.view_selected":
-                    print("  Changed", kmi_to_string(kmi))
-                    kmi.type = "F"
-                    print("       to", kmi_to_string(kmi))
 
 
             # IMAGE EDITOR TOOL: UV, CURSOR
