@@ -311,12 +311,12 @@ class PieModes(Menu):
 
                     elif context.mode == "EDIT_GPENCIL":
                         row = column.row(align=True)
-                        row.prop(toolsettings, "gpencil_selectmode", text="", expand=True)
+                        row.prop(toolsettings, "gpencil_selectmode_edit", text="", expand=True)
 
 
                     # 3 - BOTTOM - RIGHT
                     box = pie.split()
-                    column = box.column()
+                    column = box.column(align=True)
 
                     if context.mode == "EDIT_GPENCIL":
                         row = column.row(align=True)
@@ -327,13 +327,13 @@ class PieModes(Menu):
                         r.popover(panel="VIEW3D_PT_gpencil_multi_frame", text="Multiframe")
 
                         row = column.row(align=True)
-                        row.prop(toolsettings.gpencil_sculpt, "use_select_mask", text="")
-
                         row.popover(panel="VIEW3D_PT_tools_grease_pencil_interpolate", text="Interpolate")
 
                     elif context.mode == "SCULPT_GPENCIL":
                         row = column.row(align=True)
-                        row.prop(toolsettings.gpencil_sculpt, "use_select_mask", text="")
+                        row.prop(toolsettings, "use_gpencil_select_mask_point", text="")
+                        row.prop(toolsettings, "use_gpencil_select_mask_stroke", text="")
+                        row.prop(toolsettings, "use_gpencil_select_mask_segment", text="")
 
                         row.separator()
                         row.prop(gpd, "use_multiedit", text="", icon='GP_MULTIFRAME_EDITING')
