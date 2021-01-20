@@ -547,7 +547,7 @@ def get_apply(classlists=[], keylists=[], count=0):
 def get_select(classlists=[], keylists=[], count=0):
     if get_prefs().activate_select:
         classlists.append(classesdict["SELECT"])
-        keylists.append(keysdict["SELECT"])
+        # keylists.append(keysdict["SELECT"])
         count +=1
 
     return classlists, keylists, count
