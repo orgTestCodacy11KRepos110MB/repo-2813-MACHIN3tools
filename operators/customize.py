@@ -567,7 +567,7 @@ class Customize(bpy.types.Operator):
 
                 if kmi.idname == "transform.translate":
                     if kmi.map_type == "TWEAK":
-                        print("  Decactivated", kmi_to_string(kmi))
+                        print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
 
                 if kmi.idname == "uv.cursor_set":
