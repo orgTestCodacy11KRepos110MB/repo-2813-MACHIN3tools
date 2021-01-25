@@ -478,7 +478,7 @@ class SmartVert(bpy.types.Operator):
         hit = hitmx.inverted() @ hitlocation
 
         # get closest edge
-        edge = min([(e, (hit - intersect_point_line(hit, e.verts[0].co, e.verts[1].co)[0]).length, (hit - get_center_between_verts(*e.verts)).length) for e in hitface.edges], key=lambda x: (x[1] * x[2]) / x[0].calc_length())[0]
+        edge = min([(e, (hit - intersect_point_line(hit, e.verts[0].co, e.verts[1].co)[0]).length, (hit - get_center_between_verts(*e.verts)).length) for e in hitface.edges if e.calc_length()], key=lambda x: (x[1] * x[2]) / x[0].calc_length())[0]
 
         # set snap coords for view3d drawing
         self.snap_coords = [hitmx @ v.co for v in edge.verts]
