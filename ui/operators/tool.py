@@ -26,6 +26,10 @@ class SetToolByName(bpy.types.Operator):
         # switch to the passed in tool
         bpy.ops.wm.tool_set_by_id(name=self.name)
 
+        # ensure hyper cursor gizmos are actually shown
+        if 'machin3.tool_hyper_cursor' in self.name:
+            context.scene.HC.show_gizmos = True
+
         # draw a prettified version of the new tool in a fading HUD
         name = self.prettify(self.name)
 
