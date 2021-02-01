@@ -692,6 +692,10 @@ class PieSave(Menu):
         # col.operator("wm.recover_last_session", text="Recover Last Session", icon='RECOVER_LAST')
         column.operator("wm.revert_mainfile", text="Revert", icon_value=get_icon('revert'))
 
+        column.separator()
+        column.operator("machin3.clean_out_blend_file", text="Clean out .blend", icon_value=get_icon('error'))
+
+
     def draw_center_column_top(self, context, layout):
         column = layout.column(align=True)
 

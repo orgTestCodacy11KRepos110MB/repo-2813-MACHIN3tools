@@ -7,7 +7,7 @@ import time
 from ... utils.registration import get_prefs, get_addon
 from ... utils.append import append_material, append_world
 from ... utils.system import add_path_to_recent_files
-from ... utils.ui import popup_message
+from ... utils.ui import popup_message, get_icon
 
 
 class New(bpy.types.Operator):
@@ -408,7 +408,7 @@ class LoadNext(bpy.types.Operator):
 
     def get_data(self, filepath):
         """
-        return path of current blend, all blend files in the folder or the current file as well as the index of the next file 
+        return path of current blend, all blend files in the folder or the current file as well as the index of the next file
         """
         currentpath = os.path.dirname(filepath)
         currentblend = os.path.basename(filepath)
@@ -432,6 +432,42 @@ class Purge(bpy.types.Operator):
                 bpy.ops.outliner.orphans_purge()
 
         else:
+            bpy.ops.outliner.orphans_purge()
+
+        return {'FINISHED'}
+
+
+class Clean(bpy.types.Operator):
+    bl_idname = "machin3.clean_out_blend_file"
+    bl_label = "Clean out entire .blend file!"
+    bl_description = "Clean out entire .blend file"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return bpy.data.objects or bpy.data.materials or bpy.data.images
+
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column()
+        column.label(text='This will remove everything in the current .blend file!', icon_value=get_icon('error'))
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+    def execute(self, context):
+        for obj in bpy.data.objects:
+            bpy.data.objects.remove(obj, do_unlink=True)
+
+        for mat in bpy.data.materials:
+            bpy.data.materials.remove(mat, do_unlink=True)
+
+        for img in bpy.data.images:
+            bpy.data.images.remove(img, do_unlink=True)
+
+        for i in range(5):
             bpy.ops.outliner.orphans_purge()
 
         return {'FINISHED'}
