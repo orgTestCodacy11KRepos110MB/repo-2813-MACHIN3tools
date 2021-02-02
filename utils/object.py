@@ -131,11 +131,20 @@ def set_obj_origin(obj, mx, bm=None, decalmachine=False, meshmachine=False):
         # the following originally immitated stash retrieval and then re-creation, it just chained both events together. this could then be simplifed further and further. setting stash.obj.matrix_world is optional
         for stash in obj.MM.stashes:
 
-            # stashmx in stashtargetmx's local space, aka the stash difference matrix(which is all that's actually needed for stashes, just like for decal backups)
-            stashdeltamx = stash.obj.MM.stashtargetmx.inverted() @ stash.obj.MM.stashmx
+            # MEShmachine 0.7 uses a delta and orphan matrix
+            if getattr(stash, 'version', False) and float('.'.join([v for v in stash.version.split('.')[:2]])) >= 0.7:
+                stashdeltamx = stash.obj.MM.stashdeltamx
+
+                stash.obj.MM.stashdeltamx = flatten_matrix(deltamx @ stashdeltamx)
+                stash.obj.MM.stashorphanmx = flatten_matrix(mx)
+
+            # older versions use the stashmx and targetmx
+            else:
+                # stashmx in stashtargetmx's local space, aka the stash difference matrix(which is all that's actually needed for stashes, just like for decal backups)
+                stashdeltamx = stash.obj.MM.stashtargetmx.inverted() @ stash.obj.MM.stashmx
+
+                stash.obj.MM.stashmx = flatten_matrix(omx @ stashdeltamx)
+                stash.obj.MM.stashtargetmx = flatten_matrix(mx)
 
             stash.obj.data.transform(deltamx)
             stash.obj.matrix_world = mx
-
-            stash.obj.MM.stashmx = flatten_matrix(omx @ stashdeltamx)
-            stash.obj.MM.stashtargetmx = flatten_matrix(mx)
