@@ -467,6 +467,9 @@ class Clean(bpy.types.Operator):
         for img in bpy.data.images:
             bpy.data.images.remove(img, do_unlink=True)
 
+        for col in bpy.data.collections:
+            bpy.data.collections.remove(col, do_unlink=True)
+
         for i in range(5):
             bpy.ops.outliner.orphans_purge()
 
