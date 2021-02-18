@@ -89,23 +89,23 @@ class CleanUp(bpy.types.Operator):
             row.active = self.select
             row.prop(self, "planar_threshold", text='Threshold')
 
-
     @classmethod
     def poll(cls, context):
         return context.mode == "EDIT_MESH"
 
     def execute(self, context):
-        active = context.active_object
+        sel = [obj for obj in context.selected_objects if obj.type == 'MESH' and obj.mode == 'EDIT']
 
-        bm = self.clean_up(active)
+        for obj in sel:
+            bm = self.clean_up(obj)
 
-        if self.select:
-            self.select_geometry(bm)
+            if self.select:
+                self.select_geometry(bm)
 
-        bmesh.update_edit_mesh(active.data)
+            bmesh.update_edit_mesh(obj.data)
 
         if self.select and self.view_selected:
-            bpy.ops.view3d.view_selected(use_all_regions=False)
+            bpy.ops.view3d.view_selected('INVOKE_DEFAULT', use_all_regions=False)
 
         return {'FINISHED'}
 
