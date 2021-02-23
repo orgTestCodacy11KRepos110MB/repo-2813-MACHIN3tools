@@ -33,7 +33,7 @@ class SmartEdge(bpy.types.Operator):
             row.prop(self, 'is_knife_project', text='Knife Project', toggle=True)
 
             r = row.row(align=True)
-            r.active = self.draw_knife_props
+            r.active = self.is_knife_project
             r.prop(self, "cut_through", toggle=True)
 
         elif self.draw_bridge_props:
