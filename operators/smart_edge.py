@@ -19,34 +19,57 @@ class SmartEdge(bpy.types.Operator):
     bridge_cuts: IntProperty(name="Cuts", default=0, min=0)
     bridge_interpolation: EnumProperty(name="Interpolation", items=bridge_interpolation_items, default='SURFACE')
 
+    is_knife_projectable: BoolProperty(name="Can be Knife Projected", default=False)
+    is_knife_project: BoolProperty(name="Is Knife Project", default=False)
     cut_through: BoolProperty(name="Cut Trough", default=False)
-
-    draw_bridge_props = False
-    draw_knife_props_props = False
 
     def draw(self, context):
         layout = self.layout
 
         column = layout.column()
 
-        if self.draw_bridge_props:
+        if self.is_knife_projectable:
+            row = column.row(align=True)
+            row.prop(self, 'is_knife_project', text='Knife Project', toggle=True)
+
+            r = row.row(align=True)
+            r.active = self.draw_knife_props
+            r.prop(self, "cut_through", toggle=True)
+
+        elif self.draw_bridge_props:
             row = column.row(align=True)
             row.prop(self, "bridge_cuts")
             row.prop(self, "bridge_interpolation", text="")
-
-        elif self.draw_knife_props:
-            row = column.row(align=True)
-            row.prop(self, "cut_through")
 
     @classmethod
     def poll(cls, context):
         mode = tuple(context.scene.tool_settings.mesh_select_mode)
         return any(mode == m for m in [(True, False, False), (False, True, False), (False, False, True)])
 
-    def execute(self, context):
+    def invoke(self, context, event):
         self.draw_bridge_props = False
         self.draw_knife_props = False
+        self.is_knife_projectable = False
+        self.do_knife_project = False
 
+        active = context.active_object
+
+        bm = bmesh.from_edit_mesh(active.data)
+        bm.normal_update()
+        bm.verts.ensure_lookup_table()
+
+        verts = [v for v in bm.verts if v.select]
+        faces = [f for f in bm.faces if f.select]
+        edges = [e for e in bm.edges if e.select]
+
+        # check if selection is isolated and can be knife projected
+        if self.is_selection_separated(bm, verts, edges, faces):
+            self.is_knife_projectable = True
+            self.is_knife_project = True
+
+        return self.execute(context)
+
+    def execute(self, context):
         active = context.active_object
 
         bm = bmesh.from_edit_mesh(active.data)
@@ -60,7 +83,7 @@ class SmartEdge(bpy.types.Operator):
 
         # KNIFE PROJECT
 
-        if self.is_selection_separated(bm, verts, edges, faces):
+        if self.is_knife_projectable and self.is_knife_project:
             self.knife_project(context, active, cut_through=self.cut_through)
             return {'FINISHED'}
 
