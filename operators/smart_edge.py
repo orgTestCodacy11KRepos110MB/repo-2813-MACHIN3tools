@@ -99,11 +99,9 @@ class SmartEdge(bpy.types.Operator):
         # SMART
 
         else:
-            ts = context.scene.tool_settings
-            mode = tuple(ts.mesh_select_mode)
 
             # vert mode
-            if mode[0]:
+            if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
                 verts = [v for v in bm.verts if v.select]
 
                 # KNIFE
@@ -120,7 +118,7 @@ class SmartEdge(bpy.types.Operator):
                         bpy.ops.mesh.vert_connect_path()
 
             # edge mode
-            elif mode[1]:
+            elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
 
                 # LOOPCUT
                 if len(edges) == 0:
@@ -143,8 +141,8 @@ class SmartEdge(bpy.types.Operator):
                     bpy.ops.mesh.loop_to_region()
                     bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
 
-            # face mode
-            elif mode[2]:
+            # face mode:
+            elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
                 faces = [f for f in bm.faces if f.select]
 
                 # REGION TO LOOP
