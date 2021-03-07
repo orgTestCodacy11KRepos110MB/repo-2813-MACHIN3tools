@@ -173,7 +173,7 @@ class SmartViewCam(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.mode == 'OBJECT'
+        return context.space_data.type == 'VIEW_3D'
 
     def invoke(self, context, event):
         cams = [obj for obj in context.scene.objects if obj.type == "CAMERA"]
