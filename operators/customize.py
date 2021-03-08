@@ -624,6 +624,26 @@ class Customize(bpy.types.Operator):
                     print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
+
+
+            # NODE EDITOR
+
+            km = kc.keymaps.get("Node Editor")
+            print("\n Node Editor Keymap")
+
+            for kmi in km.keymap_items:
+                if kmi.idname == "node.links_cut" and kmi.type == 'EVT_TWEAK_L':
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.type = 'EVT_TWEAK_R'
+                    print("       to", kmi_to_string(kmi))
+
+            for kmi in km.keymap_items:
+                if kmi.idname == "node.add_reroute":
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.type = 'EVT_TWEAK_R'
+                    print("       to", kmi_to_string(kmi))
+
+
         def add_keymaps(kc):
             '''
             add new keymap items
