@@ -750,7 +750,7 @@ class Customize(bpy.types.Operator):
             keyconfigpath = bpy.utils.preset_paths(subdir='keyconfig')
 
             if keyconfigpath:
-                keymappath = os.path.join(keyconfigpath[0], "blender_27x.py")
+                keymappath = os.path.join(keyconfigpath[0], f"{'b' if bpy.app.version < (2, 93, 0) else 'B'}lender_27x.py")
 
                 print(" Set 2.7X keymap")
                 bpy.ops.preferences.keyconfig_activate(filepath=keymappath)
