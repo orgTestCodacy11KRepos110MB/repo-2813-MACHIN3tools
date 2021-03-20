@@ -644,6 +644,19 @@ class Customize(bpy.types.Operator):
                     print("       to", kmi_to_string(kmi))
 
 
+            # FILE BROWSER
+
+            km = kc.keymaps.get("File Browser")
+            print("\n File Browser Keymap")
+
+            for kmi in km.keymap_items:
+                if kmi.idname == "file.start_filter":
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.type = 'SLASH'
+                    kmi.ctrl = False
+                    print("       to", kmi_to_string(kmi))
+
+
         def add_keymaps(kc):
             '''
             add new keymap items
