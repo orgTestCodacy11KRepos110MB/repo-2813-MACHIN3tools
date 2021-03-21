@@ -473,4 +473,7 @@ class Clean(bpy.types.Operator):
         for i in range(5):
             bpy.ops.outliner.orphans_purge()
 
+        if context.space_data.local_view:
+            bpy.ops.view3d.localview(frame_selected=False)
+
         return {'FINISHED'}
