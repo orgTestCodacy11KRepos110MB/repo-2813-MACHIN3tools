@@ -46,6 +46,7 @@ class SmartVert(bpy.types.Operator):
 
     mode: EnumProperty(name="Mode", items=smartvert_mode_items, default="MERGE")
     mergetype: EnumProperty(name="Merge Type", items=smartvert_merge_type_items, default="LAST")
+    merge_center_paths: BoolProperty(name="Merge Paths in center", default=False)
     pathtype: EnumProperty(name="Path Type", items=smartvert_path_type_items, default="TOPO")
 
     slideoverride: BoolProperty(name="Slide Override", default=False)
@@ -81,8 +82,12 @@ class SmartVert(bpy.types.Operator):
             if self.mode == "MERGE":
                 row = column.split(factor=0.3)
                 row.label(text="Merge")
-                r = row.row()
+                r = row.row(align=True)
                 r.prop(self, "mergetype", expand=True)
+
+                if self.mergetype == 'PATHS':
+                    r.prop(self, "merge_center_paths", text='in Center', toggle=True)
+
 
             if self.mode == "CONNECT" or (self.mode == "MERGE" and self.mergetype == "PATHS"):
                 if self.wrongselection:
@@ -423,6 +428,9 @@ class SmartVert(bpy.types.Operator):
         targetmap = {}
         for v1, v2 in zip(path1, path2):
             targetmap[v1] = v2
+
+            if self.merge_center_paths:
+                v2.co = (v1.co + v2.co) / 2
 
         bmesh.ops.weld_verts(bm, targetmap=targetmap)
 
