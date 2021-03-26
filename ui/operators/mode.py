@@ -209,13 +209,18 @@ class SurfaceDrawMode(bpy.types.Operator):
         if not view.show_region_toolbar:
             view.show_region_toolbar = True
 
+        # add opacity and thickness mods
+        opacity = gp.grease_pencil_modifiers.new(name="Opacity", type="GP_OPACITY")
+        opacity.show_expanded = False
+        thickness = gp.grease_pencil_modifiers.new(name="Thickness", type="GP_THICK")
+        thickness.show_expanded = False
+
         # optionally select the line tool
         if event.shift:
             bpy.ops.wm.tool_set_by_id(name="builtin.line")
 
+        # by default pick the brush
         else:
             bpy.ops.wm.tool_set_by_id(name="builtin_brush.Draw")
-
-
 
         return {'FINISHED'}

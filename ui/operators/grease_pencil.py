@@ -12,8 +12,7 @@ class ShrinkwrapGreasePencil(bpy.types.Operator):
     def poll(cls, context):
         active = context.active_object
         if active and active.type == 'GPENCIL':
-            layer = active.data.layers.active
-            return layer and not layer.hide
+            return active.data.layers.active
 
     def execute(self, context):
         dg = context.evaluated_depsgraph_get()

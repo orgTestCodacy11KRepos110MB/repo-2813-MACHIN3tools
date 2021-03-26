@@ -258,16 +258,7 @@ class PieModes(Menu):
                     self.draw_gp_modes(context, pie)
 
                     # 9 - TOP - RIGHT
-                    # pie.separator()
-
-                    box = pie.split()
-
-                    row = box.row(align=True)
-                    row.scale_y = 1.5
-
-                    row.operator('machin3.shrinkwrap_grease_pencil', text='Shrinkwrap')
-                    row.prop(active.data, 'zdepth_offset', text='')
-
+                    self.draw_gp_extra(active, pie)
 
                     # 1 - BOTTOM - LEFT
                     box = pie.split()
@@ -516,6 +507,28 @@ class PieModes(Menu):
         r = row.row(align=True)
         r.active = False if context.mode == 'EDIT_GPENCIL' else True
         r.operator("object.mode_set", text="", icon="EDITMODE_HLT").mode = 'EDIT_GPENCIL'
+
+    def draw_gp_extra(self, active, pie):
+        box = pie.split()
+        column = box.column(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.5
+
+        row.operator('machin3.shrinkwrap_grease_pencil', text='Shrinkwrap')
+        row.prop(active.data, 'zdepth_offset', text='')
+
+        opacity = [mod for mod in active.grease_pencil_modifiers if mod.type == 'GP_OPACITY']
+        thickness = [mod for mod in active.grease_pencil_modifiers if mod.type == 'GP_THICK']
+
+        if opacity:
+            row = column.row(align=True)
+            row.prop(opacity[0], 'factor', text='Opacity')
+
+        if thickness:
+            row = column.row(align=True)
+            row.prop(thickness[0], 'thickness_factor', text='Thickness')
+
 
     def draw_mesh_modes(self, context, pie):
         box = pie.split()
