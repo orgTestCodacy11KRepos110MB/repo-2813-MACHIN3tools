@@ -18,7 +18,7 @@ class SetToolByName(bpy.types.Operator):
     def execute(self, context):
 
         # re-enable the cursor if switching away from the simple hyper cursor
-        active_tool = get_active_tool(context)
+        active_tool = get_active_tool(context).idname
 
         if active_tool == 'machin3.tool_hyper_cursor_simple':
             context.space_data.overlay.show_cursor = True

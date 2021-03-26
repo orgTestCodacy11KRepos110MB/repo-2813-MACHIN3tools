@@ -2603,7 +2603,7 @@ class PieTools(Menu):
             # 8 - TOP
             if 'builtin.select_box' in tools:
                 if hypercursor:
-                    active_tool = get_active_tool(context)
+                    active_tool = get_active_tool(context).idname
 
                     # set the last used hyper cursor tool
                     if 'machin3.tool_hyper_cursor' in active_tool:

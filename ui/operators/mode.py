@@ -26,7 +26,7 @@ class EditMode(bpy.types.Operator):
         sync_tools = get_prefs().sync_tools
 
         if sync_tools:
-            active_tool = get_active_tool(context)
+            active_tool = get_active_tool(context).idname
 
         if context.mode == "OBJECT":
             set_xray(context)
@@ -76,7 +76,7 @@ class MeshMode(bpy.types.Operator):
         if context.mode == "OBJECT":
             set_xray(context)
 
-            active_tool = get_active_tool(context) if get_prefs().sync_tools else None
+            active_tool = get_active_tool(context).idname if get_prefs().sync_tools else None
 
             bpy.ops.object.mode_set(mode="EDIT")
 
@@ -144,6 +144,11 @@ class UVMode(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# TODO: expose the z depth value to the pie
+# TODO: create a displace op, that offsets are gp verts based on a factor surface proximity
+# ####: could be tricky if gpence goes across multiple objects, except it could actually check all visible objects to findthe nearest surface, just consider the matrix compensation in that case
+
+
 class SurfaceDrawMode(bpy.types.Operator):
     bl_idname = "machin3.surface_draw_mode"
     bl_label = "MACHIN3: Surface Draw Mode"
@@ -176,19 +181,35 @@ class SurfaceDrawMode(bpy.types.Operator):
 
         update_local_view(view, [(gp, True)])
 
-        gp.data.layers.new(name="SurfaceLayer")
+        # create a new layer and set it to multply, multiply actuall results in a dark gpencil in sold shading, otherwise it would be bright, even with a black material
+        layer = gp.data.layers.new(name="SurfaceLayer")
+        layer.blend_mode = 'MULTIPLY'
 
         context.view_layer.objects.active = gp
         active.select_set(False)
         gp.select_set(True)
 
+        # set object color to black
         gp.color = (0, 0, 0, 1)
 
+        # create black gp mat and append it, look for existing one to avoid duplicates
+        blacks = [mat for mat in bpy.data.materials if mat.name == 'Black' and mat.is_grease_pencil]
+        mat = blacks[0] if blacks else bpy.data.materials.new(name='Black')
+
+        bpy.data.materials.create_gpencil_data(mat)
+        gp.data.materials.append(mat)
+
+        # go into gp draw mode
         bpy.ops.object.mode_set(mode='PAINT_GPENCIL')
 
-        # surface placement
+        # setup surface drawing
         ts.gpencil_stroke_placement_view3d = 'SURFACE'
-        gp.data.zdepth_offset = 0.0001
+
+        # note that dis value is not absulate and oddly depends on the view to object distance
+        gp.data.zdepth_offset = 0.01
+
+        # set the strength to 1, vs the defautl 0.6, making strokes transparent
+        ts.gpencil_paint.brush.gpencil_settings.pen_strength = 1
 
         if not view.show_region_toolbar:
             view.show_region_toolbar = True
@@ -196,5 +217,10 @@ class SurfaceDrawMode(bpy.types.Operator):
         # optionally select the line tool
         if event.shift:
             bpy.ops.wm.tool_set_by_id(name="builtin.line")
+
+        else:
+            bpy.ops.wm.tool_set_by_id(name="builtin_brush.Draw")
+
+
 
         return {'FINISHED'}
