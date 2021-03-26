@@ -234,13 +234,13 @@ class PieModes(Menu):
                     gpd = context.gpencil_data
 
                     # 4 - LEFT
-                    pie.operator("object.mode_set", text="Draw", icon='GREASEPENCIL').mode = "PAINT_GPENCIL"
+                    pie.operator("object.mode_set", text="Edit Mode", icon='EDITMODE_HLT').mode = "EDIT_GPENCIL"
 
                     # 6 - RIGHT
                     pie.operator("object.mode_set", text="Sculpt", icon='SCULPTMODE_HLT').mode = "SCULPT_GPENCIL"
 
                     # 2 - BOTTOM
-                    pie.operator("object.mode_set", text="Edit Mode", icon='EDITMODE_HLT').mode = "EDIT_GPENCIL"
+                    pie.operator("object.mode_set", text="Draw", icon='GREASEPENCIL').mode = "PAINT_GPENCIL"
 
                     # 8 - TOP
                     text, icon = ("Draw", "GREASEPENCIL") if active.mode == "OBJECT" else ("Object", "OBJECT_DATAMODE")
@@ -275,6 +275,9 @@ class PieModes(Menu):
                     elif context.mode == "EDIT_GPENCIL":
                         row = column.row(align=True)
                         row.prop(toolsettings, "gpencil_selectmode_edit", text="", expand=True)
+
+                        if bpy.app.version >= (2, 92, 0):
+                            row.prop(active.data, "use_curve_edit", text="", icon='IPO_BEZIER')
 
 
                     # 3 - BOTTOM - RIGHT
