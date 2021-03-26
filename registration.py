@@ -60,6 +60,8 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                                                 ('ImageMode', 'image_mode'),
                                                 ('UVMode', 'uv_mode'),
                                                 ('SurfaceDrawMode', 'surface_draw_mode')]),
+                         ('ui.operators.grease_pencil', [('ShrinkwrapGreasePencil', 'shrinkwrap_grease_pencil')]),
+
                          ('ui.operators.open_blend', [('OpenLibraryBlend', 'open_library_blend')])],
            'SAVE_PIE': [('ui.pies', [('PieSave', 'save_pie')]),
                         ('ui.menus', [('MenuAppendMaterials', 'append_materials')]),

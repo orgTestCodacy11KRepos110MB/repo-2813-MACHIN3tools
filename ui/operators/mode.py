@@ -144,11 +144,6 @@ class UVMode(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# TODO: expose the z depth value to the pie
-# TODO: create a displace op, that offsets are gp verts based on a factor surface proximity
-# ####: could be tricky if gpence goes across multiple objects, except it could actually check all visible objects to findthe nearest surface, just consider the matrix compensation in that case
-
-
 class SurfaceDrawMode(bpy.types.Operator):
     bl_idname = "machin3.surface_draw_mode"
     bl_label = "MACHIN3: Surface Draw Mode"
