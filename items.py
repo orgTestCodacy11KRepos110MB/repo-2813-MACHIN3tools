@@ -12,6 +12,14 @@ uv_axis_items = [('U', 'U', ''),
                  ('V', 'V', '')]
 
 
+# PREFERENCES
+
+
+matcap_background_type_items = [("THEME", "Theme", ""),
+                                ("WORLD", "World", ""),
+                                ("VIEWPORT", "Viewport", "")]
+
+
 # OPERATORS
 
 

@@ -195,6 +195,8 @@ class MatcapSwitch(bpy.types.Operator):
         matcap1 = get_prefs().switchmatcap1
         matcap2 = get_prefs().switchmatcap2
 
+        switch_background = get_prefs().matcap_switch_background
+
         force_single = get_prefs().matcap2_force_single
         global matcap1_color_type
 
@@ -202,12 +204,25 @@ class MatcapSwitch(bpy.types.Operator):
             if shading.studio_light == matcap1:
                 shading.studio_light = matcap2
 
+                if switch_background:
+                    shading.background_type = get_prefs().matcap2_switch_background_type
+
+                    if get_prefs().matcap2_switch_background_type == 'VIEWPORT':
+                        shading.background_color = get_prefs().matcap2_switch_background_viewport_color
+
+
                 if force_single and shading.color_type != 'SINGLE':
                     matcap1_color_type = shading.color_type
                     shading.color_type = 'SINGLE'
 
             elif shading.studio_light == matcap2:
                 shading.studio_light = matcap1
+
+                if switch_background:
+                    shading.background_type = get_prefs().matcap1_switch_background_type
+
+                    if get_prefs().matcap1_switch_background_type == 'VIEWPORT':
+                        shading.background_color = get_prefs().matcap1_switch_background_viewport_color
 
                 if force_single and matcap1_color_type:
                     shading.color_type = matcap1_color_type
