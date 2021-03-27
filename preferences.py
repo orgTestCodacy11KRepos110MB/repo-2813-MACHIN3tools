@@ -197,6 +197,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     switchmatcap1: StringProperty(name="Matcap 1", update=update_switchmatcap1)
     switchmatcap2: StringProperty(name="Matcap 2", update=update_switchmatcap2)
     matcap2_force_single: BoolProperty(name="Force Single Color Shading for Matcap 2", default=True)
+    matcap2_disable_overlays: BoolProperty(name="Disable Overlays for Matcap 2", default=True)
 
     matcap_switch_background: BoolProperty(name="Switch Background too", default=False)
     matcap1_switch_background_type: EnumProperty(name="Matcap 1 Background Type", items=matcap_background_type_items, default="THEME")
@@ -667,8 +668,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             row = column.split(factor=0.5)
             row.prop(self, "matcap_switch_background")
-            row.prop(self, "matcap2_force_single")
 
+            col = row.column()
+            col.prop(self, "matcap2_force_single")
+            col.prop(self, "matcap2_disable_overlays")
 
             if self.matcap_switch_background:
                 row = column.row()
