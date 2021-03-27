@@ -173,7 +173,7 @@ class SmartViewCam(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.mode == 'OBJECT'
+        return context.space_data.type == 'VIEW_3D'
 
     def invoke(self, context, event):
         cams = [obj for obj in context.scene.objects if obj.type == "CAMERA"]
@@ -296,14 +296,36 @@ class ToggleViewPerspOrtho(bpy.types.Operator):
 class ToggleOrbitMethod(bpy.types.Operator):
     bl_idname = "machin3.toggle_orbit_method"
     bl_label = "MACHIN3: Toggle Orbit Method"
-    bl_description = "Toggle Orbit Method"
     bl_options = {'REGISTER', 'UNDO'}
 
-    method: StringProperty(name='Orbit Method', default='TURNTABLE')
+    @classmethod
+    def description(cls, context, properties):
+        if context.preferences.inputs.view_rotate_method == 'TURNTABLE':
+            return "Change Orbit Method from Turntable to Trackball"
+        return "Change Orbit Method from Trackball to Turntable"
 
     def execute(self, context):
-        context.preferences.inputs.view_rotate_method = self.method
+        if context.preferences.inputs.view_rotate_method == 'TURNTABLE':
+            context.preferences.inputs.view_rotate_method = 'TRACKBALL'
+        else:
+            context.preferences.inputs.view_rotate_method = 'TURNTABLE'
 
+        return {'FINISHED'}
+
+
+class ToggleOrbitSelection(bpy.types.Operator):
+    bl_idname = "machin3.toggle_orbit_selection"
+    bl_label = "MACHIN3: Toggle Orbit Selection"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        if context.preferences.inputs.use_rotate_around_active:
+            return "Disable Orbit around Selection"
+        return "Enable Orbit around Selection"
+
+    def execute(self, context):
+        context.preferences.inputs.use_rotate_around_active = not context.preferences.inputs.use_rotate_around_active
         return {'FINISHED'}
 
 

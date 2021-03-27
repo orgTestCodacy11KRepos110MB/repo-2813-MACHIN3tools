@@ -3,8 +3,8 @@ from bpy.props import EnumProperty, BoolProperty
 import bmesh
 from mathutils import Vector, Matrix, geometry
 from ... utils.math import get_center_between_verts, create_rotation_difference_matrix_from_quat, get_loc_matrix, create_selection_bbox, get_right_and_up_axes
-from ... items import axis_items, align_type_items, axis_mapping_dict, align_direction_items, align_orientation_items
-from ... utils.selection import get_selected_vert_sequences
+from ... items import axis_items, align_type_items, axis_mapping_dict, align_direction_items, align_space_items, align_mode_items
+from ... utils.selection import get_selected_vert_sequences, get_selection_islands
 from ... utils.ui import popup_message
 
 
@@ -14,12 +14,16 @@ class AlignEditMesh(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Local Space Align\nALT: World Space Align\nCTRL: Cursor Space Align"
 
-    type: EnumProperty(name="Type", items=align_type_items, default="MINMAX")
+    mode: EnumProperty(name="Mode", items=align_mode_items, default="VIEW")
+    type: EnumProperty(name="Type", items=align_type_items, description="Align to Min or Max, Average, Zero or Cursor", default="MIN")
 
-    axis: EnumProperty(name="Axis", items=axis_items, default="X")
-    direction: EnumProperty(name="Axis", items=align_direction_items, default="LEFT")
+    axis: EnumProperty(name="Axis", items=axis_items, description="Align on the X, Y or Z Axis", default="X")
+    direction: EnumProperty(name="Direction", items=align_direction_items, default="LEFT")
 
-    orientation: EnumProperty(name="Orientation", items=align_orientation_items, default="LOCAL")
+    space: EnumProperty(name="Space", items=align_space_items, description="Align in Local, World or Cursor Space", default="LOCAL")
+
+    align_each: BoolProperty(name="Align Each Island independently", default=False)
+    draw_each: BoolProperty()
 
     @classmethod
     def poll(cls, context):
@@ -28,120 +32,202 @@ class AlignEditMesh(bpy.types.Operator):
             bm = bmesh.from_edit_mesh(active.data)
             return [v for v in bm.verts if v.select]
 
+    def draw(self, context):
+        layout = self.layout
+        column = layout.column(align=True)
+
+        split = column.split(factor=0.15, align=True)
+        split.label(text='Space')
+        row = split.row(align=True)
+        row.prop(self, 'space', expand=True)
+
+        split = column.split(factor=0.15, align=True)
+        split.label(text='Axis')
+        row = split.row(align=True)
+        row.prop(self, 'axis', expand=True)
+
+        split = column.split(factor=0.15, align=True)
+        split.label(text='Type')
+        row = split.row(align=True)
+        row.prop(self, 'type', expand=True)
+
+        if self.draw_each:
+            split = column.split(factor=0.15, align=True)
+            split.label(text='Each')
+            row = split.row(align=True)
+            row.prop(self, 'align_each', text='True' if self.align_each else 'False', toggle=True)
+
     def invoke(self, context, event):
-        if event.alt and event.ctrl:
-            popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
-            return {'CANCELLED'}
 
-        self.orientation = 'WORLD' if event.alt else 'CURSOR' if event.ctrl else 'LOCAL'
+        # set space based on modifier keys
+        self.space = 'WORLD' if event.alt else 'CURSOR' if event.ctrl else 'LOCAL'
 
-        self.align(context, self.type, axis_mapping_dict[self.axis], self.direction, self.orientation)
+        # in VIEW mode the axis is calculated from from viewport direction given in the pie
+        if self.mode == 'VIEW':
+            axis_right, axis_up, flip_right, flip_up = get_right_and_up_axes(context, mx=self.get_matrix(context))
+
+            if self.type in ['ZERO', 'AVERAGE', 'CURSOR'] and self.direction in ['HORIZONTAL', 'VERTICAL']:
+                axis = axis_right if self.direction == "HORIZONTAL" else axis_up
+
+            elif self.direction in ['LEFT', 'RIGHT', 'TOP', 'BOTTOM']:
+                axis = axis_right if self.direction in ['RIGHT', 'LEFT'] else axis_up
+
+                # set the alignment type based on the directions
+                if self.direction == 'RIGHT':
+                    self.type = 'MIN' if flip_right else 'MAX'
+
+                elif self.direction == 'LEFT':
+                    self.type = 'MAX' if flip_right else 'MIN'
+
+                elif self.direction == 'TOP':
+                    self.type = 'MIN' if flip_up else 'MAX'
+
+                elif self.direction == 'BOTTOM':
+                    self.type = 'MAX' if flip_up else 'MIN'
+
+            # invalid combination of props
+            else:
+                popup_message(f"You can't combine {self.type} with {self.direction}!", title="Invalid Property Combination")
+                return {'CANCELLED'}
+
+            # set the axis prop
+            self.axis = 'X' if axis == 0 else 'Y' if axis == 1 else 'Z'
+
+        return self.execute(context)
+
+    def execute(self, context):
+        self.align(context, self.type, axis_mapping_dict[self.axis], self.space)
         return {'FINISHED'}
 
-    def align(self, context, type, axis, direction, orientation):
+    def align(self, context, type, axis, space):
+        '''
+        align selected verts based on alignment type, axis and space
+        '''
         active = context.active_object
-
-        mx = active.matrix_world if orientation == 'LOCAL' else context.scene.cursor.matrix if orientation == 'CURSOR' else Matrix()
-
-        mode = context.scene.M3.align_mode
-
-        # in VIEW mode the axis is calculated from from viewport direction giving in the pie
-        if mode == 'VIEW':
-            axis_right, axis_up, flip_right, flip_up = get_right_and_up_axes(context, mx=mx)
-
-            if type == 'MINMAX':
-                axis = axis_right if direction in ['RIGHT', 'LEFT'] else axis_up
-
-            elif type in ['ZERO', 'AVERAGE', 'CURSOR']:
-                axis = axis_right if direction == "HORIZONTAL" else axis_up
+        mx = self.get_matrix(context)
 
         bm = bmesh.from_edit_mesh(active.data)
         bm.normal_update()
         bm.verts.ensure_lookup_table()
 
+        all_verts = []
         verts = [v for v in bm.verts if v.select]
 
-        # axis coordinates in local space
-        if orientation == 'LOCAL':
-            axiscoords = [v.co[axis] for v in verts]
+        if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) or type in ['ZERO', 'CURSOR']:
+            all_verts.append(verts)
+            self.draw_each = False
 
-        # coordinates in world space
-        elif orientation == 'WORLD':
-            axiscoords = [(active.matrix_world @ v.co)[axis] for v in verts]
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
+            sequences = get_selected_vert_sequences(verts.copy(), debug=False)
+            eachable = len(sequences) > 1
 
-        # coordinates in cursor space
-        elif orientation == 'CURSOR':
-            axiscoords = [(mx.inverted_safe() @ active.matrix_world @ v.co)[axis] for v in verts]
+            if eachable:
+                self.draw_each = True
 
-        # get min or max target value
-        if type == "MIN":
-            target = min(axiscoords)
+            if eachable and self.align_each:
+                for verts, _ in sequences:
+                    all_verts.append(verts)
 
-        elif type == "MAX":
-            target = max(axiscoords)
+            else:
+                all_verts.append(verts)
 
-        # min or max in VIEW mode
-        elif type == 'MINMAX':
-            if direction == 'RIGHT':
-                target = min(axiscoords) if flip_right else max(axiscoords)
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
+            islands = get_selection_islands([f for f in bm.faces if f.select], debug=False)
+            eachable = len(islands) > 1
 
-            elif direction == 'LEFT':
-                target = max(axiscoords) if flip_right else min(axiscoords)
+            if eachable:
+                self.draw_each = True
 
-            elif direction == 'TOP':
-                target = min(axiscoords) if flip_up else max(axiscoords)
+            if eachable and self.align_each:
+                for verts, _, _ in islands:
+                    all_verts.append(verts)
+            else:
+                all_verts.append(verts)
 
-            elif direction == 'BOTTOM':
-                target = max(axiscoords) if flip_up else min(axiscoords)
+        for verts in all_verts:
 
-        # get the zero target value
-        elif type == "ZERO":
-            target = 0
+            # AXIS COORDS
 
-        # get the average target value
-        elif type == "AVERAGE":
-            target = sum(axiscoords) / len(axiscoords)
+            # axis coordinates in local space
+            if space == 'LOCAL':
+                axiscoords = [v.co[axis] for v in verts]
 
-        # get cursor target value
-        elif type == "CURSOR":
-            if orientation == 'LOCAL':
-                c_world = context.scene.cursor.location
-                c_local = mx.inverted() @ c_world
-                target = c_local[axis]
+            # coordinates in world space
+            elif space == 'WORLD':
+                axiscoords = [(active.matrix_world @ v.co)[axis] for v in verts]
 
-            elif orientation == 'WORLD':
-                target = context.scene.cursor.location[axis]
+            # coordinates in cursor space
+            elif space == 'CURSOR':
+                axiscoords = [(mx.inverted_safe() @ active.matrix_world @ v.co)[axis] for v in verts]
 
-            elif orientation == 'CURSOR':
+
+            # TARGET VALUE
+
+            # get min or max target value
+            if self.type == "MIN":
+                target = min(axiscoords)
+
+            elif self.type == "MAX":
+                target = max(axiscoords)
+
+            # get the zero target value
+            elif self.type == "ZERO":
                 target = 0
 
-        # set the new coordinates
-        for v in verts:
-            if orientation == 'LOCAL':
-                v.co[axis] = target
+            # get the average target value
+            elif self.type == "AVERAGE":
+                target = sum(axiscoords) / len(axiscoords)
 
-            elif orientation == 'WORLD':
-                # bring vertex coords into world space
-                world_co = active.matrix_world @ v.co
+            # get cursor target value
+            elif type == "CURSOR":
+                if space == 'LOCAL':
+                    c_world = context.scene.cursor.location
+                    c_local = mx.inverted() @ c_world
+                    target = c_local[axis]
 
-                # set the target value
-                world_co[axis] = target
+                elif space == 'WORLD':
+                    target = context.scene.cursor.location[axis]
 
-                # bring it back into local space
-                v.co = active.matrix_world.inverted_safe() @ world_co
+                elif space == 'CURSOR':
+                    target = 0
 
-            elif orientation == 'CURSOR':
-                # bring vertex coords into cursor space
-                cursor_co = mx.inverted_safe() @ active.matrix_world @ v.co
 
-                # set the target value
-                cursor_co[axis] = target
+            # ALIGN
 
-                # bring it back into local space
-                v.co = active.matrix_world.inverted_safe() @ mx @ cursor_co
+            # set the new coordinates
+            for v in verts:
+                if space == 'LOCAL':
+                    v.co[axis] = target
+
+                elif space == 'WORLD':
+                    # bring vertex coords into world space
+                    world_co = active.matrix_world @ v.co
+
+                    # set the target value
+                    world_co[axis] = target
+
+                    # bring it back into local space
+                    v.co = active.matrix_world.inverted_safe() @ world_co
+
+                elif space == 'CURSOR':
+                    # bring vertex coords into cursor space
+                    cursor_co = mx.inverted_safe() @ active.matrix_world @ v.co
+
+                    # set the target value
+                    cursor_co[axis] = target
+
+                    # bring it back into local space
+                    v.co = active.matrix_world.inverted_safe() @ mx @ cursor_co
 
         bm.normal_update()
         bmesh.update_edit_mesh(active.data)
+
+    def get_matrix(self, context):
+        '''
+        return matrix based on space
+        '''
+        mx = context.active_object.matrix_world if self.space == 'LOCAL' else context.scene.cursor.matrix if self.space == 'CURSOR' else Matrix()
+        return mx
 
 
 class CenterEditMesh(bpy.types.Operator):
@@ -153,8 +239,7 @@ class CenterEditMesh(bpy.types.Operator):
     axis: EnumProperty(name="Axis", items=axis_items, default="X")
     direction: EnumProperty(name="Axis", items=align_direction_items, default="HORIZONTAL")
 
-    # local: BoolProperty(name="Local Space", default=True)
-    orientation: EnumProperty(name="Orientation", items=align_orientation_items, default="LOCAL")
+    space: EnumProperty(name="Space", items=align_space_items, default="LOCAL")
 
     @classmethod
     def poll(cls, context):
@@ -168,14 +253,14 @@ class CenterEditMesh(bpy.types.Operator):
             popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
             return {'CANCELLED'}
 
-        self.orientation = 'WORLD' if event.alt else 'CURSOR' if event.ctrl else 'LOCAL'
+        self.space = 'WORLD' if event.alt else 'CURSOR' if event.ctrl else 'LOCAL'
 
-        self.center(context, axis_mapping_dict[self.axis], self.direction, self.orientation)
+        self.center(context, axis_mapping_dict[self.axis], self.direction, self.space)
         return {'FINISHED'}
 
-    def center(self, context, axis, direction, orientation):
+    def center(self, context, axis, direction, space):
         active = context.active_object
-        mx = active.matrix_world if orientation == 'LOCAL' else context.scene.cursor.matrix if orientation == 'CURSOR' else Matrix()
+        mx = active.matrix_world if space == 'LOCAL' else context.scene.cursor.matrix if space == 'CURSOR' else Matrix()
 
         mode = context.scene.M3.align_mode
 
@@ -204,14 +289,14 @@ class CenterEditMesh(bpy.types.Operator):
             _, origin = create_selection_bbox([v.co for v in verts])
 
         # the target location will be the origin with the axis zeroed out
-        if orientation == 'LOCAL':
+        if space == 'LOCAL':
             target = origin.copy()
             target[axis] = 0
 
             # create translation matrix
             mxt = get_loc_matrix(target - origin)
 
-        elif orientation == 'WORLD':
+        elif space == 'WORLD':
             # bring into world space
             origin = active.matrix_world @ origin
             target = origin.copy()
@@ -220,7 +305,7 @@ class CenterEditMesh(bpy.types.Operator):
             # create translation matrix (in local space again)
             mxt = get_loc_matrix(active.matrix_world.inverted().to_3x3() @ (target - origin))
 
-        elif orientation == 'CURSOR':
+        elif space == 'CURSOR':
             # bring into cursor space
             origin = mx.inverted_safe() @ active.matrix_world @ origin
             target = origin.copy()

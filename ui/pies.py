@@ -18,7 +18,6 @@ from .. utils.tools import get_tools_from_context, get_active_tool
 # TODO: modes gpencil: add modal shrinkwrap tool, if gpencil is parented
 
 
-grouppro = None
 decalmachine = None
 boxcutter = None
 hardops = None
@@ -35,11 +34,7 @@ class PieModes(Menu):
         layout = self.layout
         toolsettings = context.tool_settings
 
-        global grouppro
         global decalmachine
-
-        if grouppro is None:
-            grouppro, _, _, _ = get_addon("Group Pro")
 
         if decalmachine is None:
             decalmachine, _, _, _ = get_addon("DECALmachine")
@@ -73,22 +68,14 @@ class PieModes(Menu):
                             pie.operator("machin3.mesh_mode", text="Edge", icon_value=get_icon('edge')).mode = 'EDGE'
 
                             # 8 - TOP
-                            if context.mode == 'OBJECT' and grouppro and len(context.scene.storedGroupSettings):
-                                pie.operator("object.close_grouppro", text="Close Group")
-
-                            else:
-                                text, icon = ("Edit", get_icon('edit_mesh')) if active.mode == "OBJECT" else ("Object", get_icon('object'))
-                                pie.operator("machin3.edit_mode", text=text, icon_value=icon)
+                            text, icon = ("Edit", get_icon('edit_mesh')) if active.mode == "OBJECT" else ("Object", get_icon('object'))
+                            pie.operator("machin3.edit_mode", text=text, icon_value=icon)
 
                             # 7 - TOP - LEFT
                             self.draw_mesh_modes(context, pie)
 
                             # 9 - TOP - RIGHT
-                            if context.mode == 'OBJECT' and grouppro:
-                                self.draw_grouppro(context, pie)
-
-                            else:
-                                pie.separator()
+                            pie.separator()
 
                             # 1 - BOTTOM - LEFT
                             if get_prefs().activate_surface_slide:
@@ -191,25 +178,17 @@ class PieModes(Menu):
                     pie.separator()
 
                     # 8 - TOP
-                    if context.mode == "OBJECT" and grouppro and len(context.scene.storedGroupSettings):
-                        pie.operator("object.close_grouppro", text="Close Group")
-
+                    text, icon = ("Edit", "EDITMODE_HLT") if active.mode == "OBJECT" else ("Object", "OBJECT_DATAMODE")
+                    if active.mode == "POSE":
+                        pie.operator("object.posemode_toggle", text=text, icon=icon)
                     else:
-                        text, icon = ("Edit", "EDITMODE_HLT") if active.mode == "OBJECT" else ("Object", "OBJECT_DATAMODE")
-                        if active.mode == "POSE":
-                            pie.operator("object.posemode_toggle", text=text, icon=icon)
-                        else:
-                            pie.operator("object.editmode_toggle", text=text, icon=icon)
+                        pie.operator("object.editmode_toggle", text=text, icon=icon)
 
                     # 7 - TOP - LEFT
                     pie.separator()
 
                     # 9 - TOP - RIGHT
-                    if context.mode == 'OBJECT' and grouppro:
-                        self.draw_grouppro(context, pie)
-
-                    else:
-                        pie.separator()
+                    pie.separator()
 
                     # 1 - BOTTOM - LEFT
                     pie.separator()
@@ -228,22 +207,14 @@ class PieModes(Menu):
                     pie.separator()
 
                     # 9 - TOP
-                    if context.mode == 'OBJECT' and grouppro and len(context.scene.storedGroupSettings):
-                        pie.operator("object.close_grouppro", text="Close Group")
-
-                    else:
-                        text, icon = ("Edit", "EDITMODE_HLT") if active.mode == "OBJECT" else ("Object", "OBJECT_DATAMODE")
-                        pie.operator("object.editmode_toggle", text=text, icon=icon)
+                    text, icon = ("Edit", "EDITMODE_HLT") if active.mode == "OBJECT" else ("Object", "OBJECT_DATAMODE")
+                    pie.operator("object.editmode_toggle", text=text, icon=icon)
 
                     # 7 - TOP - LEFT
                     pie.separator()
 
                     # 9 - TOP - RIGHT
-                    if context.mode == 'OBJECT' and grouppro:
-                        self.draw_grouppro(context, pie)
-
-                    else:
-                        pie.separator()
+                    pie.separator()
 
                     # 1 - BOTTOM - LEFT
                     pie.separator()
@@ -263,39 +234,31 @@ class PieModes(Menu):
                     gpd = context.gpencil_data
 
                     # 4 - LEFT
-                    pie.operator("object.mode_set", text="Draw", icon='GREASEPENCIL').mode = "PAINT_GPENCIL"
+                    pie.operator("object.mode_set", text="Edit Mode", icon='EDITMODE_HLT').mode = "EDIT_GPENCIL"
 
                     # 6 - RIGHT
                     pie.operator("object.mode_set", text="Sculpt", icon='SCULPTMODE_HLT').mode = "SCULPT_GPENCIL"
 
                     # 2 - BOTTOM
-                    pie.operator("object.mode_set", text="Edit Mode", icon='EDITMODE_HLT').mode = "EDIT_GPENCIL"
+                    pie.operator("object.mode_set", text="Draw", icon='GREASEPENCIL').mode = "PAINT_GPENCIL"
 
                     # 8 - TOP
-                    if context.mode == 'OBJECT' and grouppro and len(context.scene.storedGroupSettings):
-                        pie.operator("object.close_grouppro", text="Close Group")
+                    text, icon = ("Draw", "GREASEPENCIL") if active.mode == "OBJECT" else ("Object", "OBJECT_DATAMODE")
 
+                    if active.mode == "WEIGHT_GPENCIL":
+                        pie.operator("gpencil.weightmode_toggle", text=text, icon=icon)
+                    elif active.mode == "EDIT_GPENCIL":
+                        pie.operator("gpencil.editmode_toggle", text=text, icon=icon)
+                    elif active.mode == "SCULPT_GPENCIL":
+                        pie.operator("gpencil.sculptmode_toggle", text=text, icon=icon)
                     else:
-                        text, icon = ("Draw", "GREASEPENCIL") if active.mode == "OBJECT" else ("Object", "OBJECT_DATAMODE")
-
-                        if active.mode == "WEIGHT_GPENCIL":
-                            pie.operator("gpencil.weightmode_toggle", text=text, icon=icon)
-                        elif active.mode == "EDIT_GPENCIL":
-                            pie.operator("gpencil.editmode_toggle", text=text, icon=icon)
-                        elif active.mode == "SCULPT_GPENCIL":
-                            pie.operator("gpencil.sculptmode_toggle", text=text, icon=icon)
-                        else:
-                            pie.operator("gpencil.paintmode_toggle", text=text, icon=icon)
+                        pie.operator("gpencil.paintmode_toggle", text=text, icon=icon)
 
                     # 7 - TOP - LEFT
                     self.draw_gp_modes(context, pie)
 
                     # 9 - TOP - RIGHT
-                    if context.mode == 'OBJECT' and grouppro:
-                        self.draw_grouppro(context, pie)
-
-                    else:
-                        pie.separator()
+                    self.draw_gp_extra(active, pie)
 
                     # 1 - BOTTOM - LEFT
                     box = pie.split()
@@ -312,6 +275,9 @@ class PieModes(Menu):
                     elif context.mode == "EDIT_GPENCIL":
                         row = column.row(align=True)
                         row.prop(toolsettings, "gpencil_selectmode_edit", text="", expand=True)
+
+                        if bpy.app.version >= (2, 92, 0):
+                            row.prop(active.data, "use_curve_edit", text="", icon='IPO_BEZIER')
 
 
                     # 3 - BOTTOM - RIGHT
@@ -344,10 +310,7 @@ class PieModes(Menu):
 
                 elif active.type == 'EMPTY':
                     # 4 - LEFT
-                    if grouppro and active.instance_collection and active.instance_collection.created_with_gp and not active.instance_collection.library:
-                        pie.operator("object.edit_grouppro", text="Edit Group")
-
-                    elif active.instance_collection and active.instance_collection.library:
+                    if active.instance_collection and active.instance_collection.library:
                         blendpath = abspath(active.instance_collection.library.filepath)
                         library = active.instance_collection.library.name
 
@@ -362,30 +325,16 @@ class PieModes(Menu):
                     pie.separator()
 
                     # 2 - BOTTOM
-                    if grouppro and active.instance_collection and active.instance_collection.created_with_gp and not active.instance_collection.library:
-                        if decalmachine:
-                            pie.operator("machin3.grouppro_dissolve", text="Dissolve", icon='OUTLINER_OB_GROUP_INSTANCE').maxDept = 0
-                        else:
-                            pie.operator("object.gpro_converttogeo", icon='OUTLINER_OB_GROUP_INSTANCE').maxDept = 0
-                    else:
-                        pie.separator()
+                    pie.separator()
 
                     # 8 - TOP
-                    if grouppro and len(context.scene.storedGroupSettings):
-                        pie.operator("object.close_grouppro", text="Close Group")
-
-                    else:
-                        pie.separator()
+                    pie.separator()
 
                     # 7 - TOP - LEFT
                     pie.separator()
 
                     # 9 - TOP - RIGHT
-                    if context.mode == 'OBJECT' and grouppro:
-                        self.draw_grouppro(context, pie)
-
-                    else:
-                        pie.separator()
+                    pie.separator()
 
                     # 1 - BOTTOM - LEFT
                     pie.separator()
@@ -525,49 +474,19 @@ class PieModes(Menu):
             pie.separator()
 
             # 8 - TOP
-            if grouppro and len(context.scene.storedGroupSettings):
-                pie.operator("object.close_grouppro", text="Close Group")
-
-            else:
-                pie.separator()
+            pie.separator()
 
             # 7 - TOP - LEFT
             pie.separator()
 
             # 9 - TOP - RIGHT
-            if context.mode == 'OBJECT' and grouppro:
-                self.draw_grouppro(context, pie, addremove=False)
-
-            else:
-                pie.separator()
+            pie.separator()
 
             # 1 - BOTTOM - LEFT
             pie.separator()
 
             # 3 - BOTTOM - RIGHT
             pie.separator()
-
-    def draw_grouppro(self, context, layout, addremove=True):
-        box = layout.split()
-        column = box.column()
-        column.scale_y = 1.5
-
-        # group pro "object mode"
-        if len(context.scene.storedGroupSettings) == 0:
-            row = column.split(factor=0.7, align=True)
-            row.operator("wm.call_menu_pie", text="GroupPro", icon='STICKY_UVS_LOC').name = "GP_MT_grouppro_main_pie"
-            row.operator("object.create_grouppro", text="Create")
-
-        # group pro "edit mode"
-        else:
-            row = column.row()
-            row.operator("wm.call_menu_pie", text="GroupPro", icon='STICKY_UVS_LOC').name = "GP_MT_grouppro_main_pie"
-
-            if addremove:
-                r = row.row(align=True)
-                r.scale_x = 1.2
-                r.operator("object.add_to_grouppro", text="", icon='ADD')
-                r.operator("object.remove_from_grouppro", text="", icon='REMOVE')
 
     def draw_gp_modes(self, context, pie):
         box = pie.split()
@@ -591,6 +510,28 @@ class PieModes(Menu):
         r = row.row(align=True)
         r.active = False if context.mode == 'EDIT_GPENCIL' else True
         r.operator("object.mode_set", text="", icon="EDITMODE_HLT").mode = 'EDIT_GPENCIL'
+
+    def draw_gp_extra(self, active, pie):
+        box = pie.split()
+        column = box.column(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.5
+
+        row.operator('machin3.shrinkwrap_grease_pencil', text='Shrinkwrap')
+        row.prop(active.data, 'zdepth_offset', text='')
+
+        opacity = [mod for mod in active.grease_pencil_modifiers if mod.type == 'GP_OPACITY']
+        thickness = [mod for mod in active.grease_pencil_modifiers if mod.type == 'GP_THICK']
+
+        if opacity:
+            row = column.row(align=True)
+            row.prop(opacity[0], 'factor', text='Opacity')
+
+        if thickness:
+            row = column.row(align=True)
+            row.prop(thickness[0], 'thickness_factor', text='Thickness')
+
 
     def draw_mesh_modes(self, context, pie):
         box = pie.split()
@@ -691,6 +632,10 @@ class PieSave(Menu):
         column.operator("wm.recover_auto_save", text="Recover Auto Save...", icon_value=get_icon('recover_auto_save'))
         # col.operator("wm.recover_last_session", text="Recover Last Session", icon='RECOVER_LAST')
         column.operator("wm.revert_mainfile", text="Revert", icon_value=get_icon('revert'))
+
+        column.separator()
+        column.operator("machin3.clean_out_blend_file", text="Clean out .blend", icon_value=get_icon('error'))
+
 
     def draw_center_column_top(self, context, layout):
         column = layout.column(align=True)
@@ -1365,16 +1310,20 @@ class PieViewport(Menu):
         pie.separator()
 
         # 1 - BOTTOM - LEFT
-        if get_prefs().show_orbit_method:
+        if get_prefs().show_orbit_selection:
             box = pie.split()
             box.scale_y = 1.2
-            box.operator("machin3.toggle_orbit_method", text="Turntable", depress=context.preferences.inputs.view_rotate_method=='TURNTABLE').method = 'TURNTABLE'
+            box.operator("machin3.toggle_orbit_selection", text="Orbit Selection", depress=context.preferences.inputs.use_rotate_around_active)
+        else:
+            pie.separator()
 
         # 3 - BOTTOM - RIGHT
         if get_prefs().show_orbit_method:
             box = pie.split()
             box.scale_y = 1.2
-            box.operator("machin3.toggle_orbit_method", text="Trackball", depress=context.preferences.inputs.view_rotate_method=='TRACKBALL').method = 'TRACKBALL'
+            box.operator("machin3.toggle_orbit_method", text=context.preferences.inputs.view_rotate_method.title())
+        else:
+            pie.separator()
 
     def draw_camera_box(self, scene, view, layout):
         column = layout.column(align=True)
@@ -1476,17 +1425,19 @@ class PieAlign(Menu):
             self.draw_align_with_view(pie, m3, sel)
 
     def draw_align_with_axes(self, pie, m3, sel):
-        """
+        '''
         draw alignment options with axes as inputs
-        """
+        '''
 
         # 4 - LEFT
         op = pie.operator("machin3.align_editmesh", text="Y min")
+        op.mode = "AXES"
         op.axis = "Y"
         op.type = "MIN"
 
         # 6 - RIGHT
         op = pie.operator("machin3.align_editmesh", text="Y max")
+        op.mode = "AXES"
         op.axis = "Y"
         op.type = "MAX"
 
@@ -1527,33 +1478,39 @@ class PieAlign(Menu):
         column = box.column()
 
         row = column.split(factor=0.2)
-        row.label(icon="FREEZE")
-        r = row.row(align=True)
-        r.scale_y = 1.2
-        op = r.operator("machin3.align_editmesh", text="X")
-        op.axis = "X"
-        op.type = "ZERO"
-        op = r.operator("machin3.align_editmesh", text="Y")
-        op.axis = "Y"
-        op.type = "ZERO"
-        op = r.operator("machin3.align_editmesh", text="Z")
-        op.axis = "Z"
-        op.type = "ZERO"
-
-
-        row = column.split(factor=0.2)
         row.label(icon="ARROW_LEFTRIGHT")
         r = row.row(align=True)
         r.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="X")
+        op.mode = "AXES"
         op.axis = "X"
         op.type = "AVERAGE"
         op = r.operator("machin3.align_editmesh", text="Y")
+        op.mode = "AXES"
         op.axis = "Y"
         op.type = "AVERAGE"
         op = r.operator("machin3.align_editmesh", text="Z")
+        op.mode = "AXES"
         op.axis = "Z"
         op.type = "AVERAGE"
+
+
+        row = column.split(factor=0.2)
+        row.label(icon="FREEZE")
+        r = row.row(align=True)
+        r.scale_y = 1.2
+        op = r.operator("machin3.align_editmesh", text="X")
+        op.mode = "AXES"
+        op.axis = "X"
+        op.type = "ZERO"
+        op = r.operator("machin3.align_editmesh", text="Y")
+        op.mode = "AXES"
+        op.axis = "Y"
+        op.type = "ZERO"
+        op = r.operator("machin3.align_editmesh", text="Z")
+        op.mode = "AXES"
+        op.axis = "Z"
+        op.type = "ZERO"
 
 
         row = column.split(factor=0.2)
@@ -1561,12 +1518,15 @@ class PieAlign(Menu):
         r = row.row(align=True)
         r.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="X")
+        op.mode = "AXES"
         op.axis = "X"
         op.type = "CURSOR"
         op = r.operator("machin3.align_editmesh", text="Y")
+        op.mode = "AXES"
         op.axis = "Y"
         op.type = "CURSOR"
         op = r.operator("machin3.align_editmesh", text="Z")
+        op.mode = "AXES"
         op.axis = "Z"
         op.type = "CURSOR"
 
@@ -1583,47 +1543,51 @@ class PieAlign(Menu):
 
         # 7 - TOP - LEFT
         op = pie.operator("machin3.align_editmesh", text="X min")
+        op.mode = "AXES"
         op.axis = "X"
         op.type = "MIN"
 
         # 9 - TOP - RIGHT
         op = pie.operator("machin3.align_editmesh", text="X max")
+        op.mode = "AXES"
         op.axis = "X"
         op.type = "MAX"
 
         # 1 - BOTTOM - LEFT
         op = pie.operator("machin3.align_editmesh", text="Z min")
+        op.mode = "AXES"
         op.axis = "Z"
         op.type = "MIN"
 
         # 3 - BOTTOM - RIGHT
         op = pie.operator("machin3.align_editmesh", text="Z max")
+        op.mode = "AXES"
         op.axis = "Z"
         op.type = "MAX"
 
     def draw_align_with_view(self, pie, m3, sel):
-        """
+        '''
         draw align alignment options using directions in the view as inputs
-        """
+        '''
 
         # 4 - LEFT
         op = pie.operator("machin3.align_editmesh", text="Left")
-        op.type = "MINMAX"
+        op.mode = "VIEW"
         op.direction = "LEFT"
 
         # 6 - RIGHT
         op = pie.operator("machin3.align_editmesh", text="Right")
-        op.type = "MINMAX"
+        op.mode = "VIEW"
         op.direction = "RIGHT"
 
         # 2 - BOTTOM
         op = pie.operator("machin3.align_editmesh", text="Bottom")
-        op.type = "MINMAX"
+        op.mode = "VIEW"
         op.direction = "BOTTOM"
 
         # 2 - TOP
         op = pie.operator("machin3.align_editmesh", text="Top")
-        op.type = "MINMAX"
+        op.mode = "VIEW"
         op.direction = "TOP"
 
         # 7 - TOP - LEFT
@@ -1675,30 +1639,36 @@ class PieAlign(Menu):
         column = box.column(align=True)
 
         row = column.split(factor=0.2, align=True)
-        # row.label(text="Zero")
-        row.label(icon="FREEZE")
-
-        r = row.row(align=True)
-        r.scale_y = 1.2
-        op = r.operator("machin3.align_editmesh", text="Horizontal")
-        op.type = "ZERO"
-        op.direction = "HORIZONTAL"
-        op = r.operator("machin3.align_editmesh", text="Vertical")
-        op.type = "ZERO"
-        op.direction = "VERTICAL"
-
-        row = column.split(factor=0.2, align=True)
         # row.label(text="Average")
         row.label(icon="ARROW_LEFTRIGHT")
 
         r = row.row(align=True)
         row.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="Horizontal")
+        op.mode = "VIEW"
         op.type = "AVERAGE"
         op.direction = "HORIZONTAL"
         op = r.operator("machin3.align_editmesh", text="Vertical")
+        op.mode = "VIEW"
         op.type = "AVERAGE"
         op.direction = "VERTICAL"
+
+
+        row = column.split(factor=0.2, align=True)
+        # row.label(text="Zero")
+        row.label(icon="FREEZE")
+
+        r = row.row(align=True)
+        r.scale_y = 1.2
+        op = r.operator("machin3.align_editmesh", text="Horizontal")
+        op.mode = "VIEW"
+        op.type = "ZERO"
+        op.direction = "HORIZONTAL"
+        op = r.operator("machin3.align_editmesh", text="Vertical")
+        op.mode = "VIEW"
+        op.type = "ZERO"
+        op.direction = "VERTICAL"
+
 
         row = column.split(factor=0.2, align=True)
         # row.label(text="Cursor")
@@ -1707,9 +1677,11 @@ class PieAlign(Menu):
         r = row.row(align=True)
         row.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="Horizontal")
+        op.mode = "VIEW"
         op.type = "CURSOR"
         op.direction = "HORIZONTAL"
         op = r.operator("machin3.align_editmesh", text="Vertical")
+        op.mode = "VIEW"
         op.type = "CURSOR"
         op.direction = "VERTICAL"
 
@@ -2149,7 +2121,6 @@ class PieCollections(Menu):
         sel = context.selected_objects
         active = context.active_object
 
-        grouppro, _, _, _ = get_addon("Group Pro")
         batchops, _, _, _ = get_addon("Batch Operations™")
         decalmachine, _, _, _ = get_addon("DECALmachine")
 
@@ -2244,10 +2215,6 @@ class PieCollections(Menu):
         box = column.box()
         self.draw_left_top_column(context, box)
 
-        if grouppro:
-            box = column.box()
-            self.draw_left_bottom_column(context, box)
-
 
         # MIDDLE
 
@@ -2314,20 +2281,6 @@ class PieCollections(Menu):
         row = column.row()
         row.scale_y = 1.5
         row.operator("machin3.purge_collections", text="Purge", icon='MONKEY')
-
-    def draw_left_bottom_column(self, context, layout):
-        m3 = context.scene.M3
-
-        column = layout.column()
-
-        column.label(text="GroupPro")
-
-        row = column.row()
-        row.prop(m3, "grouppro_dotnames", text=".hide", icon_only=True)
-        row.operator("object.gpro_cleanup", text="Cleanup")
-
-        row = column.row()
-        row.operator("machin3.sort_grouppro_groups", text="Sort Groups")
 
     def draw_center_column(self, context, batchops, sel, collections, layout):
         if sel:
@@ -2595,7 +2548,7 @@ class PieTools(Menu):
             # 8 - TOP
             if 'builtin.select_box' in tools:
                 if hypercursor:
-                    active_tool = get_active_tool(context)
+                    active_tool = get_active_tool(context).idname
 
                     # set the last used hyper cursor tool
                     if 'machin3.tool_hyper_cursor' in active_tool:

@@ -91,8 +91,8 @@ class Mirror(bpy.types.Operator):
         self.dm = decalmachine
 
         active = context.active_object
-        active_tool = get_active_tool(context)
-        self.cursor = hypercursor and 'machin3.tool_hyper_cursor' in active_tool
+        # active_tool = get_active_tool(context).idname
+        # self.cursor = hypercursor and 'machin3.tool_hyper_cursor' in active_tool
 
         self.sel = context.selected_objects
         self.meshes_present = True if any([obj for obj in self.sel if obj.type == 'MESH']) else False

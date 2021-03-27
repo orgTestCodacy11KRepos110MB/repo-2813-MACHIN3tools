@@ -26,7 +26,7 @@ def get_tools_from_context(context):
 
 
 def get_active_tool(context):
-    return view3d_tools.tool_active_from_context(context).idname
+    return view3d_tools.tool_active_from_context(context)
 
 
 def get_tool_options(context, tool_idname, operator_idname):

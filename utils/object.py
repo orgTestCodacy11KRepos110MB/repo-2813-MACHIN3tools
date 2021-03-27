@@ -131,11 +131,33 @@ def set_obj_origin(obj, mx, bm=None, decalmachine=False, meshmachine=False):
         # the following originally immitated stash retrieval and then re-creation, it just chained both events together. this could then be simplifed further and further. setting stash.obj.matrix_world is optional
         for stash in obj.MM.stashes:
 
-            # stashmx in stashtargetmx's local space, aka the stash difference matrix(which is all that's actually needed for stashes, just like for decal backups)
-            stashdeltamx = stash.obj.MM.stashtargetmx.inverted() @ stash.obj.MM.stashmx
+            # MEShmachine 0.7 uses a delta and orphan matrix
+            if getattr(stash, 'version', False) and float('.'.join([v for v in stash.version.split('.')[:2]])) >= 0.7:
+                stashdeltamx = stash.obj.MM.stashdeltamx
+
+                stash.obj.MM.stashdeltamx = flatten_matrix(deltamx @ stashdeltamx)
+                stash.obj.MM.stashorphanmx = flatten_matrix(mx)
+
+                # for self stashes, cange the stash obj origin in the same way as it was chaged for the main object
+                # NOTE: this seems to work, it properly changes the origin of the stash object in the same way
+                # ####: however the stash is drawn in and retrieved in the wrong location, in the pre-origin change location
+                # ####: you can then align it properly, but why would it not be drawing and retrieved properly??
+
+                # if stash.self_stash:
+                    # stash.obj.matrix_world = mx
+                    # stash.obj.data.transform(deltamx)
+                    # stash.obj.data.update()
+
+                # just disable self_stashes until you get this sorted
+                stash.self_stash = False
+
+            # older versions use the stashmx and targetmx
+            else:
+                # stashmx in stashtargetmx's local space, aka the stash difference matrix(which is all that's actually needed for stashes, just like for decal backups)
+                stashdeltamx = stash.obj.MM.stashtargetmx.inverted() @ stash.obj.MM.stashmx
+
+                stash.obj.MM.stashmx = flatten_matrix(omx @ stashdeltamx)
+                stash.obj.MM.stashtargetmx = flatten_matrix(mx)
 
             stash.obj.data.transform(deltamx)
             stash.obj.matrix_world = mx
-
-            stash.obj.MM.stashmx = flatten_matrix(omx @ stashdeltamx)
-            stash.obj.MM.stashtargetmx = flatten_matrix(mx)

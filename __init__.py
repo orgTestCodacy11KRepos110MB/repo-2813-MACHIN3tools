@@ -1,7 +1,7 @@
 bl_info = {
     "name": "MACHIN3tools",
     "author": "MACHIN3",
-    "version": (0, 6, 0),
+    "version": (0, 7, 0),
     "blender": (2, 83, 0),
     "location": "",
     "description": "Streamlining Blender 2.83 and beyond.",
@@ -72,7 +72,7 @@ if 'bpy' in locals():
     reload_modules(bl_info['name'])
 
 import bpy
-from bpy.props import PointerProperty, BoolProperty
+from bpy.props import PointerProperty
 from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, register_msgbus, unregister_msgbus
@@ -194,4 +194,4 @@ def unregister():
 
     unregister_icons(icons)
 
-    print("Unregistered %s %s." % (bl_info["name"], ".".join([str(i) for i in bl_info['version']])))
+    print(f"Unregistered {bl_info['name']} {'.'.join([str(i) for i in bl_info['version']])}.")

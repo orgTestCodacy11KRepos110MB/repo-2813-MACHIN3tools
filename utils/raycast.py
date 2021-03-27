@@ -121,3 +121,53 @@ def cast_obj_ray_from_mouse(mousepos, depsgraph=None, candidates=None, debug=Fal
         return hitobj, hitobj_eval, hitlocation, hitnormal, hitindex, hitdistance
 
     return None, None, None, None, None, None
+
+
+# CLOSEST POINT ON MESH
+
+def get_closest(origin, candidates=[], depsgraph=None, debug=False):
+    nearestobj = None
+    nearestlocation = None
+    nearestnormal = None
+    nearestindex = None
+    nearestdistance = sys.maxsize
+
+    if not candidates:
+        candidates = bpy.context.visible_objects
+
+    objects = [obj for obj in candidates if obj.type == 'MESH']
+
+    for obj in objects:
+        mx = obj.matrix_world
+
+        origin_local = mx.inverted_safe() @ origin
+
+        # as a safety meassure, only get the closets when the evaluated mesh actually has faces
+        obj_eval = obj.evaluated_get(depsgraph)
+
+        if obj_eval.data.polygons:
+            # location, normal, index, distance = bvh.find_nearest(origin_local)
+            success, location, normal, index = obj.closest_point_on_mesh(origin_local, depsgraph=depsgraph)
+
+            # NOTE: should this be run on the evaluated mesh instead? see crash/freeze issues in create_panel_decal_from_edges() in EPanel()
+            # success, location, normal, index = target_eval.closest_point_on_mesh(origin_local)
+
+            distance = (mx @ location - origin).length if success else sys.maxsize
+
+            if debug:
+                print("candidate:", success, obj, location, normal, index, distance)
+
+            if distance is not None and distance < nearestdistance:
+                nearestobj, nearestlocation, nearestnormal, nearestindex, nearestdistance = obj, mx @ location, mx.to_3x3() @ normal, index, distance
+
+        elif debug:
+                print("candidate:", "%s's evaluated mesh contains no faces" % (obj))
+
+
+    if debug:
+        print("best hit:", nearestobj, nearestlocation, nearestnormal, nearestindex, nearestdistance)
+
+    if nearestobj:
+        return nearestobj, nearestobj.evaluated_get(depsgraph), nearestlocation, nearestnormal, nearestindex, nearestdistance
+
+    return None, None, None, None, None, None

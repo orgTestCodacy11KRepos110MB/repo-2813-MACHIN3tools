@@ -1,9 +1,10 @@
 import bpy
-from bpy.props import IntProperty, StringProperty, CollectionProperty, BoolProperty, EnumProperty, FloatProperty
+from bpy.props import IntProperty, StringProperty, CollectionProperty, BoolProperty, EnumProperty, FloatProperty, FloatVectorProperty
 import os
 from . properties import AppendMatsCollection
 from . utils.ui import get_icon, draw_keymap_items
 from . utils.registration import activate, get_path, get_name
+from . items import matcap_background_type_items
 
 
 preferences_tabs = [("GENERAL", "General", ""),
@@ -196,11 +197,20 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     switchmatcap1: StringProperty(name="Matcap 1", update=update_switchmatcap1)
     switchmatcap2: StringProperty(name="Matcap 2", update=update_switchmatcap2)
     matcap2_force_single: BoolProperty(name="Force Single Color Shading for Matcap 2", default=True)
+    matcap2_disable_overlays: BoolProperty(name="Disable Overlays for Matcap 2", default=True)
+
+    matcap_switch_background: BoolProperty(name="Switch Background too", default=False)
+    matcap1_switch_background_type: EnumProperty(name="Matcap 1 Background Type", items=matcap_background_type_items, default="THEME")
+    matcap1_switch_background_viewport_color: FloatVectorProperty(name="Matcap 1 Background Color", subtype='COLOR', default=[0.05, 0.05, 0.05], size=3, min=0, max=1)
+
+    matcap2_switch_background_type: EnumProperty(name="Matcap 2 Background Type", items=matcap_background_type_items, default="THEME")
+    matcap2_switch_background_viewport_color: FloatVectorProperty(name="Matcap 2 Background Color", subtype='COLOR', default=[0.05, 0.05, 0.05], size=3, min=0, max=1)
 
     obj_mode_rotate_around_active: BoolProperty(name="Rotate Around Selection, but only in Object Mode", default=False)
     custom_views_use_trackball: BoolProperty(name="Force Trackball Navigation when using Custom Views", default=True)
     custom_views_set_transform_preset: BoolProperty(name="Set Transform Preset when using Custom Views", default=True)
     custom_views_toggle_axes_drawing: BoolProperty(name="Toggle Custom View Axes Drawing", default=True)
+    show_orbit_selection: BoolProperty(name="Show Orbit around Active", default=True)
     show_orbit_method: BoolProperty(name="Show Orbit Method Selection", default=True)
 
     cursor_show_to_grid: BoolProperty(name="Show Cursor and Selected to Grid", default=False)
@@ -657,8 +667,31 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             row.prop(self, "switchmatcap2")
 
             row = column.split(factor=0.5)
-            row.separator()
-            row.prop(self, "matcap2_force_single")
+            row.prop(self, "matcap_switch_background")
+
+            col = row.column()
+            col.prop(self, "matcap2_force_single")
+            col.prop(self, "matcap2_disable_overlays")
+
+            if self.matcap_switch_background:
+                row = column.row()
+                row.prop(self, "matcap1_switch_background_type", expand=True)
+                row.prop(self, "matcap2_switch_background_type", expand=True)
+
+                if any([bg == 'VIEWPORT' for bg in [self.matcap1_switch_background_type, self.matcap2_switch_background_type]]):
+                    row = column.split(factor=0.5)
+
+                    if self.matcap1_switch_background_type == 'VIEWPORT':
+                        row.prop(self, "matcap1_switch_background_viewport_color", text='')
+
+                    else:
+                        row.separator()
+
+                    if self.matcap2_switch_background_type == 'VIEWPORT':
+                        row.prop(self, "matcap2_switch_background_viewport_color", text='')
+
+                    else:
+                        row.separator()
 
 
         # VIEWPORT PIE
@@ -676,6 +709,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             if self.activate_shading_pie:
                 column.prop(self, "custom_views_toggle_axes_drawing")
 
+            column.prop(self, "show_orbit_selection")
             column.prop(self, "show_orbit_method")
 
 

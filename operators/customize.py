@@ -624,6 +624,39 @@ class Customize(bpy.types.Operator):
                     print("  Deactivated", kmi_to_string(kmi))
                     kmi.active = False
 
+
+
+            # NODE EDITOR
+
+            km = kc.keymaps.get("Node Editor")
+            print("\n Node Editor Keymap")
+
+            for kmi in km.keymap_items:
+                if kmi.idname == "node.links_cut" and kmi.type == 'EVT_TWEAK_L':
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.type = 'EVT_TWEAK_R'
+                    print("       to", kmi_to_string(kmi))
+
+            for kmi in km.keymap_items:
+                if kmi.idname == "node.add_reroute":
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.type = 'EVT_TWEAK_R'
+                    print("       to", kmi_to_string(kmi))
+
+
+            # FILE BROWSER
+
+            km = kc.keymaps.get("File Browser")
+            print("\n File Browser Keymap")
+
+            for kmi in km.keymap_items:
+                if kmi.idname == "file.start_filter":
+                    print("  Changed", kmi_to_string(kmi))
+                    kmi.type = 'SLASH'
+                    kmi.ctrl = False
+                    print("       to", kmi_to_string(kmi))
+
+
         def add_keymaps(kc):
             '''
             add new keymap items
@@ -730,7 +763,7 @@ class Customize(bpy.types.Operator):
             keyconfigpath = bpy.utils.preset_paths(subdir='keyconfig')
 
             if keyconfigpath:
-                keymappath = os.path.join(keyconfigpath[0], "blender_27x.py")
+                keymappath = os.path.join(keyconfigpath[0], f"{'b' if bpy.app.version < (2, 93, 0) else 'B'}lender_27x.py")
 
                 print(" Set 2.7X keymap")
                 bpy.ops.preferences.keyconfig_activate(filepath=keymappath)

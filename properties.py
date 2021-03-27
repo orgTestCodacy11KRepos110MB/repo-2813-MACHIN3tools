@@ -292,7 +292,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             context.preferences.inputs.view_rotate_method = 'TRACKBALL' if self.custom_views_cursor else 'TURNTABLE'
 
         # only actually set the transform preset and draw the cursor axis if hyper cursor tools aren't active
-        if 'machin3.tool_hyper_cursor' not in get_active_tool(context):
+        if 'machin3.tool_hyper_cursor' not in get_active_tool(context).idname:
 
             # set transform preset
             if get_prefs().activate_transform_pie and get_prefs().custom_views_set_transform_preset:

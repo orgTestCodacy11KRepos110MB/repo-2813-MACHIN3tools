@@ -18,13 +18,17 @@ class SetToolByName(bpy.types.Operator):
     def execute(self, context):
 
         # re-enable the cursor if switching away from the simple hyper cursor
-        active_tool = get_active_tool(context)
+        active_tool = get_active_tool(context).idname
 
         if active_tool == 'machin3.tool_hyper_cursor_simple':
             context.space_data.overlay.show_cursor = True
 
         # switch to the passed in tool
         bpy.ops.wm.tool_set_by_id(name=self.name)
+
+        # ensure hyper cursor gizmos are actually shown
+        if 'machin3.tool_hyper_cursor' in self.name:
+            context.scene.HC.show_gizmos = True
 
         # draw a prettified version of the new tool in a fading HUD
         name = self.prettify(self.name)

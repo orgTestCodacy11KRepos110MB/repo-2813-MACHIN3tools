@@ -26,7 +26,7 @@ class EditMode(bpy.types.Operator):
         sync_tools = get_prefs().sync_tools
 
         if sync_tools:
-            active_tool = get_active_tool(context)
+            active_tool = get_active_tool(context).idname
 
         if context.mode == "OBJECT":
             set_xray(context)
@@ -76,7 +76,7 @@ class MeshMode(bpy.types.Operator):
         if context.mode == "OBJECT":
             set_xray(context)
 
-            active_tool = get_active_tool(context) if get_prefs().sync_tools else None
+            active_tool = get_active_tool(context).idname if get_prefs().sync_tools else None
 
             bpy.ops.object.mode_set(mode="EDIT")
 
@@ -176,25 +176,51 @@ class SurfaceDrawMode(bpy.types.Operator):
 
         update_local_view(view, [(gp, True)])
 
-        gp.data.layers.new(name="SurfaceLayer")
+        # create a new layer and set it to multply, multiply actuall results in a dark gpencil in sold shading, otherwise it would be bright, even with a black material
+        layer = gp.data.layers.new(name="SurfaceLayer")
+        layer.blend_mode = 'MULTIPLY'
 
         context.view_layer.objects.active = gp
         active.select_set(False)
         gp.select_set(True)
 
+        # set object color to black
         gp.color = (0, 0, 0, 1)
 
+        # create black gp mat and append it, look for existing one to avoid duplicates
+        blacks = [mat for mat in bpy.data.materials if mat.name == 'Black' and mat.is_grease_pencil]
+        mat = blacks[0] if blacks else bpy.data.materials.new(name='Black')
+
+        bpy.data.materials.create_gpencil_data(mat)
+        gp.data.materials.append(mat)
+
+        # go into gp draw mode
         bpy.ops.object.mode_set(mode='PAINT_GPENCIL')
 
-        # surface placement
+        # setup surface drawing
         ts.gpencil_stroke_placement_view3d = 'SURFACE'
-        gp.data.zdepth_offset = 0.0001
+
+        # note that dis value is not absulate and oddly depends on the view to object distance
+        gp.data.zdepth_offset = 0.01
+
+        # set the strength to 1, vs the defautl 0.6, making strokes transparent
+        ts.gpencil_paint.brush.gpencil_settings.pen_strength = 1
 
         if not view.show_region_toolbar:
             view.show_region_toolbar = True
 
+        # add opacity and thickness mods
+        opacity = gp.grease_pencil_modifiers.new(name="Opacity", type="GP_OPACITY")
+        opacity.show_expanded = False
+        thickness = gp.grease_pencil_modifiers.new(name="Thickness", type="GP_THICK")
+        thickness.show_expanded = False
+
         # optionally select the line tool
         if event.shift:
             bpy.ops.wm.tool_set_by_id(name="builtin.line")
+
+        # by default pick the brush
+        else:
+            bpy.ops.wm.tool_set_by_id(name="builtin_brush.Draw")
 
         return {'FINISHED'}
