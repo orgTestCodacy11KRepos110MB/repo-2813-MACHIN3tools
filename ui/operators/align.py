@@ -3,7 +3,7 @@ from bpy.props import EnumProperty, BoolProperty
 import bmesh
 from mathutils import Vector, Matrix, geometry
 from ... utils.math import get_center_between_verts, create_rotation_difference_matrix_from_quat, get_loc_matrix, create_selection_bbox, get_right_and_up_axes
-from ... items import axis_items, align_type_items, axis_mapping_dict, align_direction_items, align_orientation_items
+from ... items import axis_items, align_type_items, axis_mapping_dict, align_direction_items, align_orientation_items, align_mode_items
 from ... utils.selection import get_selected_vert_sequences
 from ... utils.ui import popup_message
 
@@ -14,12 +14,15 @@ class AlignEditMesh(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Local Space Align\nALT: World Space Align\nCTRL: Cursor Space Align"
 
-    type: EnumProperty(name="Type", items=align_type_items, default="MINMAX")
+    mode: EnumProperty(name="Mode", items=align_mode_items, default="VIEW")
+    type: EnumProperty(name="Type", items=align_type_items, default="MIN")
 
     axis: EnumProperty(name="Axis", items=axis_items, default="X")
     direction: EnumProperty(name="Axis", items=align_direction_items, default="LEFT")
 
     orientation: EnumProperty(name="Orientation", items=align_orientation_items, default="LOCAL")
+
+    each: BoolProperty(name="Align Each Island independently", default=False)
 
     @classmethod
     def poll(cls, context):
@@ -28,38 +31,81 @@ class AlignEditMesh(bpy.types.Operator):
             bm = bmesh.from_edit_mesh(active.data)
             return [v for v in bm.verts if v.select]
 
+    def draw(self, context):
+        layout = self.layout
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.prop(self, 'orientation', expand=True)
+
+        row = column.row(align=True)
+        row.prop(self, 'axis', expand=True)
+
+        row = column.row(align=True)
+        row.prop(self, 'type', expand=True)
+
+
+        # column.prop(self, 'each', text='Align Each', toggle=True)
+
     def invoke(self, context, event):
         if event.alt and event.ctrl:
             popup_message("Hold down ATL, CTRL or neither, not both!", title="Invalid Modifier Keys")
             return {'CANCELLED'}
 
+        # set orientation based on modifier keys
         self.orientation = 'WORLD' if event.alt else 'CURSOR' if event.ctrl else 'LOCAL'
 
-        self.align(context, self.type, axis_mapping_dict[self.axis], self.direction, self.orientation)
+        # in VIEW mode the axis is calculated from from viewport direction given in the pie
+        if self.mode == 'VIEW':
+            axis_right, axis_up, flip_right, flip_up = get_right_and_up_axes(context, mx=self.get_matrix(context))
+
+            if type in ['ZERO', 'AVERAGE', 'CURSOR'] and self.direction in ['HORIZONTAL', 'VERTICAL']:
+                axis = axis_right if self.direction == "HORIZONTAL" else axis_up
+
+            elif self.direction in ['LEFT', 'RIGHT', 'TOP', 'BOTTOM']:
+                axis = axis_right if self.direction in ['RIGHT', 'LEFT'] else axis_up
+
+                # set the alignment type based on the directions
+                if self.direction == 'RIGHT':
+                    self.type = 'MIN' if flip_right else 'MAX'
+
+                elif self.direction == 'LEFT':
+                    self.type = 'MAX' if flip_right else 'MIN'
+
+                elif self.direction == 'TOP':
+                    self.type = 'MIN' if flip_up else 'MAX'
+
+                elif self.direction == 'BOTTOM':
+                    self.type = 'MAX' if flip_up else 'MIN'
+
+            # invalid combination of props
+            else:
+                return {'CANCELLED'}
+
+            # set the axis prop
+            self.axis = 'X' if axis == 0 else 'Y' if axis == 1 else 'Z'
+
+        return self.execute(context)
+
+    def execute(self, context):
+        self.align(context, self.type, axis_mapping_dict[self.axis], self.orientation)
         return {'FINISHED'}
 
-    def align(self, context, type, axis, direction, orientation):
+    def align(self, context, type, axis, orientation):
+        '''
+        align selected verts based on alignment type, axis and orientation
+        '''
         active = context.active_object
-
-        mx = active.matrix_world if orientation == 'LOCAL' else context.scene.cursor.matrix if orientation == 'CURSOR' else Matrix()
-
-        mode = context.scene.M3.align_mode
-
-        # in VIEW mode the axis is calculated from from viewport direction giving in the pie
-        if mode == 'VIEW':
-            axis_right, axis_up, flip_right, flip_up = get_right_and_up_axes(context, mx=mx)
-
-            if type == 'MINMAX':
-                axis = axis_right if direction in ['RIGHT', 'LEFT'] else axis_up
-
-            elif type in ['ZERO', 'AVERAGE', 'CURSOR']:
-                axis = axis_right if direction == "HORIZONTAL" else axis_up
+        mx = self.get_matrix(context)
 
         bm = bmesh.from_edit_mesh(active.data)
         bm.normal_update()
         bm.verts.ensure_lookup_table()
 
         verts = [v for v in bm.verts if v.select]
+
+
+        # AXIS COORDS
 
         # axis coordinates in local space
         if orientation == 'LOCAL':
@@ -73,33 +119,22 @@ class AlignEditMesh(bpy.types.Operator):
         elif orientation == 'CURSOR':
             axiscoords = [(mx.inverted_safe() @ active.matrix_world @ v.co)[axis] for v in verts]
 
+
+        # TARGET VALUE
+
         # get min or max target value
-        if type == "MIN":
+        if self.type == "MIN":
             target = min(axiscoords)
 
-        elif type == "MAX":
+        elif self.type == "MAX":
             target = max(axiscoords)
 
-        # min or max in VIEW mode
-        elif type == 'MINMAX':
-            if direction == 'RIGHT':
-                target = min(axiscoords) if flip_right else max(axiscoords)
-
-            elif direction == 'LEFT':
-                target = max(axiscoords) if flip_right else min(axiscoords)
-
-            elif direction == 'TOP':
-                target = min(axiscoords) if flip_up else max(axiscoords)
-
-            elif direction == 'BOTTOM':
-                target = max(axiscoords) if flip_up else min(axiscoords)
-
         # get the zero target value
-        elif type == "ZERO":
+        elif self.type == "ZERO":
             target = 0
 
         # get the average target value
-        elif type == "AVERAGE":
+        elif self.type == "AVERAGE":
             target = sum(axiscoords) / len(axiscoords)
 
         # get cursor target value
@@ -114,6 +149,9 @@ class AlignEditMesh(bpy.types.Operator):
 
             elif orientation == 'CURSOR':
                 target = 0
+
+
+        # ALIGN
 
         # set the new coordinates
         for v in verts:
@@ -142,6 +180,13 @@ class AlignEditMesh(bpy.types.Operator):
 
         bm.normal_update()
         bmesh.update_edit_mesh(active.data)
+
+    def get_matrix(self, context):
+        '''
+        return matrix based on orientation
+        '''
+        mx = context.active_object.matrix_world if self.orientation == 'LOCAL' else context.scene.cursor.matrix if self.orientation == 'CURSOR' else Matrix()
+        return mx
 
 
 class CenterEditMesh(bpy.types.Operator):

@@ -46,7 +46,6 @@ align_mode_items = [('VIEW', 'View', ''),
 
 align_type_items = [('MIN', 'Min', ''),
                     ('MAX', 'Max', ''),
-                    ('MINMAX', 'Min/Max', ''),
                     ('ZERO', 'Zero', ''),
                     ('AVERAGE', 'Average', ''),
                     ('CURSOR', 'Cursor', '')]

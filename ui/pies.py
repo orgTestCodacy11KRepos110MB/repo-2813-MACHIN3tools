@@ -1431,11 +1431,13 @@ class PieAlign(Menu):
 
         # 4 - LEFT
         op = pie.operator("machin3.align_editmesh", text="Y min")
+        op.mode = "AXES"
         op.axis = "Y"
         op.type = "MIN"
 
         # 6 - RIGHT
         op = pie.operator("machin3.align_editmesh", text="Y max")
+        op.mode = "AXES"
         op.axis = "Y"
         op.type = "MAX"
 
@@ -1480,12 +1482,15 @@ class PieAlign(Menu):
         r = row.row(align=True)
         r.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="X")
+        op.mode = "AXES"
         op.axis = "X"
         op.type = "ZERO"
         op = r.operator("machin3.align_editmesh", text="Y")
+        op.mode = "AXES"
         op.axis = "Y"
         op.type = "ZERO"
         op = r.operator("machin3.align_editmesh", text="Z")
+        op.mode = "AXES"
         op.axis = "Z"
         op.type = "ZERO"
 
@@ -1495,12 +1500,15 @@ class PieAlign(Menu):
         r = row.row(align=True)
         r.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="X")
+        op.mode = "AXES"
         op.axis = "X"
         op.type = "AVERAGE"
         op = r.operator("machin3.align_editmesh", text="Y")
+        op.mode = "AXES"
         op.axis = "Y"
         op.type = "AVERAGE"
         op = r.operator("machin3.align_editmesh", text="Z")
+        op.mode = "AXES"
         op.axis = "Z"
         op.type = "AVERAGE"
 
@@ -1510,12 +1518,15 @@ class PieAlign(Menu):
         r = row.row(align=True)
         r.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="X")
+        op.mode = "AXES"
         op.axis = "X"
         op.type = "CURSOR"
         op = r.operator("machin3.align_editmesh", text="Y")
+        op.mode = "AXES"
         op.axis = "Y"
         op.type = "CURSOR"
         op = r.operator("machin3.align_editmesh", text="Z")
+        op.mode = "AXES"
         op.axis = "Z"
         op.type = "CURSOR"
 
@@ -1532,21 +1543,25 @@ class PieAlign(Menu):
 
         # 7 - TOP - LEFT
         op = pie.operator("machin3.align_editmesh", text="X min")
+        op.mode = "AXES"
         op.axis = "X"
         op.type = "MIN"
 
         # 9 - TOP - RIGHT
         op = pie.operator("machin3.align_editmesh", text="X max")
+        op.mode = "AXES"
         op.axis = "X"
         op.type = "MAX"
 
         # 1 - BOTTOM - LEFT
         op = pie.operator("machin3.align_editmesh", text="Z min")
+        op.mode = "AXES"
         op.axis = "Z"
         op.type = "MIN"
 
         # 3 - BOTTOM - RIGHT
         op = pie.operator("machin3.align_editmesh", text="Z max")
+        op.mode = "AXES"
         op.axis = "Z"
         op.type = "MAX"
 
@@ -1557,22 +1572,22 @@ class PieAlign(Menu):
 
         # 4 - LEFT
         op = pie.operator("machin3.align_editmesh", text="Left")
-        op.type = "MINMAX"
+        op.mode = "VIEW"
         op.direction = "LEFT"
 
         # 6 - RIGHT
         op = pie.operator("machin3.align_editmesh", text="Right")
-        op.type = "MINMAX"
+        op.mode = "VIEW"
         op.direction = "RIGHT"
 
         # 2 - BOTTOM
         op = pie.operator("machin3.align_editmesh", text="Bottom")
-        op.type = "MINMAX"
+        op.mode = "VIEW"
         op.direction = "BOTTOM"
 
         # 2 - TOP
         op = pie.operator("machin3.align_editmesh", text="Top")
-        op.type = "MINMAX"
+        op.mode = "VIEW"
         op.direction = "TOP"
 
         # 7 - TOP - LEFT
@@ -1630,9 +1645,11 @@ class PieAlign(Menu):
         r = row.row(align=True)
         r.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="Horizontal")
+        op.mode = "VIEW"
         op.type = "ZERO"
         op.direction = "HORIZONTAL"
         op = r.operator("machin3.align_editmesh", text="Vertical")
+        op.mode = "VIEW"
         op.type = "ZERO"
         op.direction = "VERTICAL"
 
@@ -1643,9 +1660,11 @@ class PieAlign(Menu):
         r = row.row(align=True)
         row.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="Horizontal")
+        op.mode = "VIEW"
         op.type = "AVERAGE"
         op.direction = "HORIZONTAL"
         op = r.operator("machin3.align_editmesh", text="Vertical")
+        op.mode = "VIEW"
         op.type = "AVERAGE"
         op.direction = "VERTICAL"
 
@@ -1656,9 +1675,11 @@ class PieAlign(Menu):
         r = row.row(align=True)
         row.scale_y = 1.2
         op = r.operator("machin3.align_editmesh", text="Horizontal")
+        op.mode = "VIEW"
         op.type = "CURSOR"
         op.direction = "HORIZONTAL"
         op = r.operator("machin3.align_editmesh", text="Vertical")
+        op.mode = "VIEW"
         op.type = "CURSOR"
         op.direction = "VERTICAL"
 
