@@ -1425,9 +1425,9 @@ class PieAlign(Menu):
             self.draw_align_with_view(pie, m3, sel)
 
     def draw_align_with_axes(self, pie, m3, sel):
-        """
+        '''
         draw alignment options with axes as inputs
-        """
+        '''
 
         # 4 - LEFT
         op = pie.operator("machin3.align_editmesh", text="Y min")
@@ -1478,24 +1478,6 @@ class PieAlign(Menu):
         column = box.column()
 
         row = column.split(factor=0.2)
-        row.label(icon="FREEZE")
-        r = row.row(align=True)
-        r.scale_y = 1.2
-        op = r.operator("machin3.align_editmesh", text="X")
-        op.mode = "AXES"
-        op.axis = "X"
-        op.type = "ZERO"
-        op = r.operator("machin3.align_editmesh", text="Y")
-        op.mode = "AXES"
-        op.axis = "Y"
-        op.type = "ZERO"
-        op = r.operator("machin3.align_editmesh", text="Z")
-        op.mode = "AXES"
-        op.axis = "Z"
-        op.type = "ZERO"
-
-
-        row = column.split(factor=0.2)
         row.label(icon="ARROW_LEFTRIGHT")
         r = row.row(align=True)
         r.scale_y = 1.2
@@ -1511,6 +1493,24 @@ class PieAlign(Menu):
         op.mode = "AXES"
         op.axis = "Z"
         op.type = "AVERAGE"
+
+
+        row = column.split(factor=0.2)
+        row.label(icon="FREEZE")
+        r = row.row(align=True)
+        r.scale_y = 1.2
+        op = r.operator("machin3.align_editmesh", text="X")
+        op.mode = "AXES"
+        op.axis = "X"
+        op.type = "ZERO"
+        op = r.operator("machin3.align_editmesh", text="Y")
+        op.mode = "AXES"
+        op.axis = "Y"
+        op.type = "ZERO"
+        op = r.operator("machin3.align_editmesh", text="Z")
+        op.mode = "AXES"
+        op.axis = "Z"
+        op.type = "ZERO"
 
 
         row = column.split(factor=0.2)
@@ -1566,9 +1566,9 @@ class PieAlign(Menu):
         op.type = "MAX"
 
     def draw_align_with_view(self, pie, m3, sel):
-        """
+        '''
         draw align alignment options using directions in the view as inputs
-        """
+        '''
 
         # 4 - LEFT
         op = pie.operator("machin3.align_editmesh", text="Left")
@@ -1639,6 +1639,22 @@ class PieAlign(Menu):
         column = box.column(align=True)
 
         row = column.split(factor=0.2, align=True)
+        # row.label(text="Average")
+        row.label(icon="ARROW_LEFTRIGHT")
+
+        r = row.row(align=True)
+        row.scale_y = 1.2
+        op = r.operator("machin3.align_editmesh", text="Horizontal")
+        op.mode = "VIEW"
+        op.type = "AVERAGE"
+        op.direction = "HORIZONTAL"
+        op = r.operator("machin3.align_editmesh", text="Vertical")
+        op.mode = "VIEW"
+        op.type = "AVERAGE"
+        op.direction = "VERTICAL"
+
+
+        row = column.split(factor=0.2, align=True)
         # row.label(text="Zero")
         row.label(icon="FREEZE")
 
@@ -1653,20 +1669,6 @@ class PieAlign(Menu):
         op.type = "ZERO"
         op.direction = "VERTICAL"
 
-        row = column.split(factor=0.2, align=True)
-        # row.label(text="Average")
-        row.label(icon="ARROW_LEFTRIGHT")
-
-        r = row.row(align=True)
-        row.scale_y = 1.2
-        op = r.operator("machin3.align_editmesh", text="Horizontal")
-        op.mode = "VIEW"
-        op.type = "AVERAGE"
-        op.direction = "HORIZONTAL"
-        op = r.operator("machin3.align_editmesh", text="Vertical")
-        op.mode = "VIEW"
-        op.type = "AVERAGE"
-        op.direction = "VERTICAL"
 
         row = column.split(factor=0.2, align=True)
         # row.label(text="Cursor")

@@ -3,9 +3,10 @@
 # SORTING
 
 def get_selected_vert_sequences(verts, ensure_seq_len=False, debug=False):
-    """
+    '''
     return sorted lists of vertices, where vertices are considered connected if their edges are selected, and faces are not selected
-    """
+    '''
+
     sequences = []
 
     # if edge loops are non-cyclic, it matters at what vert you start the sorting
@@ -130,6 +131,66 @@ def get_edges_vert_sequences(verts, edges, debug=False):
 
 
 # REGIONS
+
+def get_selection_islands(faces, debug=False):
+    '''
+    return island tuples (verts, edges, faces), sorted by amount of faces in each, highest first
+    '''
+
+    if debug:
+        print("selected:", [f.index for f in faces])
+
+    face_islands = []
+
+    while faces:
+        island = [faces[0]]
+        foundmore = [faces[0]]
+
+        if debug:
+            print("island:", [f.index for f in island])
+            print("foundmore:", [f.index for f in foundmore])
+
+        while foundmore:
+            for e in foundmore[0].edges:
+                # get unseen selected border faces
+                bf = [f for f in e.link_faces if f.select and f not in island]
+                if bf:
+                    island.append(bf[0])
+                    foundmore.append(bf[0])
+
+            if debug:
+                print("popping", foundmore[0].index)
+
+            foundmore.pop(0)
+
+        face_islands.append(island)
+
+        for f in island:
+            faces.remove(f)
+
+    if debug:
+        print()
+        for idx, island in enumerate(face_islands):
+            print("island:", idx)
+            print(" » ", ", ".join([str(f.index) for f in island]))
+
+
+    islands = []
+
+    for fi in face_islands:
+        vi = set()
+        ei = set()
+
+        for f in fi:
+            vi.update(f.verts)
+            ei.update(f.edges)
+
+            # f.select = False
+
+        islands.append((list(vi), list(ei), fi))
+
+    return sorted(islands, key=lambda x: len(x[2]), reverse=True)
+
 
 def get_boundary_edges(faces, region_to_loop=False):
     """

@@ -46,8 +46,8 @@ align_mode_items = [('VIEW', 'View', ''),
 
 align_type_items = [('MIN', 'Min', ''),
                     ('MAX', 'Max', ''),
-                    ('ZERO', 'Zero', ''),
                     ('AVERAGE', 'Average', ''),
+                    ('ZERO', 'Zero', ''),
                     ('CURSOR', 'Cursor', '')]
 
 align_direction_items = [('LEFT', 'Left', ''),
@@ -57,9 +57,9 @@ align_direction_items = [('LEFT', 'Left', ''),
                          ('HORIZONTAL', 'Horizontal', ''),
                          ('VERTICAL', 'Vertical', '')]
 
-align_orientation_items = [('LOCAL', 'Local', ''),
-                           ('WORLD', 'World', ''),
-                           ('CURSOR', 'Cursor', '')]
+align_space_items = [('LOCAL', 'Local', ''),
+                     ('WORLD', 'World', ''),
+                     ('CURSOR', 'Cursor', '')]
 
 obj_align_mode_items = [('ORIGIN', 'Origin', ''),
                         ('CURSOR', 'Cursor', ''),
