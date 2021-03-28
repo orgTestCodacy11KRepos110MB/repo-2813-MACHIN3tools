@@ -83,7 +83,7 @@ class SmartEdge(bpy.types.Operator):
 
         # KNIFE PROJECT
 
-        if self.is_knife_projectable and self.is_knife_project:
+        if self.is_knife_projectable and self.is_knife_project and not self.offset and not self.sharp:
             self.knife_project(context, active, cut_through=self.cut_through)
             return {'FINISHED'}
 
