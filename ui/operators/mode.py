@@ -223,4 +223,8 @@ class SurfaceDrawMode(bpy.types.Operator):
         else:
             bpy.ops.wm.tool_set_by_id(name="builtin_brush.Draw")
 
+        # enable auto keyframing in 2.93, see https://developer.blender.org/rB6a662ffda836
+        if bpy.app.version >= (2, 93, 0) and not ts.use_keyframe_insert_auto:
+            ts.use_keyframe_insert_auto = True
+
         return {'FINISHED'}
