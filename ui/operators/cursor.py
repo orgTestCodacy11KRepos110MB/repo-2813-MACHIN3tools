@@ -77,7 +77,7 @@ class CursorToSelected(bpy.types.Operator):
             context.space_data.overlay.show_cursor = True
 
         # only actually set the presets and draw the axes if hyper cursor tools are not active
-        set_transform_preset_and_draw_cursor_axes = 'machin3.tool_hyper_cursor' not in get_active_tool(context)
+        set_transform_preset_and_draw_cursor_axes = 'machin3.tool_hyper_cursor' not in get_active_tool(context).idname
 
         active = context.active_object
         sel = [obj for obj in context.selected_objects if obj != active]
