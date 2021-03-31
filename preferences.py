@@ -144,6 +144,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_thread(self, context):
         activate(self, register=self.activate_thread, tool="thread")
 
+    def update_activate_smooth(self, context):
+        activate(self, register=self.activate_smooth, tool="smooth")
+
     def update_activate_customize(self, context):
         activate(self, register=self.activate_customize, tool="customize")
 
@@ -273,6 +276,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     activate_material_picker: BoolProperty(name="Material Picker", default=False, update=update_activate_material_picker)
     activate_group: BoolProperty(name="Group", default=False, update=update_activate_group)
     activate_thread: BoolProperty(name="Thread", default=False, update=update_activate_thread)
+    activate_smooth: BoolProperty(name="Smooth", default=False, update=update_activate_smooth)
     activate_customize: BoolProperty(name="Customize", default=False, update=update_activate_customize)
 
 
@@ -411,6 +415,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row = column.split(factor=0.25)
         row.prop(self, "activate_thread", toggle=True)
         row.label(text="Easily turn Cylinder Faces into Thread")
+
+        row = column.split(factor=0.25)
+        row.prop(self, "activate_smooth", toggle=True)
+        row.label(text="Toggle Smoothing in Korean Bevel and SubD workflows")
 
         row = column.split(factor=0.25)
         row.prop(self, "activate_customize", toggle=True)

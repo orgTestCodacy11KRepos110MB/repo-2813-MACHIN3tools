@@ -478,6 +478,9 @@ class M3ObjectProperties(bpy.types.PropertyGroup):
     is_group_object: BoolProperty()
     group_size: FloatProperty(default=0.2)
 
+    smooth_angle: FloatProperty(name="Smooth Angle", default=30)
+    has_smoothed: BoolProperty(name="Has been smoothed", default=False)
+
     # hidden
 
     avoid_update: BoolProperty()

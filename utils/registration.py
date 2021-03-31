@@ -393,6 +393,10 @@ def get_tools():
     classlists, keylists, count = get_thread(classlists, keylists, count)
 
 
+    # SMOOTH
+    classlists, keylists, count = get_smooth(classlists, keylists, count)
+
+
     # CUSTOMIZE
     classlists, keylists, count = get_customize(classlists, keylists, count)
 
@@ -619,6 +623,15 @@ def get_group(classlists=[], keylists=[], count=0):
 def get_thread(classlists=[], keylists=[], count=0):
     if get_prefs().activate_thread:
         classlists.append(classesdict["THREAD"])
+        count +=1
+
+    return classlists, keylists, count
+
+
+def get_smooth(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_smooth:
+        classlists.append(classesdict["SMOOTH"])
+        keylists.append(keysdict["SMOOTH"])
         count +=1
 
     return classlists, keylists, count
