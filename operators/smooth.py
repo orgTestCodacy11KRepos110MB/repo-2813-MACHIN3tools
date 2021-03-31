@@ -24,10 +24,14 @@ class ToggleSmooth(bpy.types.Operator):
         layout = self.layout
 
         column = layout.column()
+        row = column.split(factor=0.3)
+
         if self.mode == 'SUBD':
-            column.prop(self, 'toggle_subd_overlays', toggle=True)
+            row.label(text='SubD')
+            row.prop(self, 'toggle_subd_overlays', toggle=True)
         else:
-            column.prop(self, 'toggle_korean_bevel_overlays', toggle=True)
+            row.label(text='Korean Bevel')
+            row.prop(self, 'toggle_korean_bevel_overlays', toggle=True)
 
     def execute(self, context):
         global is_angle, has_smoothed
