@@ -2,6 +2,7 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty, FloatProperty
 import bmesh
 from mathutils.geometry import distance_point_to_plane
+from mathutils import Vector
 import math
 from .. items import cleanup_select_items
 
@@ -93,19 +94,44 @@ class CleanUp(bpy.types.Operator):
     def poll(cls, context):
         return context.mode == "EDIT_MESH"
 
+    def invoke(self, context, event):
+        self.coords = Vector((event.mouse_region_x, event.mouse_region_y)) + Vector((10, 20))
+        return self.execute(context)
+
     def execute(self, context):
         sel = [obj for obj in context.selected_objects if obj.type == 'MESH' and obj.mode == 'EDIT']
 
+        removed = {}
+
         for obj in sel:
-            bm = self.clean_up(obj)
+            bm, elementcounts = self.clean_up(obj)
 
             if self.select:
                 self.select_geometry(bm)
 
+            cleanedcounts = self.get_element_counts(bm)
             bmesh.update_edit_mesh(obj.data)
+
+            if elementcounts != cleanedcounts:
+                removed[obj] = (elementcounts[0] - cleanedcounts[0], elementcounts[1] - cleanedcounts[1], elementcounts[2] - cleanedcounts[2])
 
         if self.select and self.view_selected:
             bpy.ops.view3d.view_selected('INVOKE_DEFAULT', use_all_regions=False)
+
+        if removed:
+            verts = 0
+            edges = 0
+            faces = 0
+
+            for counts in removed.values():
+                verts += counts[0]
+                edges += counts[1]
+                faces += counts[2]
+
+            text = f"Removed:{' Verts: ' + str(verts) if verts else ''}{' Edges: ' + str(edges) if edges else ''}{' Faces: ' + str(faces) if faces else ''}"
+
+            bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, alpha=1)
+            # self.report({'INFO'}, text)
 
         return {'FINISHED'}
 
@@ -113,6 +139,8 @@ class CleanUp(bpy.types.Operator):
         bm = bmesh.from_edit_mesh(active.data)
         bm.normal_update()
         bm.verts.ensure_lookup_table()
+
+        elementcounts = self.get_element_counts(bm)
 
         if self.remove_doubles:
             bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=self.distance)
@@ -132,7 +160,13 @@ class CleanUp(bpy.types.Operator):
             if self.flip_normals:
                 for f in bm.faces:
                     f.normal_flip()
-        return bm
+        return bm, elementcounts
+
+    def get_element_counts(self, bm):
+        '''
+        return tuple of vertcount, edgecount and facecount
+        '''
+        return len(bm.verts), len(bm.edges), len(bm.faces)
 
     def delete_loose_geometry(self, bm):
         if self.delete_loose_verts:

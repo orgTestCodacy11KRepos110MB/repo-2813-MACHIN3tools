@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import FloatProperty, StringProperty, FloatVectorProperty
+from bpy.props import FloatProperty, StringProperty, FloatVectorProperty, BoolProperty
 from ... utils.draw import draw_label
 
 
@@ -11,6 +11,7 @@ class DrawLabel(bpy.types.Operator):
 
     text: StringProperty(name="Text to draw the HUD", default='Text')
     coords: FloatVectorProperty(name='Screen Coordinates', size=2, default=(100, 100))
+    center: BoolProperty(name='Center', default=True)
     color: FloatVectorProperty(name='Screen Coordinates', size=3, default=(1, 1, 1))
 
     time: FloatProperty(name="", default=1, min=0.1)
@@ -22,7 +23,7 @@ class DrawLabel(bpy.types.Operator):
 
     def draw_HUD(self, context):
         alpha = self.countdown / self.time * self.alpha
-        draw_label(context, title=self.text, coords=self.coords, color=self.color, alpha=alpha)
+        draw_label(context, title=self.text, coords=self.coords, center=self.center, color=self.color, alpha=alpha)
 
 
     def modal(self, context, event):
