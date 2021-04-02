@@ -1,6 +1,6 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty
-from bpy_extras.view3d_utils import region_2d_to_origin_3d, region_2d_to_vector_3d
+from bpy_extras.view3d_utils import region_2d_to_origin_3d, region_2d_to_vector_3d, region_2d_to_location_3d
 from bl_ui.space_statusbar import STATUSBAR_HT_header as statusbar
 import bmesh
 from mathutils import Vector
@@ -58,7 +58,7 @@ class SmartVert(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if context.mode == 'EDIT_MESH' and tuple(context.scene.tool_settings.mesh_select_mode) == (True, False, False):
+        if context.mode == 'EDIT_MESH' and (tuple(context.scene.tool_settings.mesh_select_mode) == (True, False, False) or tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False)):
             bm = bmesh.from_edit_mesh(context.active_object.data)
             return [v for v in bm.verts if v.select]
 
@@ -268,28 +268,51 @@ class SmartVert(bpy.types.Operator):
                 self.bm = bmesh.from_edit_mesh(self.active.data)
                 self.bm.normal_update()
 
-                # get selected verts
-                selected = [v for v in bm.verts if v.select]
-                history = list(self.bm.select_history)
+                # init mouse
+                self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
 
-                # get each vert that is slid and the target it pushed away from or towards
-                # also store the initial location of the moved verts
+                # VERT MODE
 
-                # multi target sliding
-                if len(selected) > 3 and len(selected) % 2 == 0 and set(history) == set(selected):
-                    self.verts = {history[i]: {'co': history[i].co.copy(), 'target': history[i + 1]} for i in range(0, len(history), 2)}
+                if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
 
-                # single target sliding
-                else:
-                    last = history[-1]
-                    self.verts = {v: {'co': v.co.copy(), 'target': last} for v in selected if v != last}
+                    # get selected verts
+                    selected = [v for v in bm.verts if v.select]
+                    history = list(self.bm.select_history)
+
+                    # get each vert that is slid and the target it pushed away from or towards
+                    # also store the initial location of the moved verts
+
+                    # multi target sliding
+                    if len(selected) > 3 and len(selected) % 2 == 0 and set(history) == set(selected):
+                        self.verts = {history[i]: {'co': history[i].co.copy(), 'target': history[i + 1]} for i in range(0, len(history), 2)}
+
+                    # single target sliding
+                    else:
+                        last = history[-1]
+                        self.verts = {v: {'co': v.co.copy(), 'target': last} for v in selected if v != last}
+
+                # EDGE MODE
+
+                elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
+
+                    # get selected edges
+                    selected = [e for e in bm.edges if e.select]
+                    self.verts = {}
+
+                    # for each edge find the closest vert to the mouse pointer (based on proximity to the mouse projected into the edge center depth)
+                    for edge in selected:
+                        edge_center = average_locations([self.mx @ v.co for v in edge.verts])
+
+                        mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.mousepos, edge_center)
+                        mouse_3d_local = self.mx.inverted_safe() @ mouse_3d
+
+                        closest = min([(v, (v.co - mouse_3d_local).length) for v in edge.verts], key=lambda x: x[1])[0]
+
+                        self.verts[closest] = {'co': closest.co.copy(), 'target': edge.other_vert(closest)}
 
                 # get average target and slid vert locations in world space
                 self.target_avg = self.mx @ average_locations([data['target'].co for _, data in self.verts.items()])
                 self.origin = self.mx @ average_locations([v.co for v, _ in self.verts.items()])
-
-                # init mouse
-                self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
 
                 # create first intersection of the view dir with the origin-to-targetavg vector
                 self.init_loc = self.get_slide_vector_intersection(context)
@@ -333,10 +356,11 @@ class SmartVert(bpy.types.Operator):
                 return {'CANCELLED'}
 
         # MERGE and CONNECT
-        else:
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
             self.smart_vert(context)
+            return {'FINISHED'}
 
-        return {'FINISHED'}
+        return {'CANCELLED'}
 
     def execute(self, context):
         self.smart_vert(context)
