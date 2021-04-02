@@ -249,35 +249,32 @@ class SmartVert(bpy.types.Operator):
 
         # SLIDE EXTEND
         if self.slideoverride:
-            bm = bmesh.from_edit_mesh(context.active_object.data)
-            verts = [v for v in bm.verts if v.select]
-            history = list(bm.select_history)
+            self.bm = bmesh.from_edit_mesh(context.active_object.data)
+            self.bm.normal_update()
 
-            if len(verts) == 1:
-                popup_message("Select more than 1 vertex.")
-                return {'CANCELLED'}
+            # init mouse
+            self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
 
-            elif not history:
-                popup_message("Select the last vertex without Box or Circle Select.")
-                return {'CANCELLED'}
+            self.active = context.active_object
+            self.mx = self.active.matrix_world
 
-            else:
-                self.active = context.active_object
-                self.mx = self.active.matrix_world
 
-                self.bm = bmesh.from_edit_mesh(self.active.data)
-                self.bm.normal_update()
+            # VERT MODE
 
-                # init mouse
-                self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
+            if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
 
-                # VERT MODE
+                selected = [v for v in self.bm.verts if v.select]
+                history = list(self.bm.select_history)
 
-                if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
+                if len(selected) == 1:
+                    popup_message("Select more than 1 vertex.")
+                    return {'CANCELLED'}
 
-                    # get selected verts
-                    selected = [v for v in bm.verts if v.select]
-                    history = list(self.bm.select_history)
+                elif not history:
+                    popup_message("Select the last vertex without Box or Circle Select.")
+                    return {'CANCELLED'}
+
+                else:
 
                     # get each vert that is slid and the target it pushed away from or towards
                     # also store the initial location of the moved verts
@@ -291,69 +288,70 @@ class SmartVert(bpy.types.Operator):
                         last = history[-1]
                         self.verts = {v: {'co': v.co.copy(), 'target': last} for v in selected if v != last}
 
-                # EDGE MODE
+            # EDGE MODE
 
-                elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
+            elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
 
-                    # get selected edges
-                    selected = [e for e in bm.edges if e.select]
-                    self.verts = {}
+                # get selected edges
+                selected = [e for e in self.bm.edges if e.select]
+                self.verts = {}
 
-                    # for each edge find the closest vert to the mouse pointer (based on proximity to the mouse projected into the edge center depth)
-                    for edge in selected:
-                        edge_center = average_locations([self.mx @ v.co for v in edge.verts])
+                # for each edge find the closest vert to the mouse pointer (based on proximity to the mouse projected into the edge center depth)
+                for edge in selected:
+                    edge_center = average_locations([self.mx @ v.co for v in edge.verts])
 
-                        mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.mousepos, edge_center)
-                        mouse_3d_local = self.mx.inverted_safe() @ mouse_3d
+                    mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.mousepos, edge_center)
+                    mouse_3d_local = self.mx.inverted_safe() @ mouse_3d
 
-                        closest = min([(v, (v.co - mouse_3d_local).length) for v in edge.verts], key=lambda x: x[1])[0]
+                    closest = min([(v, (v.co - mouse_3d_local).length) for v in edge.verts], key=lambda x: x[1])[0]
 
-                        self.verts[closest] = {'co': closest.co.copy(), 'target': edge.other_vert(closest)}
+                    self.verts[closest] = {'co': closest.co.copy(), 'target': edge.other_vert(closest)}
 
-                # get average target and slid vert locations in world space
-                self.target_avg = self.mx @ average_locations([data['target'].co for _, data in self.verts.items()])
-                self.origin = self.mx @ average_locations([v.co for v, _ in self.verts.items()])
 
-                # create first intersection of the view dir with the origin-to-targetavg vector
-                self.init_loc = self.get_slide_vector_intersection(context)
+            # get average target and slid vert locations in world space
+            self.target_avg = self.mx @ average_locations([data['target'].co for _, data in self.verts.items()])
+            self.origin = self.mx @ average_locations([v.co for v, _ in self.verts.items()])
 
-                if self.init_loc:
+            # create first intersection of the view dir with the origin-to-targetavg vector
+            self.init_loc = self.get_slide_vector_intersection(context)
 
-                    # init
-                    self.loc = self.init_loc
-                    self.offset_loc = self.init_loc
-                    self.distance = 0
-                    self.coords = []
+            if self.init_loc:
 
-                    # init snapping
-                    self.is_snapping = False
-                    self.is_diverging = False
-                    self.snap_bms = {}
-                    self.snap_bvhs = {}
-                    self.snap_coords = []
-                    self.snap_proximity_coords = []
-                    self.snap_ortho_coords = []
+                # init
+                self.loc = self.init_loc
+                self.offset_loc = self.init_loc
+                self.distance = 0
+                self.coords = []
 
-                    # create copy of the active to raycast on, this prevents an issue where the raycast flips from one face to the other because moving a vert changes the topology
-                    self.active.update_from_editmode()
-                    self.snap_copy = self.active.copy()
-                    self.snap_copy.data = self.active.data.copy()
+                # init snapping
+                self.is_snapping = False
+                self.is_diverging = False
+                self.snap_bms = {}
+                self.snap_bvhs = {}
+                self.snap_coords = []
+                self.snap_proximity_coords = []
+                self.snap_ortho_coords = []
 
-                    # snappable objects are all edit mesh object nicluding the the active's copy
-                    edit_mesh_objects = [obj for obj in context.visible_objects if obj.mode == 'EDIT' and obj != self.active]
-                    self.snappable = edit_mesh_objects + [self.snap_copy]
+                # create copy of the active to raycast on, this prevents an issue where the raycast flips from one face to the other because moving a vert changes the topology
+                self.active.update_from_editmode()
+                self.snap_copy = self.active.copy()
+                self.snap_copy.data = self.active.data.copy()
 
-                    # handlers
-                    self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
+                # snappable objects are all edit mesh object nicluding the the active's copy
+                edit_mesh_objects = [obj for obj in context.visible_objects if obj.mode == 'EDIT' and obj != self.active]
+                self.snappable = edit_mesh_objects + [self.snap_copy]
 
-                    # draw statusbar info
-                    self.bar_orig = statusbar.draw
-                    statusbar.draw = draw_slide_status(self)
+                # handlers
+                self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
 
-                    context.window_manager.modal_handler_add(self)
-                    return {'RUNNING_MODAL'}
+                # draw statusbar info
+                self.bar_orig = statusbar.draw
+                statusbar.draw = draw_slide_status(self)
 
-                return {'CANCELLED'}
+                context.window_manager.modal_handler_add(self)
+                return {'RUNNING_MODAL'}
+
+            return {'CANCELLED'}
 
         # MERGE and CONNECT
         elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
