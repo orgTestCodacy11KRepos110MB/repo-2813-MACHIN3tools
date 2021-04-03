@@ -417,3 +417,34 @@ def draw_mesh_wire(batch, color=(1, 1, 1), width=1, alpha=1, xray=True, modal=Tr
 
     else:
         bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_VIEW')
+
+
+
+def draw_tris(coords, indices=None, mx=Matrix(), color=(1, 1, 1), width=1, alpha=1, xray=True, modal=True):
+    def draw():
+        shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+        shader.bind()
+        shader.uniform_float("color", (*color, alpha))
+
+        if bpy.app.version >= (2, 91, 0) and not xray:
+            bgl.glDepthFunc(bgl.GL_LEQUAL)
+
+        bgl.glEnable(bgl.GL_BLEND) if alpha < 1 else bgl.glDisable(bgl.GL_BLEND)
+        bgl.glDisable(bgl.GL_DEPTH_TEST) if xray else bgl.glEnable(bgl.GL_DEPTH_TEST)
+
+        if alpha < 1:
+            bgl.glEnable(bgl.GL_LINE_SMOOTH)
+
+        if mx != Matrix():
+            batch = batch_for_shader(shader, 'TRIS', {"pos": [mx @ co for co in coords]}, indices=indices)
+
+        else:
+            batch = batch_for_shader(shader, 'TRIS', {"pos": coords}, indices=indices)
+
+        batch.draw(shader)
+
+    if modal:
+        draw()
+
+    else:
+        bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_VIEW')

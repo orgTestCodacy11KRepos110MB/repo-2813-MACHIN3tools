@@ -4,13 +4,13 @@ from bpy_extras.view3d_utils import region_2d_to_origin_3d, region_2d_to_vector_
 from bl_ui.space_statusbar import STATUSBAR_HT_header as statusbar
 import bmesh
 from mathutils import Vector
-from mathutils.geometry import intersect_point_line, intersect_line_line
+from mathutils.geometry import intersect_point_line, intersect_line_line, intersect_line_plane
 from .. utils.graph import get_shortest_path
 from .. utils.ui import popup_message
-from .. utils.draw import draw_line, draw_lines, draw_point
+from .. utils.draw import draw_line, draw_lines, draw_point, draw_tris, draw_vector
 from .. utils.raycast import cast_bvh_ray_from_mouse
-from .. utils.math import average_locations, get_center_between_verts
-from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items
+from .. utils.math import average_locations, get_center_between_verts, get_face_center
+from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items, ctrl, alt
 
 
 def draw_slide_status(op):
@@ -18,7 +18,9 @@ def draw_slide_status(op):
         layout = self.layout
 
         row = layout.row(align=True)
-        row.label(text=f"Slide Extend")
+
+        text = f"Slide Extend Snap to {op.snap_element.capitalize()}" if op.snap_element else "Slide Extend"
+        row.label(text=text)
 
         row.label(text="", icon='MOUSE_LMB')
         row.label(text="Confirm")
@@ -32,7 +34,7 @@ def draw_slide_status(op):
             row.label(text="", icon='EVENT_CTRL')
             row.label(text="Snap")
 
-        if op.is_snapping and not op.is_diverging:
+        if op.is_snapping and op.snap_element == 'EDGE' and not op.is_diverging:
             row.label(text="", icon='EVENT_ALT')
             row.label(text="Diverge")
 
@@ -100,27 +102,26 @@ class SmartVert(bpy.types.Operator):
                     r.prop(self, "pathtype", expand=True)
 
     def draw_VIEW3D(self):
-        # draw_point(self.target_avg, color=(1, 1, 0))
-        # draw_point(self.origin, color=(1, 0, 0))
-
-        # draw_point(self.init_loc, color=(1, 1, 1), alpha=0.5)
-        # draw_point(self.loc, color=(1, 1, 0), alpha=0.5)
-        # draw_line([self.init_loc, self.loc], width=2, alpha=0.2)
 
         # draw slide vectors
         if self.coords:
-            draw_lines(self.coords, mx=self.mx, color=(0.5, 1, 0.5), width=3, alpha=0.5)
+            draw_lines(self.coords, mx=self.mx, color=(0.5, 1, 0.5), width=2, alpha=0.5)
 
         # draw snap coords
         if self.is_snapping:
-            if self.snap_coords:
-                draw_lines(self.snap_coords, color=(1, 0, 0), width=3, alpha=0.75)
+            if self.snap_element == 'EDGE':
+                if self.snap_coords:
+                    draw_lines(self.snap_coords, color=(1, 0, 0), width=3, alpha=0.75)
 
-            if self.snap_proximity_coords:
-                draw_lines(self.snap_proximity_coords, mx=self.mx, color=(1, 0, 0), width=1, alpha=0.3)
+                if self.snap_proximity_coords:
+                    draw_lines(self.snap_proximity_coords, mx=self.mx, color=(1, 0, 0), width=1, alpha=0.3)
 
-            if self.snap_ortho_coords:
-                draw_lines(self.snap_ortho_coords, mx=self.mx, color=(1, 0.7, 0), width=1, alpha=0.3)
+                if self.snap_ortho_coords:
+                    draw_lines(self.snap_ortho_coords, mx=self.mx, color=(1, 0.7, 0), width=1, alpha=0.3)
+
+            elif self.snap_element == 'FACE':
+                if self.snap_tri_coords:
+                    draw_tris(self.snap_tri_coords, color=(1, 0, 0), alpha=0.1)
 
 
     def modal(self, context, event):
@@ -135,10 +136,12 @@ class SmartVert(bpy.types.Operator):
 
         if not self.is_snapping:
             self.snap_coords = []
+            self.snap_tri_coords = []
             self.snap_proximity_coords = []
             self.snap_ortho_coords = []
+            self.snap_element = None
 
-        events = ['MOUSEMOVE', 'LEFT_CTRL', 'LEFT_ALT', 'RIGHT_CTRL', 'RIGHT_ALT']
+        events = ['MOUSEMOVE', *ctrl, *alt]
 
         if event.type in events:
             if self.passthrough:
@@ -148,7 +151,7 @@ class SmartVert(bpy.types.Operator):
                 self.loc = self.get_slide_vector_intersection(context)
                 self.init_loc = self.init_loc + self.loc - self.offset_loc
 
-            # snap to edge
+            # snap to edge or face
             elif event.ctrl:
                 hitobj, hitlocation, hitnormal, hitindex, hitdistance, cache = cast_bvh_ray_from_mouse(self.mousepos, candidates=self.snappable, bmeshes=self.snap_bms, bvhs=self.snap_bvhs, debug=False)
 
@@ -157,8 +160,10 @@ class SmartVert(bpy.types.Operator):
                     for name, bm in cache['bmesh'].items():
                         if name not in self.snap_bms:
                             bm.faces.ensure_lookup_table()
+                            loop_triangles = bm.calc_loop_triangles()
+                            tri_coords = {}
 
-                            self.snap_bms[name] = bm
+                            self.snap_bms[name] = (bm, loop_triangles, tri_coords)
 
                 # cache bvhs
                 if cache['bvh']:
@@ -173,8 +178,10 @@ class SmartVert(bpy.types.Operator):
                 # side normally if nothing is hit
                 else:
                     self.snap_coords = []
+                    self.snap_tri_coords = []
                     self.snap_proximity_coords = []
                     self.snap_ortho_coords = []
+                    self.snap_element = None
 
                     self.loc = self.get_slide_vector_intersection(context)
 
@@ -263,6 +270,7 @@ class SmartVert(bpy.types.Operator):
 
             if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
 
+                # get selected verts and history
                 selected = [v for v in self.bm.verts if v.select]
                 history = list(self.bm.select_history)
 
@@ -326,9 +334,11 @@ class SmartVert(bpy.types.Operator):
                 # init snapping
                 self.is_snapping = False
                 self.is_diverging = False
+                self.snap_element = None
                 self.snap_bms = {}
                 self.snap_bvhs = {}
                 self.snap_coords = []
+                self.snap_tri_coords = []
                 self.snap_proximity_coords = []
                 self.snap_ortho_coords = []
 
@@ -499,57 +509,103 @@ class SmartVert(bpy.types.Operator):
         slide snap to edges of all edit mode objects
         '''
 
-        # get hitface from the cached bmesh
-        hitbm = self.snap_bms[hitobj.name]
-        hitface = hitbm.faces[hitindex]
-
         # hit location in hitobj's local space
         hitmx = hitobj.matrix_world
         hit = hitmx.inverted() @ hitlocation
 
-        # get closest edge
-        edge = min([(e, (hit - intersect_point_line(hit, e.verts[0].co, e.verts[1].co)[0]).length, (hit - get_center_between_verts(*e.verts)).length) for e in hitface.edges if e.calc_length()], key=lambda x: (x[1] * x[2]) / x[0].calc_length())[0]
+        # fetch cached bmesh, all loop triangles for it as well as any cachaed tri_coords for view3d face drawing
+        bm, loop_triangles, tri_coords = self.snap_bms[hitobj.name]
 
-        # set snap coords for view3d drawing
-        self.snap_coords = [hitmx @ v.co for v in edge.verts]
+        # get hitface from the cached bmesh
+        hitface = bm.faces[hitindex]
 
-        # get snap coords in active's local space
-        snap_coords = [self.mx.inverted_safe() @ co for co in self.snap_coords]
+        # cache tri coords for that face
+        if hitindex not in tri_coords:
+            tri_coords[hitindex] = [hitmx @ l.vert.co for tri in loop_triangles if tri[0].face == hitface for l in tri]
 
-        # init proximity and ortho coords for view3d drawing
+        # weigh the following distances, to influence how easily the individual elements can be selected
+        face_weight = 10
+        edge_weight = 1
+
+        # get distance to face center
+        face_distance = (hitface, (hit - hitface.calc_center_median_weighted()).length / face_weight)
+
+        # evaluate all hitface edges and get their proximity to the hit, as well as the proximity to the hit from the edge center
+        # get the closest edge by multiplying the distance with the center distance, and divide the result by the edge length, this is necessary to deal with split edges
+        # edge = min([(e, (hit - intersect_point_line(hit, e.verts[0].co, e.verts[1].co)[0]).length, (hit - get_center_between_verts(*e.verts)).length) for e in hitface.edges if e.calc_length()], key=lambda x: (x[1] * x[2]) / x[0].calc_length())[0]
+        edge = min([(e, (hit - intersect_point_line(hit, e.verts[0].co, e.verts[1].co)[0]).length, (hit - get_center_between_verts(*e.verts)).length) for e in hitface.edges if e.calc_length()], key=lambda x: (x[1] * x[2]) / x[0].calc_length())
+        edge_distance = (edge[0], ((edge[1] * edge[2]) / edge[0].calc_length()) / edge_weight)
+
+        # based on the two distances get the closest edge or face
+        closest = min([face_distance, edge_distance], key=lambda x: x[1])
+
+        # initialize all coords
+        self.snap_coords = []
+        self.snap_tri_coords = []
         self.snap_proximity_coords = []
         self.snap_ortho_coords = []
 
-        # get intersection of individual slide dirs and snap coords
-        for v, data in self.verts.items():
-            init_co = data['co']
-            target = data['target']
+        if isinstance(closest[0], bmesh.types.BMEdge):
+            self.snap_element = 'EDGE'
 
-            snap_dir = (snap_coords[0] - snap_coords[1]).normalized()
-            slide_dir = (init_co - target.co).normalized()
+            # set snap coords for view3d drawing
+            self.snap_coords = [hitmx @ v.co for v in closest[0].verts]
 
-            # check for parallel and almost parallel snap edges, do nothing in this case
-            if abs(slide_dir.dot(snap_dir)) > 0.999:
-                v.co = init_co
+            # get snap coords in active's local space
+            snap_coords = [self.mx.inverted_safe() @ co for co in self.snap_coords]
 
-            # with a smaller dot product, interseect_line_line will produce a guaranteed hit
-            else:
-                i = intersect_line_line(init_co, target.co, *snap_coords)
+            # init proximity and ortho coords for view3d drawing
+            self.snap_proximity_coords = []
+            self.snap_ortho_coords = []
 
-                v.co = i[1 if self.is_diverging else 0] if i else init_co
+            # get intersection of individual slide dirs and snap coords
+            for v, data in self.verts.items():
+                init_co = data['co']
+                target = data['target']
 
-                # add coords to draw the slide 'edges'
-                if v.co != target.co:
-                    self.coords.extend([v.co, target.co])
+                snap_dir = (snap_coords[0] - snap_coords[1]).normalized()
+                slide_dir = (init_co - target.co).normalized()
 
-                # add proximity coords
-                if i[1] != snap_coords[0]:
-                    self.snap_proximity_coords.extend([i[1], snap_coords[0]])
+                # check for parallel and almost parallel snap edges, do nothing in this case
+                if abs(slide_dir.dot(snap_dir)) > 0.999:
+                    v.co = init_co
 
-                # add ortho coords
-                if v.co != i[1]:
-                    self.snap_ortho_coords.extend([v.co, i[1]])
+                # with a smaller dot product, interseect_line_line will produce a guaranteed hit
+                else:
+                    i = intersect_line_line(init_co, target.co, *snap_coords)
 
+                    v.co = i[1 if self.is_diverging else 0] if i else init_co
+
+                    # add coords to draw the slide 'edges'
+                    if v.co != target.co:
+                        self.coords.extend([v.co, target.co])
+
+                    # add proximity coords
+                    if i[1] != snap_coords[0]:
+                        self.snap_proximity_coords.extend([i[1], snap_coords[0]])
+
+                    # add ortho coords
+                    if v.co != i[1]:
+                        self.snap_ortho_coords.extend([v.co, i[1]])
+
+        elif isinstance(closest[0], bmesh.types.BMFace):
+            self.snap_element = 'FACE'
+
+            self.snap_tri_coords = tri_coords[hitindex]
+
+            # get face center and normal in active's local space
+            co = self.mx.inverted_safe() @ hitmx @ get_face_center(closest[0])
+            no = self.mx.inverted_safe().to_3x3() @ hitmx.to_3x3() @ closest[0].normal
+
+            # get intersections of individual slide dirs and hitface
+            for v, data in self.verts.items():
+                init_co = data['co']
+                target = data['target']
+
+                i = intersect_line_plane(init_co, target.co, co, no)
+
+                if i:
+                    v.co = i
 
         self.bm.normal_update()
         bmesh.update_edit_mesh(self.active.data)

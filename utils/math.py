@@ -13,6 +13,15 @@ def get_edge_normal(edge):
     return average_normals([f.normal for f in edge.link_faces])
 
 
+def get_face_center(face, method='MEDIAN_WEIGHTED'):
+    if method == 'BOUNDS':
+        return face.calc_center_bounds()
+    elif method == 'MEDIAN':
+        return face.calc_center_median()
+    elif method == 'MEDIAN_WEIGHTED':
+        return face.calc_center_median_weighted()
+
+
 def average_locations(locationslist, size=3):
     avg = Vector.Fill(size)
 
