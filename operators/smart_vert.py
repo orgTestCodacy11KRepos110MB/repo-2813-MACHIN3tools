@@ -524,7 +524,7 @@ class SmartVert(bpy.types.Operator):
             tri_coords[hitindex] = [hitmx @ l.vert.co for tri in loop_triangles if tri[0].face == hitface for l in tri]
 
         # weigh the following distances, to influence how easily the individual elements can be selected
-        face_weight = 10
+        face_weight = 25
         edge_weight = 1
 
         # get distance to face center
@@ -591,7 +591,7 @@ class SmartVert(bpy.types.Operator):
         elif isinstance(closest[0], bmesh.types.BMFace):
             self.snap_element = 'FACE'
 
-            self.snap_tri_coords = tri_coords[hitindex]
+            foundintersection = False
 
             # get face center and normal in active's local space
             co = self.mx.inverted_safe() @ hitmx @ get_face_center(closest[0])
@@ -605,7 +605,12 @@ class SmartVert(bpy.types.Operator):
                 i = intersect_line_plane(init_co, target.co, co, no)
 
                 if i:
+                    foundintersection = True
                     v.co = i
+
+            # avoid drawing unnecessary faces
+            if foundintersection:
+                self.snap_tri_coords = tri_coords[hitindex]
 
         self.bm.normal_update()
         bmesh.update_edit_mesh(self.active.data)
