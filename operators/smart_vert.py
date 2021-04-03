@@ -123,6 +123,8 @@ class SmartVert(bpy.types.Operator):
                 if self.snap_tri_coords:
                     draw_tris(self.snap_tri_coords, color=(1, 0, 0), alpha=0.1)
 
+                if self.snap_ortho_coords:
+                    draw_lines(self.snap_ortho_coords, mx=self.mx, color=(1, 0.7, 0), width=1, alpha=0.3)
 
     def modal(self, context, event):
         context.area.tag_redraw()
@@ -608,9 +610,13 @@ class SmartVert(bpy.types.Operator):
                     foundintersection = True
                     v.co = i
 
+                    # highjack the ortho coords, to draw lines to the center of the face
+                    self.snap_ortho_coords.extend([i, co])
+
             # avoid drawing unnecessary faces
             if foundintersection:
                 self.snap_tri_coords = tri_coords[hitindex]
+
 
         self.bm.normal_update()
         bmesh.update_edit_mesh(self.active.data)
