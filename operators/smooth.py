@@ -7,7 +7,7 @@ from math import degrees, radians
 class ToggleSmooth(bpy.types.Operator):
     bl_idname = "machin3.toggle_smooth"
     bl_label = "MACHIN3: Toggle Smooth"
-    bl_description = ""
+    bl_description = "Toggle Smothing for Korean Bevel and SubD Objects"
     bl_options = {'REGISTER', 'UNDO'}
 
     toggle_subd_overlays: BoolProperty(name="Toggle Overlays", default=False)
@@ -17,8 +17,10 @@ class ToggleSmooth(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        active = context.active_object
-        return active and active.type == 'MESH'
+        if context.mode == 'EDIT_MESH':
+            return True
+        elif context.mode == 'OBJECT':
+            return [obj for obj in context.selected_objects if obj.type == 'MESH']
 
     def draw(self, context):
         layout = self.layout
@@ -34,32 +36,46 @@ class ToggleSmooth(bpy.types.Operator):
             row.prop(self, 'toggle_korean_bevel_overlays', toggle=True)
 
     def execute(self, context):
-        global is_angle, has_smoothed
+        if context.mode == 'EDIT_MESH':
+            active = context.active_object
+            subds = [mod for mod in active.modifiers if mod.type == 'SUBSURF']
 
-        active = context.active_object
-        subds = [mod for mod in active.modifiers if mod.type == 'SUBSURF']
+            if subds:
+                # print("SubD Workflow")
+                self.toggle_subd(context, active, subds)
 
-        if subds:
-            # print("SubD Workflow")
-            self.toggle_subd(context, active, subds)
+            else:
+                # print("Korean Bevel Workflow")
+                self.toggle_korean_bevel(context, active)
 
         else:
-            # print("Korean Bevel Workflow")
-            self.toggle_korean_bevel(context, active)
+            objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
+
+            for obj in objects:
+                subds = [mod for mod in obj.modifiers if mod.type == 'SUBSURF']
+
+                if subds:
+
+                    # print("SubD Workflow")
+                    self.toggle_subd(context, obj, subds)
+
+                else:
+                    # print("Korean Bevel Workflow")
+                    self.toggle_korean_bevel(context, obj)
 
         return {'FINISHED'}
 
-    def toggle_subd(self, context, active, subds):
+    def toggle_subd(self, context, obj, subds):
         self.mode = 'SUBD'
 
-        if active.mode == 'EDIT':
-            bm = bmesh.from_edit_mesh(active.data)
+        if obj.mode == 'EDIT':
+            bm = bmesh.from_edit_mesh(obj.data)
             bm.normal_update()
             bm.faces.ensure_lookup_table()
 
         else:
             bm = bmesh.new()
-            bm.from_mesh(active.data)
+            bm.from_mesh(obj.data)
             bm.normal_update()
             bm.faces.ensure_lookup_table()
 
@@ -82,13 +98,13 @@ class ToggleSmooth(bpy.types.Operator):
                 for f in bm.faces:
                     f.smooth = True
 
-                if active.mode == 'EDIT':
-                    bmesh.update_edit_mesh(active.data)
+                if obj.mode == 'EDIT':
+                    bmesh.update_edit_mesh(obj.data)
                 else:
-                    bm.to_mesh(active.data)
+                    bm.to_mesh(obj.data)
                     bm.free()
 
-                active.M3.has_smoothed = True
+                obj.M3.has_smoothed = True
 
             # disable overlays
             if self.toggle_subd_overlays:
@@ -102,42 +118,42 @@ class ToggleSmooth(bpy.types.Operator):
             subd.show_viewport = False
 
             # disable face smoothing if it was enabled before
-            if active.M3.has_smoothed:
+            if obj.M3.has_smoothed:
                 for f in bm.faces:
                     f.smooth = False
 
-                if active.mode == 'EDIT':
-                    bmesh.update_edit_mesh(active.data)
+                if obj.mode == 'EDIT':
+                    bmesh.update_edit_mesh(obj.data)
 
                 else:
-                    bm.to_mesh(active.data)
+                    bm.to_mesh(obj.data)
                     bm.free()
 
-                active.M3.has_smoothed = False
+                obj.M3.has_smoothed = False
 
             # re-enable overlays
             overlay.show_overlays = True
 
-    def toggle_korean_bevel(self, context, active):
+    def toggle_korean_bevel(self, context, obj):
         self.mode = 'KOREAN'
 
         overlay = context.space_data.overlay
 
         # enabled auto_smooth if it isn't already
-        if not active.data.use_auto_smooth:
-            active.data.use_auto_smooth = True
+        if not obj.data.use_auto_smooth:
+            obj.data.use_auto_smooth = True
 
         # get the currentl auto smooth angle
-        angle = active.data.auto_smooth_angle
+        angle = obj.data.auto_smooth_angle
 
-        if active.mode == 'EDIT':
-            bm = bmesh.from_edit_mesh(active.data)
+        if obj.mode == 'EDIT':
+            bm = bmesh.from_edit_mesh(obj.data)
             bm.normal_update()
             bm.faces.ensure_lookup_table()
 
         else:
             bm = bmesh.new()
-            bm.from_mesh(active.data)
+            bm.from_mesh(obj.data)
             bm.normal_update()
             bm.faces.ensure_lookup_table()
 
@@ -145,23 +161,23 @@ class ToggleSmooth(bpy.types.Operator):
         # ENABLE
 
         if degrees(angle) < 180:
-            active.M3.smooth_angle = angle
+            obj.M3.smooth_angle = angle
 
             # change the auto-smooth angle
-            active.data.auto_smooth_angle = radians(180)
+            obj.data.auto_smooth_angle = radians(180)
 
             # enable face smoothing if necessary
             if not bm.faces[0].smooth:
                 for f in bm.faces:
                     f.smooth = True
 
-                if active.mode == 'EDIT':
-                    bmesh.update_edit_mesh(active.data)
+                if obj.mode == 'EDIT':
+                    bmesh.update_edit_mesh(obj.data)
                 else:
-                    bm.to_mesh(active.data)
+                    bm.to_mesh(obj.data)
                     bm.free()
 
-                active.M3.has_smoothed = True
+                obj.M3.has_smoothed = True
 
             # disable overlays
             if self.toggle_korean_bevel_overlays:
@@ -173,21 +189,21 @@ class ToggleSmooth(bpy.types.Operator):
         else:
 
             # change the auto-smooth angle
-            active.data.auto_smooth_angle = active.M3.smooth_angle
+            obj.data.auto_smooth_angle = obj.M3.smooth_angle
 
             # disable face smoothing if it was enabled before
-            if active.M3.has_smoothed:
+            if obj.M3.has_smoothed:
                 for f in bm.faces:
                     f.smooth = False
 
-                if active.mode == 'EDIT':
-                    bmesh.update_edit_mesh(active.data)
+                if obj.mode == 'EDIT':
+                    bmesh.update_edit_mesh(obj.data)
 
                 else:
-                    bm.to_mesh(active.data)
+                    bm.to_mesh(obj.data)
                     bm.free()
 
-                active.M3.has_smoothed = False
+                obj.M3.has_smoothed = False
 
             # re-enable overlays
             overlay.show_overlays = True
