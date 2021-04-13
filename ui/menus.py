@@ -274,7 +274,8 @@ def add_object_buttons(self, context):
 # EXTRUDE - CURSOR SPIN
 
 def cursor_spin(self, context):
-    self.layout.operator("machin3.cursor_spin", text="Cursor Spin")
+    if getattr(bpy.types, 'MACHIN3_OT_cursor_spin', False):
+        self.layout.operator("machin3.cursor_spin", text="Cursor Spin")
 
 
 # MATERIAL PICKER HEADER
