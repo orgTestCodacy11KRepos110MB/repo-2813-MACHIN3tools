@@ -731,14 +731,14 @@ class PieShading(Menu):
         if overlay.show_overlays and shading.type == 'SOLID':
             column = box.column()
             b = column.box()
-            self.draw_overlay_box(context, view, b)
+            self.draw_overlay_box(context, active, view, b)
 
             b = column.box()
             self.draw_solid_box(context, view, b)
 
         elif overlay.show_overlays:
             b = box.box()
-            self.draw_overlay_box(context, view, b)
+            self.draw_overlay_box(context, active, view, b)
 
         elif shading.type == 'SOLID':
             b = box.box()
@@ -769,7 +769,7 @@ class PieShading(Menu):
         text, icon = self.get_text_icon(context, "RENDERED")
         pie.operator("machin3.shade_rendered", text=text, icon=icon, depress=shading.type == 'RENDERED' and overlay.show_overlays)
 
-    def draw_overlay_box(self, context, view, layout):
+    def draw_overlay_box(self, context, active, view, layout):
         overlay = context.space_data.overlay
         perspective_type = view.region_3d.view_perspective
 
@@ -823,8 +823,8 @@ class PieShading(Menu):
 
         r = row.row(align=True)
         if context.mode == "OBJECT":
-            r.active = view.overlay.show_wireframes
-            r.prop(view.overlay, "wireframe_threshold", text="Threshold")
+            r.active = view.overlay.show_wireframes or active and active.show_wire
+            r.prop(view.overlay, "wireframe_opacity", text="Opacity")
         elif context.mode == "EDIT_MESH":
             r.active = view.shading.show_xray
             r.prop(view.shading, "xray_alpha", text="X-Ray")

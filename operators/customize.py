@@ -936,9 +936,6 @@ class Customize(bpy.types.Operator):
             print(" Disabled overlay.show_relationship_lines")
             overlay.show_relationship_lines = False
 
-            print(" Changed overlay.wireframe_threshold to 0.99")
-            overlay.wireframe_threshold = 0.99
-
             print(" Changed overlay.vertex_opacity to 1")
             overlay.vertex_opacity = 1
 
