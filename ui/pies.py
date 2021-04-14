@@ -823,7 +823,7 @@ class PieShading(Menu):
 
         r = row.row(align=True)
         if context.mode == "OBJECT":
-            r.active = view.overlay.show_wireframes or active and active.show_wire
+            r.active = True if view.overlay.show_wireframes or (active and active.show_wire) else False
             r.prop(view.overlay, "wireframe_opacity", text="Opacity")
         elif context.mode == "EDIT_MESH":
             r.active = view.shading.show_xray
