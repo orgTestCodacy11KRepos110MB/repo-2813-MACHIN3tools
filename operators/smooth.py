@@ -18,9 +18,10 @@ class ToggleSmooth(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         if context.mode == 'EDIT_MESH':
-            return True
+            bm = bmesh.from_edit_mesh(context.active_object.data)
+            return bm.faces
         elif context.mode == 'OBJECT':
-            return [obj for obj in context.selected_objects if obj.type == 'MESH']
+            return [obj for obj in context.selected_objects if obj.type == 'MESH' and obj.data.polygons]
 
     def draw(self, context):
         layout = self.layout
