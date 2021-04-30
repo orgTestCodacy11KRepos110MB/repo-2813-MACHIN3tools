@@ -52,6 +52,7 @@ class SmartVert(bpy.types.Operator):
     pathtype: EnumProperty(name="Path Type", items=smartvert_path_type_items, default="TOPO")
 
     slideoverride: BoolProperty(name="Slide Override", default=False)
+    vertbevel: BoolProperty(name="Single Vertex Bevelling", default=False)
 
     # hidden
     wrongselection = False
@@ -367,6 +368,7 @@ class SmartVert(bpy.types.Operator):
 
         # MERGE and CONNECT
         elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
+            self.vertbevel = False
             self.smart_vert(context)
             return {'FINISHED'}
 
@@ -391,6 +393,7 @@ class SmartVert(bpy.types.Operator):
 
         if len(verts) == 1:
             bpy.ops.mesh.bevel('INVOKE_DEFAULT', affect='VERTICES')
+            self.vertbevel = True
 
 
         # MERGE

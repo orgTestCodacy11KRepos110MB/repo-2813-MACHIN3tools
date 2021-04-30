@@ -24,18 +24,29 @@ def get_last_operators(context, debug=False):
             if op.properties.get('slideoverride', ''):
                 prop = 'SideExtend'
 
+            elif op.properties.get('vertbevel', False):
+                prop = 'VertBevel'
+
+            else:
+                modeint = op.properties.get('mode')
+                mergetypeint = op.properties.get('mergetype')
+
+                mode = 'Merge' if modeint== 0 else 'Connect'
+                mergetype = 'Last' if mergetypeint == 0 else 'Center' if mergetypeint == 1 else 'Paths'
+                prop = mode + mergetype
+
         elif idname == 'machin3.smart_edge':
-            if op.properties.get('is_knife_project', ''):
+            if op.properties.get('is_knife_project', False):
                 prop = 'KnifeProject'
 
-            elif op.properties.get('sharp', ''):
+            elif op.properties.get('sharp', False):
                 prop = 'ToggleSharp'
 
-            elif op.properties.get('offset', ''):
+            elif op.properties.get('offset', False):
                 prop = 'OffsetEdges / KoreanBevel'
 
         elif idname == 'machin3.focus':
-            if op.properties.get('method', '') == 1:
+            if op.properties.get('method', 0) == 1:
                 prop = 'LocalView'
 
 
