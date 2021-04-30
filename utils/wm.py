@@ -49,6 +49,14 @@ def get_last_operators(context, debug=False):
             if op.properties.get('method', 0) == 1:
                 prop = 'LocalView'
 
+        elif idname == 'machin3.select':
+            if op.properties.get('vgroup', False):
+                prop = 'VertexGroup'
+            elif op.properties.get('faceloop', False):
+                prop = 'FaceLoop'
+
+            else:
+                prop = 'Loop' if op.properties.get('loop', False) else 'Sharp'
 
         operators.append((label, idname, prop))
 
