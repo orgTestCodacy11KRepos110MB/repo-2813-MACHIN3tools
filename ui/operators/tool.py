@@ -10,10 +10,17 @@ class SetToolByName(bpy.types.Operator):
     bl_idname = "machin3.set_tool_by_name"
     bl_label = "MACHIN3: Set Tool by Name"
     bl_description = "Set Tool by Name"
-    bl_options = {'INTERNAL'}
+    # bl_options = {'INTERNAL'}
+    bl_options = {'REGISTER', 'UNDO'}
 
     name: StringProperty(name="Tool name/ID")
     alpha: FloatProperty(name="Alpha", default=0.5, min=0.1, max=1)
+
+    def draw(self, context):
+        layout = self.layout
+        column = layout.column()
+
+        column.label(text=f"Tool: {self.name}")
 
     def execute(self, context):
 
@@ -36,7 +43,8 @@ class SetToolByName(bpy.types.Operator):
         coords = (context.region.width / 2, 100)
         bpy.ops.machin3.draw_label(text=name, coords=coords, color=white, time=get_prefs().tools_HUD_fade)
 
-        return {'RUNNING_MODAL'}
+        # return {'RUNNING_MODAL'}
+        return {'FINISHED'}
 
     def prettify(self, name):
         if name in tool_name_mapping_dict:
