@@ -20,6 +20,9 @@ def get_last_operators(context, debug=False):
         elif idname == 'machin3.set_tool_by_name':
             prop = op.properties.get('name', '')
 
+        elif idname == 'machin3.switch_workspace':
+            prop = op.properties.get('name', '')
+
         elif idname == 'machin3.smart_vert':
             if op.properties.get('slideoverride', ''):
                 prop = 'SideExtend'
