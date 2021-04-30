@@ -88,3 +88,7 @@ def get_incremented_path(currentblend):
 
         incr = number + 1
         incrstr = str(incr).zfill(len(numberstr))
+
+        incrname = basename + incrstr + ".blend"
+
+        return os.path.join(path, incrname)

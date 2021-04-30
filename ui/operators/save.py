@@ -65,6 +65,7 @@ class SaveIncremental(bpy.types.Operator):
 
         if currentblend:
             incrpath = get_incremented_path(currentblend)
+
             if incrpath:
                 return f"Incremental Save to\n{incrpath}"
 
