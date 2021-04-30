@@ -14,7 +14,7 @@ class SmartEdge(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     sharp: BoolProperty(name="Toggle Sharp", default=False)
-    offset: BoolProperty(name="Offset Edge Slide", default=True)
+    offset: BoolProperty(name="Offset Edge Slide", default=False)
 
     bridge_cuts: IntProperty(name="Cuts", default=0, min=0)
     bridge_interpolation: EnumProperty(name="Interpolation", items=bridge_interpolation_items, default='SURFACE')
