@@ -578,6 +578,8 @@ class PieSave(Menu):
         layout = self.layout
         pie = layout.menu_pie()
 
+        scene = context.scene
+
         # 4 - LEFT
         pie.operator("wm.open_mainfile", text="Open...", icon_value=get_icon('open'))
 
@@ -592,7 +594,7 @@ class PieSave(Menu):
         # box = pie.box().split()
 
         b = box.box()
-        self.draw_left_column(b)
+        self.draw_left_column(scene, b)
 
         column = box.column()
         b = column.box()
@@ -617,7 +619,7 @@ class PieSave(Menu):
         # 3 - BOTTOM - RIGHT
         pie.operator("machin3.save_incremental", text="Incremental Save", icon_value=get_icon('save_incremental'))
 
-    def draw_left_column(self, layout):
+    def draw_left_column(self, scene, layout):
         column = layout.column(align=True)
 
         column.scale_x = 1.1
@@ -634,7 +636,8 @@ class PieSave(Menu):
         column.operator("wm.revert_mainfile", text="Revert", icon_value=get_icon('revert'))
 
         column.separator()
-        column.operator("machin3.clean_out_blend_file", text="Clean out .blend", icon_value=get_icon('error'))
+        text, icon = ('Disable', 'PAUSE') if scene.M3.screen_cast else ('Enable', 'PLAY')
+        column.prop(scene.M3, 'screen_cast', text=f"{text} Screen Cast", icon=icon)
 
 
     def draw_center_column_top(self, context, layout):
@@ -693,6 +696,9 @@ class PieSave(Menu):
                 row.scale_y = 1.2
                 row.operator("wm.call_menu", text="Material", icon_value=get_icon('material')).name = "MACHIN3_MT_append_materials"
                 row.operator("machin3.load_materials_source", text="", icon_value=get_icon('open_material'))
+
+        column.separator()
+        column.operator("machin3.clean_out_blend_file", text="Clean out .blend", icon_value=get_icon('error'))
 
 
 class PieShading(Menu):

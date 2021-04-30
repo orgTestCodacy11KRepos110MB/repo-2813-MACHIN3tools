@@ -462,6 +462,11 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     affect_only_group_origin: BoolProperty(name="Transform only the Group Origin(Empty)", description='Transform the Group Origin(Empty) only, disable Group Auto-Select and enable "affect Parents only"', default=False, update=update_affect_only_group_origin)
 
 
+    # SCREEN CAST
+
+    screen_cast: BoolProperty(name="Screen Cast recent Operators", description="Display the last used operators on the screen", default=False)
+
+
     # hidden
 
     avoid_update: BoolProperty()

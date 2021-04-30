@@ -4,7 +4,10 @@ import gpu
 from gpu_extras.batch import batch_for_shader
 import bgl
 import blf
+from . wm import get_last_operators
+from . registration import get_prefs
 from .. colors import red, green, blue
+
 
 
 def add_object_axes_drawing_handler(dns, context, objs, draw_cursor):
@@ -173,6 +176,42 @@ def draw_surface_slide_HUD(context, color=(1, 1, 1), alpha=1, width=2):
         blf.position(font, (region.width / 2) - int(60 * scale), 0 + offset + int(fontsize), 0)
 
         blf.draw(font, title)
+
+
+def draw_screen_cast_HUD(context):
+    p = get_prefs()
+    operators = get_last_operators(context, debug=False)[-p.screencast_operator_count:]
+
+    font = 1
+    scale = context.preferences.view.ui_scale
+    size = int(p.screencast_fontsize * scale)
+    gap = round(size / 2)
+
+    for idx, (idname, label, description) in enumerate(reversed(operators)):
+        color = (0, 1, 0) if idname.startswith('machin3.') and p.screencast_highlight_machin3 else (1, 1, 1)
+        alpha = (len(operators) - idx) / len(operators)
+
+        # label
+
+        x = 20
+        y = round(70 * scale + idx * (size + gap))
+
+        blf.size(font, size, 72)
+        blf.color(font, *color, alpha)
+        blf.position(font, x, y, 0)
+
+        blf.draw(font, label)
+
+        # idname
+
+        if p.screencast_show_idname:
+            x = 20 + round(len(label) * round(p.screencast_fontsize * 0.58) * scale) + 10
+
+            blf.size(font, size - 2, 72)
+            blf.color(font, *color, alpha * 0.3)
+            blf.position(font, x, y, 0)
+
+            blf.draw(font, f"{idname}")
 
 
 def draw_label(context, title='', coords=None, center=True, color=(1, 1, 1), alpha=1):
@@ -417,7 +456,6 @@ def draw_mesh_wire(batch, color=(1, 1, 1), width=1, alpha=1, xray=True, modal=Tr
 
     else:
         bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_VIEW')
-
 
 
 def draw_tris(coords, indices=None, mx=Matrix(), color=(1, 1, 1), width=1, alpha=1, xray=True, modal=True):

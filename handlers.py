@@ -1,12 +1,13 @@
 import bpy
 from bpy.app.handlers import persistent
-from . utils.draw import remove_object_axes_drawing_handler, draw_focus_HUD, draw_surface_slide_HUD
+from . utils.draw import remove_object_axes_drawing_handler, draw_focus_HUD, draw_surface_slide_HUD, draw_screen_cast_HUD
 from . utils.registration import get_prefs, reload_msgbus
 from . utils.group import update_group_name, select_group_children
 
 
 focusHUD = None
 surfaceslideHUD = None
+screencastHUD = None
 
 
 @persistent
@@ -105,3 +106,21 @@ def surface_slide_HUD(scene):
         elif surfaceslideHUD and not surfaceslide:
             bpy.types.SpaceView3D.draw_handler_remove(surfaceslideHUD, 'WINDOW')
             surfaceslideHUD = None
+
+
+@persistent
+def screencast_HUD(scene):
+    global screencastHUD
+
+    # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
+    # despite that, the object will return True, and so we need to check for this or no new handler will be created when re-registering
+    if screencastHUD and "RNA_HANDLE_REMOVED" in str(screencastHUD):
+        screencastHUD = None
+
+    if bpy.context.window_manager.operators and scene.M3.screen_cast:
+        if not screencastHUD:
+            screencastHUD = bpy.types.SpaceView3D.draw_handler_add(draw_screen_cast_HUD, (bpy.context, ), 'WINDOW', 'POST_PIXEL')
+
+    elif screencastHUD:
+        bpy.types.SpaceView3D.draw_handler_remove(screencastHUD, 'WINDOW')
+        screencastHUD = None

@@ -237,6 +237,11 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     matpick_spacing_obj: FloatProperty(name="Object Mode Spacing", min=0, default=20)
     matpick_spacing_edit: FloatProperty(name="Edit Mode Spacing", min=0, default=5)
 
+    screencast_operator_count: IntProperty(name="Operator Count", description="Maximum number of Operators displayed when Screen Casting", default=10, min=1, max=100)
+    screencast_fontsize: IntProperty(name="Font Size", default=12, min=2)
+    screencast_highlight_machin3: BoolProperty(name="Highlight MACHIN3 operators", description="Highlight Operators from MACHIN3 addons", default=True)
+    screencast_show_idname: BoolProperty(name="Display Operators idnames", description="Display Operator's bl_idname properties", default=True)
+
     custom_startup: BoolProperty(name="Startup Scene", default=False)
     custom_theme: BoolProperty(name="Theme", default=True)
     custom_matcaps: BoolProperty(name="Matcaps", default=True)
@@ -668,6 +673,28 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             row = column.row()
             row.prop(self, "appendmatsname")
             row.operator("machin3.add_separator", text="", icon_value=get_icon('separator'))
+
+
+            bb = b.box()
+            bb.label(text="Save Pie: Screen Cast")
+
+            split = bb.split(factor=0.5)
+
+            col = split.column()
+
+            row = col.row()
+            r = row.split(factor=0.4)
+            r.prop(self, "screencast_operator_count", text="")
+            r.label(text="Operator Count")
+
+            row = col.row()
+            r = row.split(factor=0.4)
+            r.prop(self, "screencast_fontsize", text="")
+            r.label(text="Font Size")
+
+            col = split.column()
+            col.prop(self, "screencast_highlight_machin3")
+            col.prop(self, "screencast_show_idname")
 
 
         # SHADING PIE
