@@ -87,6 +87,9 @@ class SmartEdge(bpy.types.Operator):
             self.knife_project(context, active, cut_through=self.cut_through)
             return {'FINISHED'}
 
+        # disable the prop for screen casting
+        self.is_knife_project = False
+
 
         # TOGGLE SHARP
 
