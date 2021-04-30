@@ -1,6 +1,9 @@
 import bpy
 import os
 import sys
+import re
+from pprint import pprint
+
 
 enc = sys.getfilesystemencoding()
 
@@ -48,3 +51,40 @@ def makedir(pathstring):
     if not os.path.exists(pathstring):
         os.makedirs(pathstring)
     return pathstring
+
+
+def printd(d, name=''):
+    print(f"\n{name}")
+
+    if bpy.app.version < (2, 93, 0):
+        pprint(d)
+
+    else:
+        pprint(d, sort_dicts=False)
+
+
+def get_incremented_path(currentblend):
+    path = os.path.dirname(currentblend)
+    filename = os.path.basename(currentblend)
+
+    filenameRegex = re.compile(r"(.+)\.blend\d*$")
+
+    mo = filenameRegex.match(filename)
+
+    if mo:
+        name = mo.group(1)
+        numberendRegex = re.compile(r"(.*?)(\d+)$")
+
+        mo = numberendRegex.match(name)
+
+        if mo:
+            basename = mo.group(1)
+            numberstr = mo.group(2)
+        else:
+            basename = name + "_"
+            numberstr = "000"
+
+        number = int(numberstr)
+
+        incr = number + 1
+        incrstr = str(incr).zfill(len(numberstr))

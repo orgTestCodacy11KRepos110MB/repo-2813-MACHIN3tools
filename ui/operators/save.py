@@ -6,7 +6,7 @@ import re
 import time
 from ... utils.registration import get_prefs, get_addon
 from ... utils.append import append_material, append_world
-from ... utils.system import add_path_to_recent_files
+from ... utils.system import add_path_to_recent_files, get_incremented_path
 from ... utils.ui import popup_message, get_icon
 
 
@@ -57,15 +57,24 @@ class Save(bpy.types.Operator):
 class SaveIncremental(bpy.types.Operator):
     bl_idname = "machin3.save_incremental"
     bl_label = "Incremental Save"
-    bl_description = "Incremental Save"
     bl_options = {'REGISTER'}
 
+    @classmethod
+    def description(cls, context, properties):
+        currentblend = bpy.data.filepath
+
+        if currentblend:
+            incrpath = get_incremented_path(currentblend)
+            if incrpath:
+                return f"Incremental Save to\n{incrpath}"
+
+        return "Incremental Save"
 
     def execute(self, context):
         currentblend = bpy.data.filepath
 
         if currentblend:
-            savepath = self.get_incremented_path(currentblend)
+            savepath = get_incremented_path(currentblend)
 
             # add it to the recent files list
             add_path_to_recent_files(savepath)
@@ -84,35 +93,6 @@ class SaveIncremental(bpy.types.Operator):
             bpy.ops.wm.save_mainfile('INVOKE_DEFAULT')
 
         return {'FINISHED'}
-
-    def get_incremented_path(self, currentblend):
-        path = os.path.dirname(currentblend)
-        filename = os.path.basename(currentblend)
-
-        filenameRegex = re.compile(r"(.+)\.blend\d*$")
-
-        mo = filenameRegex.match(filename)
-
-        if mo:
-            name = mo.group(1)
-            numberendRegex = re.compile(r"(.*?)(\d+)$")
-
-            mo = numberendRegex.match(name)
-
-            if mo:
-                basename = mo.group(1)
-                numberstr = mo.group(2)
-            else:
-                basename = name + "_"
-                numberstr = "000"
-
-            number = int(numberstr)
-
-            incr = number + 1
-            incrstr = str(incr).zfill(len(numberstr))
-            incrname = basename + incrstr + ".blend"
-
-            return os.path.join(path, incrname)
 
 
 class LoadMostRecent(bpy.types.Operator):
