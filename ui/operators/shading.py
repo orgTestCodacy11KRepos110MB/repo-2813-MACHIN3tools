@@ -19,6 +19,9 @@ class SwitchShading(bpy.types.Operator):
 
     shading_type: StringProperty(name="Shading Type", default='SOLID')
 
+    # hidden (screen casting)
+    toggled_overlays = False
+
     @classmethod
     def description(cls, context, properties):
         shading = context.space_data.shading
@@ -39,10 +42,12 @@ class SwitchShading(bpy.types.Operator):
         # toggle overlays
         if shading.type == self.shading_type:
             show_overlays[self.shading_type] = not show_overlays[self.shading_type]
+            self.toggled_overlays = 'Enable' if show_overlays[self.shading_type] else 'Disable'
 
-        # change shading to SOLID
+        # change shading to self.shading_type
         else:
             shading.type = self.shading_type
+            self.toggled_overlays = False
 
         overlay.show_overlays = show_overlays[self.shading_type]
         return {'FINISHED'}

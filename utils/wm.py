@@ -24,8 +24,16 @@ def get_last_operators(context, debug=False):
         elif idname == 'machin3.switch_workspace':
             prop = op.properties.get('name', '')
 
+        elif idname == 'machin3.switch_shading':
+            toggled_overlays = getattr(op, 'toggled_overlays', False)
+            prop = op.properties.get('shading_type', '').capitalize()
+
+            if toggled_overlays:
+                label = f"{toggled_overlays} Overlays"
+
         elif idname == 'machin3.edit_mode':
-            label = 'Object Mode' if context.mode == 'OBJECT' else 'Edit Mesh Mode'
+            toggled_object = getattr(op, 'toggled_object', False)
+            label = 'Object Mode' if toggled_object else 'Edit Mesh Mode'
 
         elif idname == 'machin3.mesh_mode':
             mode = op.properties.get('mode', '')
@@ -64,11 +72,10 @@ def get_last_operators(context, debug=False):
         # MESHmachine
 
         elif idname == 'machin3.select':
-            if op.properties.get('vgroup', False):
+            if getattr(op, 'vgroup', False):
                 prop = 'VertexGroup'
-            elif op.properties.get('faceloop', False):
+            elif getattr(op, 'faceloop', False):
                 prop = 'FaceLoop'
-
             else:
                 prop = 'Loop' if op.properties.get('loop', False) else 'Sharp'
 
