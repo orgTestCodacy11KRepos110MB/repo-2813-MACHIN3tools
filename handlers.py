@@ -1,7 +1,7 @@
 import bpy
 from bpy.app.handlers import persistent
 from . utils.draw import remove_object_axes_drawing_handler, draw_focus_HUD, draw_surface_slide_HUD, draw_screen_cast_HUD
-from . utils.registration import get_prefs, reload_msgbus
+from . utils.registration import get_prefs, reload_msgbus, get_addon
 from . utils.group import update_group_name, select_group_children
 
 

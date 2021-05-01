@@ -637,7 +637,9 @@ class PieSave(Menu):
 
         column.separator()
         text, icon = ('Disable', 'PAUSE') if scene.M3.screen_cast else ('Enable', 'PLAY')
-        column.prop(scene.M3, 'screen_cast', text=f"{text} Screen Cast", icon=icon)
+
+        # column.prop(scene.M3, 'screen_cast', text=f"{text} Screen Cast", icon=icon)
+        column.operator('machin3.screen_cast', text=f"{text} Screen Cast", depress=scene.M3.screen_cast, icon=icon)
 
 
     def draw_center_column_top(self, context, layout):

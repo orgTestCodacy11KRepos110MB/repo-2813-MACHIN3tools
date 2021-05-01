@@ -458,3 +458,24 @@ class Clean(bpy.types.Operator):
             bpy.ops.view3d.localview(frame_selected=False)
 
         return {'FINISHED'}
+
+
+class ScreenCast(bpy.types.Operator):
+    bl_idname = "machin3.screen_cast"
+    bl_label = "MACHIN3: Screen Cast"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        context.scene.M3.screen_cast = not context.scene.M3.screen_cast
+
+        screencast_keys = get_addon('Screencast Keys')[0]
+
+        if screencast_keys:
+            bpy.ops.wm.sk_screencast_keys('INVOKE_DEFAULT')
+
+        # force handler update via selection event
+        if context.visible_objects:
+            context.visible_objects[0].select_set(context.visible_objects[0].select_get())
+
+        return {'FINISHED'}
