@@ -185,6 +185,9 @@ def draw_screen_cast_HUD(context):
     font = 0
     scale = context.preferences.view.ui_scale
 
+    offset_x = 20
+    offset_y = 70
+
     y = 0
 
     for idx, (label, idname, prop) in enumerate(reversed(operators)):
@@ -198,8 +201,8 @@ def draw_screen_cast_HUD(context):
 
         text = f"{label}: {prop}" if prop else label
 
-        x = 20
-        y = 70 * scale if idx == 0 else y + (blf.dimensions(font, text)[1] + gap)
+        x = offset_x
+        y = offset_y * scale if idx == 0 else y + (blf.dimensions(font, text)[1] + gap)
 
         blf.size(font, size, 72)
         blf.color(font, *color, alpha)
@@ -211,7 +214,7 @@ def draw_screen_cast_HUD(context):
 
         if p.screencast_show_idname:
             dim = blf.dimensions(font, text)
-            x = 20 + dim[0] + 10
+            x = offset_x + dim[0] + 10
 
             blf.size(font, size - 2, 72)
             blf.color(font, *color, alpha * 0.3)
