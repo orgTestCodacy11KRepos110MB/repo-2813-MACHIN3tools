@@ -718,11 +718,11 @@ class PieShading(Menu):
 
         # 4 - LEFT
         text, icon = self.get_text_icon(context, "SOLID")
-        pie.operator("machin3.shade_solid", text=text, icon=icon, depress=shading.type == 'SOLID' and overlay.show_overlays)
+        pie.operator("machin3.switch_shading", text=text, icon=icon, depress=shading.type == 'SOLID' and overlay.show_overlays).shading_type = 'SOLID'
 
         # 6 - RIGHT
         text, icon = self.get_text_icon(context, "MATERIAL")
-        pie.operator("machin3.shade_material", text=text, icon=icon, depress=shading.type == 'MATERIAL' and overlay.show_overlays)
+        pie.operator("machin3.switch_shading", text=text, icon=icon, depress=shading.type == 'MATERIAL' and overlay.show_overlays).shading_type = 'MATERIAL'
 
         # 2 - BOTTOM
         pie.separator()
@@ -769,11 +769,11 @@ class PieShading(Menu):
 
         # 1 - BOTTOM - LEFT
         text, icon = self.get_text_icon(context, "WIREFRAME")
-        pie.operator("machin3.shade_wire", text=text, icon=icon, depress=shading.type == 'WIREFRAME' and overlay.show_overlays)
+        pie.operator("machin3.switch_shading", text=text, icon=icon, depress=shading.type == 'WIREFRAME' and overlay.show_overlays).shading_type = 'WIREFRAME'
 
         # 3 - BOTTOM - RIGHT
         text, icon = self.get_text_icon(context, "RENDERED")
-        pie.operator("machin3.shade_rendered", text=text, icon=icon, depress=shading.type == 'RENDERED' and overlay.show_overlays)
+        pie.operator("machin3.switch_shading", text=text, icon=icon, depress=shading.type == 'RENDERED' and overlay.show_overlays).shading_type = 'RENDERED'
 
     def draw_overlay_box(self, context, active, view, layout):
         overlay = context.space_data.overlay
