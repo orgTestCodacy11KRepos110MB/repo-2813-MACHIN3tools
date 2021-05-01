@@ -6,7 +6,7 @@ import bgl
 import blf
 from . wm import get_last_operators
 from . registration import get_prefs
-from .. colors import red, green, blue
+from .. colors import red, green, blue, black
 
 
 
@@ -197,12 +197,20 @@ def draw_screen_cast_HUD(context):
         color = (0, 1, 0) if idname.startswith('machin3.') and p.screencast_highlight_machin3 else (1, 1, 1)
         alpha = (len(operators) - idx) / len(operators)
 
+        if idx == 0:
+            blf.enable(font, blf.SHADOW)
+
+            blf.shadow_offset(font, 3, -3)
+            blf.shadow(font, 5, *black, 1.0)
+
+
         # label
 
         text = f"{label}: {prop}" if prop else label
 
         x = offset_x
         y = offset_y * scale if idx == 0 else y + (blf.dimensions(font, text)[1] + gap)
+
 
         blf.size(font, size, 72)
         blf.color(font, *color, alpha)
@@ -224,6 +232,8 @@ def draw_screen_cast_HUD(context):
 
         if idx == 0:
             y += blf.dimensions(font, text)[1]
+            blf.disable(font, blf.SHADOW)
+
 
 
 def draw_label(context, title='', coords=None, center=True, color=(1, 1, 1), alpha=1):
