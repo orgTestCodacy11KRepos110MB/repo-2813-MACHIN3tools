@@ -184,10 +184,13 @@ def draw_screen_cast_HUD(context):
 
     font = 0
     scale = context.preferences.view.ui_scale
-    size = round(p.screencast_fontsize * scale)
-    gap = round(size / 2)
+
+    y = 0
 
     for idx, (label, idname, prop) in enumerate(reversed(operators)):
+        size = round(p.screencast_fontsize * scale * (1.25 if idx == 0 else 1))
+        gap = round(size / 2)
+
         color = (0, 1, 0) if idname.startswith('machin3.') and p.screencast_highlight_machin3 else (1, 1, 1)
         alpha = (len(operators) - idx) / len(operators)
 
@@ -196,7 +199,7 @@ def draw_screen_cast_HUD(context):
         text = f"{label}: {prop}" if prop else label
 
         x = 20
-        y = round(70 * scale + idx * (size + gap))
+        y = 70 * scale if idx == 0 else y + (blf.dimensions(font, text)[1] + gap)
 
         blf.size(font, size, 72)
         blf.color(font, *color, alpha)
@@ -215,6 +218,9 @@ def draw_screen_cast_HUD(context):
             blf.position(font, x, y, 0)
 
             blf.draw(font, f"{idname}")
+
+        if idx == 0:
+            y += blf.dimensions(font, text)[1]
 
 
 def draw_label(context, title='', coords=None, center=True, color=(1, 1, 1), alpha=1):
