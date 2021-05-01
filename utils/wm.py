@@ -14,14 +14,22 @@ def get_last_operators(context, debug=False):
         if idname.startswith('machin3.call_'):
             continue
 
+        # show props, special modes and custom labels
 
-        # show props and special modes
+        # MACHIN3tools
 
         elif idname == 'machin3.set_tool_by_name':
             prop = op.properties.get('name', '')
 
         elif idname == 'machin3.switch_workspace':
             prop = op.properties.get('name', '')
+
+        elif idname == 'machin3.edit_mode':
+            label = 'Object Mode' if context.mode == 'OBJECT' else 'Edit Mesh Mode'
+
+        elif idname == 'machin3.mesh_mode':
+            mode = op.properties.get('mode', '')
+            label = f"{mode.capitalize()} Mode"
 
         elif idname == 'machin3.smart_vert':
             if op.properties.get('slideoverride', ''):
@@ -51,6 +59,9 @@ def get_last_operators(context, debug=False):
         elif idname == 'machin3.focus':
             if op.properties.get('method', 0) == 1:
                 prop = 'LocalView'
+
+
+        # MESHmachine
 
         elif idname == 'machin3.select':
             if op.properties.get('vgroup', False):
