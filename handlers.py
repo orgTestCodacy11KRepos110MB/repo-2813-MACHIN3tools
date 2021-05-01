@@ -117,7 +117,8 @@ def screencast_HUD(scene):
     if screencastHUD and "RNA_HANDLE_REMOVED" in str(screencastHUD):
         screencastHUD = None
 
-    if bpy.context.window_manager.operators and scene.M3.screen_cast:
+    # if bpy.context.window_manager.operators and scene.M3.screen_cast:
+    if scene.M3.screen_cast:
         if not screencastHUD:
             screencastHUD = bpy.types.SpaceView3D.draw_handler_add(draw_screen_cast_HUD, (bpy.context, ), 'WINDOW', 'POST_PIXEL')
 

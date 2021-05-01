@@ -81,8 +81,13 @@ def get_last_operators(context, debug=False):
 
         operators.append((label, idname, prop))
 
+    # if there aren#t any last ops, it's because you've just done an undo
+    if not operators:
+        operators.append(('Undo', 'ed.undo', ''))
+
     if debug:
         for label, idname, prop in operators:
             print(label, f"({idname})", prop)
+
 
     return operators
