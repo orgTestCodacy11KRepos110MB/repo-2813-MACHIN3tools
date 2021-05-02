@@ -463,8 +463,16 @@ class Clean(bpy.types.Operator):
 class ScreenCast(bpy.types.Operator):
     bl_idname = "machin3.screen_cast"
     bl_label = "MACHIN3: Screen Cast"
-    bl_description = ""
+    bl_description = "Screen Cast Operators"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        screencast_keys = get_addon('Screencast Keys')[0]
+
+        if screencast_keys:
+            return "Screen Cast recent Operators and Keys"
+        return "Screen Cast Recent Operators"
 
     def execute(self, context):
         context.scene.M3.screen_cast = not context.scene.M3.screen_cast
