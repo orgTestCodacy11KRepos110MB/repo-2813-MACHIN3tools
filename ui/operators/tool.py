@@ -2,7 +2,7 @@ import bpy
 from bpy.props import StringProperty, FloatProperty
 from ... utils.tools import get_tools_from_context, get_tool_options, get_active_tool
 from ... utils.registration import get_addon_prefs, get_addon, get_prefs
-from ... items import tool_name_mapping_dict
+from ... utils.tools import prettify_tool_name
 from ... colors import white
 
 
@@ -10,7 +10,6 @@ class SetToolByName(bpy.types.Operator):
     bl_idname = "machin3.set_tool_by_name"
     bl_label = "MACHIN3: Set Tool by Name"
     bl_description = "Set Tool by Name"
-    # bl_options = {'INTERNAL'}
     bl_options = {'REGISTER', 'UNDO'}
 
     name: StringProperty(name="Tool name/ID")
@@ -38,7 +37,7 @@ class SetToolByName(bpy.types.Operator):
             context.scene.HC.show_gizmos = True
 
         # draw a prettified version of the new tool in a fading HUD
-        name = self.prettify(self.name)
+        name = prettify_tool_name(self.name)
 
         coords = (context.region.width / 2, 100)
         bpy.ops.machin3.draw_label(text=name, coords=coords, color=white, time=get_prefs().tools_HUD_fade)
@@ -46,10 +45,6 @@ class SetToolByName(bpy.types.Operator):
         # return {'RUNNING_MODAL'}
         return {'FINISHED'}
 
-    def prettify(self, name):
-        if name in tool_name_mapping_dict:
-            return tool_name_mapping_dict[name]
-        return name
 
 
 boxcutter = None

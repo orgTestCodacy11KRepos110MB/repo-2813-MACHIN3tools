@@ -1,3 +1,4 @@
+from . tools import prettify_tool_name
 
 
 def get_last_operators(context, debug=False):
@@ -19,7 +20,7 @@ def get_last_operators(context, debug=False):
         # MACHIN3tools
 
         elif idname == 'machin3.set_tool_by_name':
-            prop = op.properties.get('name', '')
+            prop = prettify_tool_name(op.properties.get('name', ''))
 
         elif idname == 'machin3.switch_workspace':
             prop = op.properties.get('name', '')

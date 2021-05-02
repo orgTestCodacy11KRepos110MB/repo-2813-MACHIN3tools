@@ -1,4 +1,5 @@
 from bl_ui.space_toolsystem_toolbar import VIEW3D_PT_tools_active as view3d_tools
+from .. items import tool_name_mapping_dict
 
 
 def get_tools_from_context(context):
@@ -37,3 +38,8 @@ def get_tool_options(context, tool_idname, operator_idname):
                     return tooldef.operator_properties(operator_idname)
                 except:
                     return None
+
+def prettify_tool_name(name):
+    if name in tool_name_mapping_dict:
+        return tool_name_mapping_dict[name]
+    return name
