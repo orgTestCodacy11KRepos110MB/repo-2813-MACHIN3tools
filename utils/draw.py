@@ -6,7 +6,7 @@ import bgl
 import blf
 from . wm import get_last_operators
 from . registration import get_prefs
-from .. colors import red, green, blue, black
+from .. colors import red, green, blue, black, white
 
 
 
@@ -185,18 +185,21 @@ def draw_screen_cast_HUD(context):
     font = 0
     scale = context.preferences.view.ui_scale
 
-    offset_x = 20
+    offset_x = 40 if p.screencast_show_addon else 20
     offset_y = 70
+    addon_x = 10
+
 
     y = 0
 
-    for idx, (label, idname, prop) in enumerate(reversed(operators)):
+    for idx, (addon, label, idname, prop) in enumerate(reversed(operators)):
         size = round(p.screencast_fontsize * scale * (1.25 if idx == 0 else 1))
         gap = round(size / 2)
 
-        color = (0, 1, 0) if idname.startswith('machin3.') and p.screencast_highlight_machin3 else (1, 1, 1)
+        color = green if idname.startswith('machin3.') and p.screencast_highlight_machin3 else white
         alpha = (len(operators) - idx) / len(operators)
 
+        # enable shadowing for the last op and idname
         if idx == 0:
             blf.enable(font, blf.SHADOW)
 
@@ -211,18 +214,17 @@ def draw_screen_cast_HUD(context):
         x = offset_x
         y = offset_y * scale if idx == 0 else y + (blf.dimensions(font, text)[1] + gap)
 
-
         blf.size(font, size, 72)
         blf.color(font, *color, alpha)
         blf.position(font, x, y, 0)
 
         blf.draw(font, text)
 
+
         # idname
 
         if p.screencast_show_idname:
-            dim = blf.dimensions(font, text)
-            x = offset_x + dim[0] + 10
+            x = offset_x + blf.dimensions(font, text)[0] + 10
 
             blf.size(font, size - 2, 72)
             blf.color(font, *color, alpha * 0.3)
@@ -230,10 +232,26 @@ def draw_screen_cast_HUD(context):
 
             blf.draw(font, f"{idname}")
 
+            # reset size
+            blf.size(font, size, 72)
+
+
+        # diable shadowing, we don't want to use it for the addon prefix or for the other ops
         if idx == 0:
-            y += blf.dimensions(font, text)[1]
             blf.disable(font, blf.SHADOW)
 
+
+        # addon prefix
+
+        if addon and p.screencast_show_addon:
+            blf.size(font, size, 72)
+            blf.color(font, *white, alpha * 0.3)
+            blf.position(font, addon_x, y, 0)
+
+            blf.draw(font, addon)
+
+        if idx == 0:
+            y += blf.dimensions(font, text)[1]
 
 
 def draw_label(context, title='', coords=None, center=True, color=(1, 1, 1), alpha=1):

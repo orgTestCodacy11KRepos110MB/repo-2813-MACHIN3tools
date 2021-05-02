@@ -1,12 +1,40 @@
 from . tools import prettify_tool_name
+from . system import printd
+from . registration import get_addon_operator_idnames
+
+
+addons = None
+
+addon_abbr_mapping = {'MACHIN3tools': 'M3',
+                      'DECALmachine': 'DM',
+                      'MESHmachine': 'MM',
+                      'HyperCursor': 'HC'}
 
 
 def get_last_operators(context, debug=False):
+    def get_parent_addon(idname):
+        for name, idnames in addons.items():
+            if idname in idnames:
+                return addon_abbr_mapping[name]
+        return None
+
+    global addons
+
+    if addons is None:
+        addons = {}
+
+        for addon in ['MACHIN3tools', 'DECALmachine', 'MESHmachine', 'HyperCursor']:
+            addons[addon] = get_addon_operator_idnames(addon)
+
+        if debug:
+            printd(addons)
+
     operators = []
 
     for op in context.window_manager.operators:
         idname = op.bl_idname.replace('_OT_', '.').lower()
         label = op.bl_label.replace('MACHIN3: ', '')
+        addon = get_parent_addon(idname)
         prop = ''
 
 
@@ -80,15 +108,14 @@ def get_last_operators(context, debug=False):
             else:
                 prop = 'Loop' if op.properties.get('loop', False) else 'Sharp'
 
-        operators.append((label, idname, prop))
+        operators.append((addon, label, idname, prop))
 
     # if there aren#t any last ops, it's because you've just done an undo
     if not operators:
-        operators.append(('Undo', 'ed.undo', ''))
+        operators.append((None, 'Undo', 'ed.undo', ''))
 
     if debug:
-        for label, idname, prop in operators:
-            print(label, f"({idname})", prop)
-
+        for addon, label, idname, prop in operators:
+            print(addon, label, f"({idname})", prop)
 
     return operators

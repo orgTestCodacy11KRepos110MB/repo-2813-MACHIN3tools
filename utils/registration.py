@@ -1,6 +1,7 @@
 import bpy
 from bpy.utils import register_class, unregister_class, previews
 import os
+from importlib import import_module
 from .. registration import keys as keysdict
 from .. registration import classes as classesdict
 from .. msgbus import group_name_change, group_color_change
@@ -44,6 +45,23 @@ def get_addon(addon, debug=False):
 
             return enabled, foldername, version, path
     return False, None, None, None
+
+
+def get_addon_operator_idnames(addon):
+    if addon in ['MACHIN3tools', 'DECALmachine', 'MESHmachine', 'HyperCursor']:
+        if addon in ['DECALmachine', 'MESHmachine', 'HyperCursor']:
+            if not get_addon(addon)[0]:
+                return
+
+        classes = import_module(f'{addon}.registration').classes
+
+        idnames = []
+
+        for imps in classes.values():
+            op_imps = [imp for imp in imps if 'operators' in imp[0]]
+            idnames.extend([f"machin3.{idname}" for _, cls in op_imps for _, idname in cls])
+
+        return idnames
 
 
 def get_addon_prefs(addon):
