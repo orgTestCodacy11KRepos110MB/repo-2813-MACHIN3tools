@@ -72,7 +72,7 @@ if 'bpy' in locals():
     reload_modules(bl_info['name'])
 
 import bpy
-from bpy.props import PointerProperty
+from bpy.props import PointerProperty, BoolProperty
 from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, register_msgbus, unregister_msgbus
@@ -92,6 +92,8 @@ def register():
 
     bpy.types.Scene.M3 = PointerProperty(type=M3SceneProperties)
     bpy.types.Object.M3 = PointerProperty(type=M3ObjectProperties)
+
+    bpy.types.WindowManager.M3_screen_cast = BoolProperty()
 
 
     # TOOLS, PIE MENUS, KEYMAPS, MENUS

@@ -475,7 +475,10 @@ class ScreenCast(bpy.types.Operator):
         return "Screen Cast Recent Operators"
 
     def execute(self, context):
-        context.scene.M3.screen_cast = not context.scene.M3.screen_cast
+        # context.scene.M3.screen_cast = not context.scene.M3.screen_cast
+
+        wm = context.window_manager
+        setattr(wm, 'M3_screen_cast', not getattr(wm, 'M3_screen_cast', False))
 
         screencast_keys = get_addon('Screencast Keys')[0]
 

@@ -112,13 +112,15 @@ def surface_slide_HUD(scene):
 def screencast_HUD(scene):
     global screencastHUD
 
+    wm = bpy.context.window_manager
+
     # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
     # despite that, the object will return True, and so we need to check for this or no new handler will be created when re-registering
     if screencastHUD and "RNA_HANDLE_REMOVED" in str(screencastHUD):
         screencastHUD = None
 
     # if bpy.context.window_manager.operators and scene.M3.screen_cast:
-    if scene.M3.screen_cast:
+    if getattr(wm, 'M3_screen_cast', False):
         if not screencastHUD:
             screencastHUD = bpy.types.SpaceView3D.draw_handler_add(draw_screen_cast_HUD, (bpy.context, ), 'WINDOW', 'POST_PIXEL')
 

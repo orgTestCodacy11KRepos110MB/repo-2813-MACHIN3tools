@@ -579,6 +579,7 @@ class PieSave(Menu):
         pie = layout.menu_pie()
 
         scene = context.scene
+        wm = context.window_manager
 
         # 4 - LEFT
         pie.operator("wm.open_mainfile", text="Open...", icon_value=get_icon('open'))
@@ -594,7 +595,7 @@ class PieSave(Menu):
         # box = pie.box().split()
 
         b = box.box()
-        self.draw_left_column(scene, b)
+        self.draw_left_column(wm, scene, b)
 
         column = box.column()
         b = column.box()
@@ -619,7 +620,7 @@ class PieSave(Menu):
         # 3 - BOTTOM - RIGHT
         pie.operator("machin3.save_incremental", text="Incremental Save", icon_value=get_icon('save_incremental'))
 
-    def draw_left_column(self, scene, layout):
+    def draw_left_column(self, wm, scene, layout):
         column = layout.column(align=True)
 
         column.scale_x = 1.1
@@ -636,11 +637,11 @@ class PieSave(Menu):
         column.operator("wm.revert_mainfile", text="Revert", icon_value=get_icon('revert'))
 
         column.separator()
-        text, icon = ('Disable', 'PAUSE') if scene.M3.screen_cast else ('Enable', 'PLAY')
 
-        # column.prop(scene.M3, 'screen_cast', text=f"{text} Screen Cast", icon=icon)
-        column.operator('machin3.screen_cast', text=f"{text} Screen Cast", depress=scene.M3.screen_cast, icon=icon)
+        screencast = getattr(wm, 'M3_screen_cast', False)
+        text, icon = ('Disable', 'PAUSE') if screencast else ('Enable', 'PLAY')
 
+        column.operator('machin3.screen_cast', text=f"{text} Screen Cast", depress=screencast, icon=icon)
 
     def draw_center_column_top(self, context, layout):
         column = layout.column(align=True)
