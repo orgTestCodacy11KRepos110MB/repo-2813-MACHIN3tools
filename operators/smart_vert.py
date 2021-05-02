@@ -10,6 +10,7 @@ from .. utils.ui import popup_message
 from .. utils.draw import draw_line, draw_lines, draw_point, draw_tris, draw_vector
 from .. utils.raycast import cast_bvh_ray_from_mouse
 from .. utils.math import average_locations, get_center_between_verts, get_face_center
+from .. utils.selection import get_edges_vert_sequences
 from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items, ctrl, alt
 
 
@@ -367,7 +368,7 @@ class SmartVert(bpy.types.Operator):
             return {'CANCELLED'}
 
         # MERGE and CONNECT
-        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) or (tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False) and self.mergetype == 'CENTER'):
             self.vertbevel = False
             self.smart_vert(context)
             return {'FINISHED'}
@@ -387,11 +388,12 @@ class SmartVert(bpy.types.Operator):
         bm.verts.ensure_lookup_table()
 
         verts = [v for v in bm.verts if v.select]
+        edges = [e for e in bm.edges if e.select]
 
 
         # VERT BEVEL
 
-        if len(verts) == 1:
+        if len(verts) == 1 and tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
             bpy.ops.mesh.bevel('INVOKE_DEFAULT', affect='VERTICES')
             self.vertbevel = True
 
@@ -400,16 +402,20 @@ class SmartVert(bpy.types.Operator):
 
         elif self.mode == "MERGE":
 
-            if self.mergetype == "LAST":
+            if self.mergetype == "LAST" and tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
                 if len(verts) >= 2:
                     if self.validate_history(active, bm, lazy=True):
                         bpy.ops.mesh.merge(type='LAST')
 
             elif self.mergetype == "CENTER":
-                if len(verts) >= 2:
+
+                if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False) and edges:
+                    self.center_merge_edges(active, bm, verts, edges)
+
+                elif len(verts) >= 2:
                     bpy.ops.mesh.merge(type='CENTER')
 
-            elif self.mergetype == "PATHS":
+            elif self.mergetype == "PATHS" and tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
                 self.wrongselection = False
 
                 if len(verts) == 4:
@@ -417,15 +423,13 @@ class SmartVert(bpy.types.Operator):
 
                     if history:
                         path1, path2 = self.get_paths(bm, history, topo)
-
-                        self.weld(active, bm, path1, path2)
-                        return
-
-                self.wrongselection = True
+                        self.merge_paths(active, bm, path1, path2)
+                else:
+                    self.wrongselection = True
 
         # CONNECT
 
-        elif self.mode == "CONNECT":
+        elif self.mode == "CONNECT" and tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
             self.wrongselection = False
 
             if len(verts) == 4:
@@ -439,16 +443,6 @@ class SmartVert(bpy.types.Operator):
 
             self.wrongselection = True
 
-    def get_paths(self, bm, history, topo):
-        pair1 = history[0:2]
-        pair2 = history[2:4]
-        pair2.reverse()
-
-        path1 = get_shortest_path(bm, *pair1, topo=topo, select=True)
-        path2 = get_shortest_path(bm, *pair2, topo=topo, select=True)
-
-        return path1, path2
-
     def validate_history(self, active, bm, lazy=False):
         verts = [v for v in bm.verts if v.select]
         history = list(bm.select_history)
@@ -461,17 +455,34 @@ class SmartVert(bpy.types.Operator):
             return history
         return None
 
-    def weld(self, active, bm, path1, path2):
+    def get_paths(self, bm, history, topo):
+        pair1 = history[0:2]
+        pair2 = history[2:4]
+        pair2.reverse()
+
+        path1 = get_shortest_path(bm, *pair1, topo=topo, select=True)
+        path2 = get_shortest_path(bm, *pair2, topo=topo, select=True)
+
+        return path1, path2
+
+    def merge_paths(self, active, bm, path1, path2):
         targetmap = {}
+
         for v1, v2 in zip(path1, path2):
             targetmap[v1] = v2
 
             if self.merge_center_paths:
-                v2.co = (v1.co + v2.co) / 2
+                v2.co = average_locations([v1.co, v2.co])
 
         bmesh.ops.weld_verts(bm, targetmap=targetmap)
-
         bmesh.update_edit_mesh(active.data)
+
+    def center_merge_edges(self, active, bm, verts, edges):
+        sequences = get_edges_vert_sequences(verts, edges, debug=False)
+
+        for verts, _ in sequences:
+            bmesh.ops.pointmerge(bm, verts=verts, merge_co=average_locations([v.co for v in verts]))
+            bmesh.update_edit_mesh(active.data)
 
     def connect(self, active, bm, path1, path2):
         for verts in zip(path1, path2):
