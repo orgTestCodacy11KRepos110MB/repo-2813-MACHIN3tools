@@ -185,16 +185,25 @@ def draw_screen_cast_HUD(context):
     font = 0
     scale = context.preferences.view.ui_scale
 
-    offset_x = 40 if p.screencast_show_addon else 20
+    offset_x = 7 if p.screencast_show_addon else 15
     offset_y = 70
-    addon_x = 10
 
+    # emphasize the last op
+    emphasize = 1.25
+
+    # get addon prefix offset, based on widest possiblestring 'MM', and based on empasized last op's size
+    if p.screencast_show_addon:
+        blf.size(font, round(p.screencast_fontsize * scale * emphasize), 72)
+        addon_offset_x = blf.dimensions(font, 'MM')[0]
+    else:
+        addon_offset_x = 0
 
     y = 0
+    hgap = 10
 
     for idx, (addon, label, idname, prop) in enumerate(reversed(operators)):
-        size = round(p.screencast_fontsize * scale * (1.25 if idx == 0 else 1))
-        gap = round(size / 2)
+        size = round(p.screencast_fontsize * scale * (emphasize if idx == 0 else 1))
+        vgap = round(size / 2)
 
         color = green if idname.startswith('machin3.') and p.screencast_highlight_machin3 else white
         alpha = (len(operators) - idx) / len(operators)
@@ -211,8 +220,8 @@ def draw_screen_cast_HUD(context):
 
         text = f"{label}: {prop}" if prop else label
 
-        x = offset_x
-        y = offset_y * scale if idx == 0 else y + (blf.dimensions(font, text)[1] + gap)
+        x = offset_x + addon_offset_x
+        y = offset_y * scale if idx == 0 else y + (blf.dimensions(font, text)[1] + vgap)
 
         blf.size(font, size, 72)
         blf.color(font, *color, alpha)
@@ -224,7 +233,7 @@ def draw_screen_cast_HUD(context):
         # idname
 
         if p.screencast_show_idname:
-            x = offset_x + blf.dimensions(font, text)[0] + 10
+            x += blf.dimensions(font, text)[0] + hgap
 
             blf.size(font, size - 2, 72)
             blf.color(font, *color, alpha * 0.3)
@@ -245,8 +254,11 @@ def draw_screen_cast_HUD(context):
 
         if addon and p.screencast_show_addon:
             blf.size(font, size, 72)
+
+            x = offset_x + addon_offset_x - blf.dimensions(font, addon)[0] - (hgap / 2)
+
             blf.color(font, *white, alpha * 0.3)
-            blf.position(font, addon_x, y, 0)
+            blf.position(font, x, y, 0)
 
             blf.draw(font, addon)
 
