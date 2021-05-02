@@ -491,8 +491,8 @@ class ScreenCast(bpy.types.Operator):
             other = [ws for ws in bpy.data.workspaces if ws != current]
 
             if other:
-                bpy.context.window.workspace = other[0]
-                bpy.context.window.workspace = current
+                context.window.workspace = other[0]
+                context.window.workspace = current
 
             bpy.ops.wm.sk_screencast_keys('INVOKE_DEFAULT')
 
