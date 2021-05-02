@@ -480,6 +480,17 @@ class ScreenCast(bpy.types.Operator):
         screencast_keys = get_addon('Screencast Keys')[0]
 
         if screencast_keys:
+
+            # switch workspaces back and forth
+            # this prevents "internal error: modal gizmo-map handler has invalid area" errors when maximizing the view
+
+            current = context.workspace
+            other = [ws for ws in bpy.data.workspaces if ws != current]
+
+            if other:
+                bpy.context.window.workspace = other[0]
+                bpy.context.window.workspace = current
+
             bpy.ops.wm.sk_screencast_keys('INVOKE_DEFAULT')
 
         # force handler update via selection event
