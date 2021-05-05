@@ -13,6 +13,8 @@ from .. utils.math import average_locations, get_center_between_verts, get_face_
 from .. utils.selection import get_edges_vert_sequences
 from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items, ctrl, alt
 
+from .. colors import yellow, white, green
+
 
 def draw_slide_status(op):
     def draw(self, context):
@@ -59,6 +61,7 @@ class SmartVert(bpy.types.Operator):
     wrongselection = False
     snapping = False
     passthrough = False
+    mousemerge = False
 
     @classmethod
     def poll(cls, context):
@@ -91,7 +94,6 @@ class SmartVert(bpy.types.Operator):
 
                 if self.mergetype == 'PATHS':
                     r.prop(self, "merge_center_paths", text='in Center', toggle=True)
-
 
             if self.mode == "CONNECT" or (self.mode == "MERGE" and self.mergetype == "PATHS"):
                 if self.wrongselection:
@@ -258,17 +260,16 @@ class SmartVert(bpy.types.Operator):
 
     def invoke(self, context, event):
 
+        # init mouse
+        self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
+
         # SLIDE EXTEND
         if self.slideoverride:
             self.bm = bmesh.from_edit_mesh(context.active_object.data)
             self.bm.normal_update()
 
-            # init mouse
-            self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
-
             self.active = context.active_object
             self.mx = self.active.matrix_world
-
 
             # VERT MODE
 
@@ -368,7 +369,7 @@ class SmartVert(bpy.types.Operator):
             return {'CANCELLED'}
 
         # MERGE and CONNECT
-        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) or (tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False) and self.mergetype == 'CENTER'):
+        elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False) or (tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False) and self.mergetype in ['LAST', 'CENTER']):
             self.vertbevel = False
             self.smart_vert(context)
             return {'FINISHED'}
@@ -402,10 +403,18 @@ class SmartVert(bpy.types.Operator):
 
         elif self.mode == "MERGE":
 
-            if self.mergetype == "LAST" and tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
-                if len(verts) >= 2:
+            if self.mergetype == "LAST":
+                self.mousemerge = False
+
+                if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False) and edges:
+                    self.mouse_merge(context, active, bm, verts, edges=edges)
+
+                elif len(verts) >= 2:
                     if self.validate_history(active, bm, lazy=True):
                         bpy.ops.mesh.merge(type='LAST')
+
+                    else:
+                        self.mouse_merge(context, active, bm, verts=verts, edges=None)
 
             elif self.mergetype == "CENTER":
 
@@ -478,11 +487,71 @@ class SmartVert(bpy.types.Operator):
         bmesh.update_edit_mesh(active.data)
 
     def center_merge_edges(self, active, bm, verts, edges):
-        sequences = get_edges_vert_sequences(verts, edges, debug=False)
+        '''
+        try finding individual edge sequences, then merge to the center of each one
+        '''
+
+        all_verts = verts.copy()
+
+        # sorting the edges can fail, if the edge selection contains various crossing edges
+        try:
+            sequences = get_edges_vert_sequences(verts, edges, debug=False)
+
+        # in that case just merge all verts
+        except:
+            sequences = [(all_verts, False)]
+
 
         for verts, _ in sequences:
             bmesh.ops.pointmerge(bm, verts=verts, merge_co=average_locations([v.co for v in verts]))
-            bmesh.update_edit_mesh(active.data)
+
+        # deselect verts
+        for v in bm.verts:
+            v.select_set(False)
+
+        bmesh.update_edit_mesh(active.data)
+
+    def mouse_merge(self, context, active, bm, verts, edges=None):
+        '''
+        try finding individual edge sequences, then merge each one to the point closest to the mouse
+        '''
+
+        def get_merge_co_from_mouse(verts, debug=False):
+            center = average_locations([mx @ v.co for v in verts])
+
+            mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.mousepos, center)
+            mouse_3d_local = mx.inverted_safe() @ mouse_3d
+
+            if debug:
+                draw_point(center, color=yellow, modal=False)
+                draw_point(mouse_3d_local, mx=mx, color=white, modal=False)
+                context.area.tag_redraw()
+
+            return min([(v.co, (v.co - mouse_3d_local).length) for v in verts], key=lambda x: x[1])[0]
+
+        mx = active.matrix_world
+
+        if edges:
+            all_verts = verts.copy()
+
+            # sorting the edges can fail, if the edge selection contains various crossing edges
+            try:
+                sequences = get_edges_vert_sequences(verts, edges, debug=False)
+
+            # in that case just merge all verts
+            except:
+                sequences = [(all_verts, False)]
+
+            for seq, _ in sequences:
+                merge_co = merge_co=get_merge_co_from_mouse(seq)
+                bmesh.ops.pointmerge(bm, verts=seq, merge_co=merge_co)
+
+        else:
+            merge_co = get_merge_co_from_mouse(verts)
+            bmesh.ops.pointmerge(bm, verts=verts, merge_co=merge_co)
+
+        bmesh.update_edit_mesh(active.data)
+        self.mousemerge = True
 
     def connect(self, active, bm, path1, path2):
         for verts in zip(path1, path2):
