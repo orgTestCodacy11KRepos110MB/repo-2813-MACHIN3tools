@@ -58,7 +58,6 @@ class SmartVert(bpy.types.Operator):
     vertbevel: BoolProperty(name="Single Vertex Bevelling", default=False)
 
     # hidden
-    wrongselection = False
     snapping = False
     passthrough = False
     mousemerge = False
@@ -96,14 +95,10 @@ class SmartVert(bpy.types.Operator):
                     r.prop(self, "merge_center_paths", text='in Center', toggle=True)
 
             if self.mode == "CONNECT" or (self.mode == "MERGE" and self.mergetype == "PATHS"):
-                if self.wrongselection:
-                    column.label(text="You need to select exactly 4 vertices for paths.", icon="INFO")
-
-                else:
-                    row = column.split(factor=0.3)
-                    row.label(text="Shortest Path")
-                    r = row.row()
-                    r.prop(self, "pathtype", expand=True)
+                row = column.split(factor=0.3)
+                row.label(text="Shortest Path")
+                r = row.row()
+                r.prop(self, "pathtype", expand=True)
 
     def draw_VIEW3D(self):
 
@@ -375,15 +370,17 @@ class SmartVert(bpy.types.Operator):
         else:
             self.vertbevel = False
             self.mousemerge = False
+            ret = False
 
             # support vert, edge and face mode when merging to last or center
             if self.mode == 'MERGE' and self.mergetype in ['LAST', 'CENTER']:
-                self.smart_vert(context)
-                return {'FINISHED'}
+                ret = self.smart_vert(context)
 
             # otherwise (vertbevel, path merging, path connecting) only support vert mode
             elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
-                self.smart_vert(context)
+                ret = self.smart_vert(context)
+
+            if ret:
                 return {'FINISHED'}
 
         return {'CANCELLED'}
@@ -410,6 +407,7 @@ class SmartVert(bpy.types.Operator):
         if len(verts) == 1 and tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
             bpy.ops.mesh.bevel('INVOKE_DEFAULT', affect='VERTICES')
             self.vertbevel = True
+            return True
 
 
         # MERGE
@@ -431,6 +429,8 @@ class SmartVert(bpy.types.Operator):
                     else:
                         self.mouse_merge(context, active, bm, verts=verts, edges=None)
 
+                return True
+
             elif self.mergetype == "CENTER":
                 if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True) and faces:
                     self.center_merge(active, bm, verts, faces=faces)
@@ -441,24 +441,22 @@ class SmartVert(bpy.types.Operator):
                 elif len(verts) >= 2:
                     bpy.ops.mesh.merge(type='CENTER')
 
+                return True
+
 
             elif self.mergetype == "PATHS" and tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
-                self.wrongselection = False
-
                 if len(verts) == 4:
                     history = self.validate_history(active, bm)
 
                     if history:
                         path1, path2 = self.get_paths(bm, history, topo)
                         self.merge_paths(active, bm, path1, path2)
-                else:
-                    self.wrongselection = True
+                        return True
+
 
         # CONNECT
 
         elif self.mode == "CONNECT" and tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
-            self.wrongselection = False
-
             if len(verts) == 4:
                 history = self.validate_history(active, bm)
 
@@ -466,9 +464,7 @@ class SmartVert(bpy.types.Operator):
                     path1, path2 = self.get_paths(bm, history, topo)
 
                     self.connect(active, bm, path1, path2)
-                    return
-
-            self.wrongselection = True
+                    return True
 
     def validate_history(self, active, bm, lazy=False):
         verts = [v for v in bm.verts if v.select]
