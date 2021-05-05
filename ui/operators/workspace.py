@@ -72,6 +72,7 @@ class SwitchWorkspace(bpy.types.Operator):
                             space.shading.use_scene_world_render = shading['use_scene_world_render']
 
                             space.shading.show_cavity = shading['show_cavity']
+                            space.shading.show_shadows = shading['show_shadows']
                             space.shading.cavity_type = shading['cavity_type']
                             space.shading.cavity_ridge_factor = shading['cavity_ridge_factor']
                             space.shading.cavity_valley_factor = shading['cavity_valley_factor']
@@ -126,6 +127,7 @@ class SwitchWorkspace(bpy.types.Operator):
             s['use_scene_world_render'] = shading.use_scene_world_render
 
             s['show_cavity'] = shading.show_cavity
+            s['show_shadows'] = shading.show_shadows
             s['cavity_type'] = shading.cavity_type
             s['cavity_ridge_factor'] = shading.cavity_ridge_factor
             s['cavity_valley_factor'] = shading.cavity_valley_factor
