@@ -120,6 +120,12 @@ eevee_preset_items = [('NONE', 'None', ''),
 render_engine_items = [('BLENDER_EEVEE', 'Eevee', ''),
                        ('CYCLES', 'Cycles', '')]
 
+
+shading_light_items = [('STUDIO', 'Studio', ''),
+                       ('MATCAP', 'Matcap', ''),
+                       ('FLAT', 'Flat', '')]
+
+
 cycles_device_items = [('CPU', 'CPU', ''),
                        ('GPU', 'GPU', '')]
 

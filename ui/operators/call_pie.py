@@ -17,6 +17,7 @@ class CallMACHIN3toolsPie(bpy.types.Operator):
             if self.idname == 'shading_pie':
                 engine = context.scene.render.engine
                 device = context.scene.cycles.device
+                shading = context.space_data.shading
 
                 # sync render engine settings
                 if engine != context.scene.M3.render_engine and engine in ['BLENDER_EEVEE', 'CYCLES']:
@@ -27,6 +28,15 @@ class CallMACHIN3toolsPie(bpy.types.Operator):
                 if engine == 'CYCLES' and device != context.scene.M3.cycles_device:
                     context.scene.M3.avoid_update = True
                     context.scene.M3.cycles_device = device
+
+                # sync shading.light
+                if shading.light != context.scene.M3.shading_light:
+                    context.scene.M3.avoid_update = True
+                    context.scene.M3.shading_light = shading.light
+
+                    context.scene.M3.avoid_update = True
+                    context.scene.M3.use_flat_shadows = shading.show_shadows
+
 
                 bpy.ops.wm.call_menu_pie(name='MACHIN3_MT_%s' % (self.idname))
 

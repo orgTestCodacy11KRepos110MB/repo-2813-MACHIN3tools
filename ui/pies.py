@@ -1026,7 +1026,9 @@ class PieShading(Menu):
             # light type
             row = column.row(align=True)
             # row.scale_y = 1.5
-            row.prop(view.shading, "light", expand=True)
+            # row.prop(view.shading, "light", expand=True)
+            row.prop(context.scene.M3, "shading_light", expand=True)
+
 
             # studio / matcap selection
             if view.shading.light in ["STUDIO", "MATCAP"]:
@@ -1041,11 +1043,23 @@ class PieShading(Menu):
                 r.active = view.shading.use_world_space_lighting
                 r.prop(view.shading, "studiolight_rotate_z", text="Rotation")
 
-            # switch matcap
-            if view.shading.light == "MATCAP":
+            # matcap ops
+            elif view.shading.light == "MATCAP":
                 row = column.row(align=True)
                 row.operator("machin3.matcap_switch", text="(X) Matcap Switch")
                 row.operator('view3d.toggle_matcap_flip', text="Matcap Flip", icon='ARROW_LEFTRIGHT')
+
+            # flat shadow settings
+            elif view.shading.light == "FLAT":
+                row = column.split(factor=0.6, align=True)
+
+                col = row.column(align=True)
+                col.prop(context.scene.M3, "use_flat_shadows")
+                col.prop(context.scene.display, "shadow_shift")
+                col.prop(context.scene.display, "shadow_focus")
+
+                row.prop(context.scene.display, "light_direction", text="")
+
 
             # color type
             row = column.row(align=True)

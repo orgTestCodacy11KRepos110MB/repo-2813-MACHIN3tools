@@ -8,7 +8,7 @@ from . utils.system import abspath
 from . utils.registration import get_prefs, get_addon_prefs
 from . utils.draw import remove_object_axes_drawing_handler, add_object_axes_drawing_handler
 from . utils.tools import get_active_tool
-from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, bc_orientation_items
+from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, bc_orientation_items, shading_light_items
 
 
 # COLLECTIONS
@@ -240,6 +240,28 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
         context.scene.cycles.device = self.cycles_device
 
+    def update_shading_light(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        shading = context.space_data.shading
+        shading.light = self.shading_light
+
+        # use shadows for FLAT shading
+        if self.use_flat_shadows:
+            shading.show_shadows = shading.light == 'FLAT'
+
+    def update_use_flat_shadows(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        shading = context.space_data.shading
+
+        if shading.light == 'FLAT':
+            shading.show_shadows = self.use_flat_shadows
+
     def update_custom_views_local(self, context):
         if self.avoid_update:
             self.avoid_update = False
@@ -320,6 +342,9 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     render_engine: EnumProperty(name="Render Engine", description="Render Engine", items=render_engine_items, default='BLENDER_EEVEE', update=update_render_engine)
     cycles_device: EnumProperty(name="Render Device", description="Render Device", items=cycles_device_items, default='CPU', update=update_cycles_device)
+
+    shading_light: EnumProperty(name="Lighting Method", description="Lighting Method for Solid/Texture Viewport Shading", items=shading_light_items, default='MATCAP', update=update_shading_light)
+    use_flat_shadows: BoolProperty(name="Use Flat Shadows", description="Use Shadows when in Flat Lighting", default=True, update=update_use_flat_shadows)
 
     object_axes_size: FloatProperty(name="Object Axes Size", default=0.3, min=0)
     object_axes_alpha: FloatProperty(name="Object Axes Alpha", default=0.75, min=0, max=1)
