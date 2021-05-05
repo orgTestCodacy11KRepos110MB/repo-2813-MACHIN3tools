@@ -1051,14 +1051,27 @@ class PieShading(Menu):
 
             # flat shadow settings
             elif view.shading.light == "FLAT":
-                row = column.split(factor=0.6, align=True)
 
-                col = row.column(align=True)
-                col.prop(context.scene.M3, "use_flat_shadows")
-                col.prop(context.scene.display, "shadow_shift")
-                col.prop(context.scene.display, "shadow_focus")
+                if context.scene.M3.use_flat_shadows:
+                    row = column.split(factor=0.6, align=True)
 
-                row.prop(context.scene.display, "light_direction", text="")
+                    col = row.column(align=True)
+                    r = col.row(align=True)
+                    r.scale_y = 1.25
+                    r.prop(context.scene.M3, "use_flat_shadows")
+
+                    c = col.column(align=True)
+                    c.active = context.scene.M3.use_flat_shadows
+                    c.prop(context.scene.display, "shadow_shift")
+                    c.prop(context.scene.display, "shadow_focus")
+
+                    r = row.row(align=True)
+                    r.prop(context.scene.display, "light_direction", text="")
+
+                else:
+                    row = column.row(align=True)
+                    row.scale_y = 1.25
+                    row.prop(context.scene.M3, "use_flat_shadows")
 
 
             # color type
