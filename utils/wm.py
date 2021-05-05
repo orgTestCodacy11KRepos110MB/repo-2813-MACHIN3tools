@@ -78,9 +78,10 @@ def get_last_operators(context, debug=False):
             else:
                 modeint = op.properties.get('mode')
                 mergetypeint = op.properties.get('mergetype')
+                mousemerge = getattr(op, 'mousemerge', False)
 
                 mode = 'Merge' if modeint== 0 else 'Connect'
-                mergetype = 'Last' if mergetypeint == 0 else 'Center' if mergetypeint == 1 else 'Paths'
+                mergetype = 'AtMouse' if mousemerge else 'AtLast' if mergetypeint == 0 else 'AtCenter' if mergetypeint == 1 else 'Paths'
                 prop = mode + mergetype
 
         elif idname == 'machin3.smart_edge':
