@@ -13,6 +13,11 @@ addon_abbr_mapping = {'MACHIN3tools': 'M3',
 
 def get_last_operators(context, debug=False):
     def get_parent_addon(idname):
+        if idname.startswith('hops.'):
+            return 'HO'
+        elif idname.startswith('bc.'):
+            return 'BC'
+
         for name, idnames in addons.items():
             if idname in idnames:
                 return addon_abbr_mapping[name]
