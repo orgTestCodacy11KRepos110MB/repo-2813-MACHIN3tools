@@ -114,6 +114,16 @@ def get_last_operators(context, debug=False):
             else:
                 prop = 'Loop' if op.properties.get('loop', False) else 'Sharp'
 
+        elif idname == 'machin3.boolean':
+            prop = getattr(op, 'method', False).capitalize()
+
+
+        # HyperCursor
+
+        elif idname == 'machin3.add_object_at_cursor':
+            prop = getattr(op, 'type', False).capitalize()
+
+
         operators.append((addon, label, idname, prop))
 
     # if there aren#t any last ops, it's because you've just done an undo
