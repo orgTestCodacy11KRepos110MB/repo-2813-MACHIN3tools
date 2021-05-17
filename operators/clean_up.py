@@ -100,7 +100,7 @@ class CleanUp(bpy.types.Operator):
         return self.execute(context)
 
     def execute(self, context):
-        sel = [obj for obj in context.selected_objects if obj.type == 'MESH' and obj.mode == 'EDIT']
+        sel = {obj for obj in context.selected_objects if obj.type == 'MESH' and obj.mode == 'EDIT'} | {context.active_object}
 
         removed = {}
 
