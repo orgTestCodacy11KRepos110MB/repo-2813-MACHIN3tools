@@ -63,7 +63,7 @@ def printd(d, name=''):
         pprint(d, sort_dicts=False)
 
 
-def get_incremented_path(currentblend):
+def get_incremented_paths(currentblend):
     path = os.path.dirname(currentblend)
     filename = os.path.basename(currentblend)
 
@@ -91,4 +91,4 @@ def get_incremented_path(currentblend):
 
         incrname = basename + incrstr + ".blend"
 
-        return os.path.join(path, incrname)
+        return os.path.join(path, incrname), os.path.join(path, name + '_01.blend')

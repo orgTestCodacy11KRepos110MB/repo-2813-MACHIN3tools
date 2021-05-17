@@ -5,7 +5,7 @@ import os
 import time
 from ... utils.registration import get_prefs, get_addon
 from ... utils.append import append_material, append_world
-from ... utils.system import add_path_to_recent_files, get_incremented_path
+from ... utils.system import add_path_to_recent_files, get_incremented_paths
 from ... utils.ui import popup_message, get_icon
 from ... utils.wm import get_last_operators
 
@@ -13,6 +13,7 @@ from ... utils.wm import get_last_operators
 class New(bpy.types.Operator):
     bl_idname = "machin3.new"
     bl_label = "Current file is unsaved. Start a new file anyway?"
+    bl_description = "Start new .blend file"
     bl_options = {'REGISTER'}
 
 
@@ -34,8 +35,15 @@ class New(bpy.types.Operator):
 class Save(bpy.types.Operator):
     bl_idname = "machin3.save"
     bl_label = "Save"
-    bl_description = "Save"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        currentblend = bpy.data.filepath
+
+        if currentblend:
+            return f"Save {os.path.basename(currentblend)}"
+        return "Save unsaved file as..."
 
     def execute(self, context):
         currentblend = bpy.data.filepath
@@ -64,31 +72,35 @@ class SaveIncremental(bpy.types.Operator):
         currentblend = bpy.data.filepath
 
         if currentblend:
-            incrpath = get_incremented_path(currentblend)
+            incrpaths = get_incremented_paths(currentblend)
 
-            if incrpath:
-                return f"Incremental Save to\n{incrpath}"
+            if incrpaths:
+                return f"Save {os.path.basename(currentblend)} incrementally to {incrpaths[0]}\nALT: Save to {os.path.basename(incrpaths[1])}"
 
-        return "Incremental Save"
+        return "Save unsaved file as..."
 
-    def execute(self, context):
+    def invoke(self, context, event):
         currentblend = bpy.data.filepath
 
         if currentblend:
-            savepath = get_incremented_path(currentblend)
-
-            # add it to the recent files list
-            add_path_to_recent_files(savepath)
+            incrpaths = get_incremented_paths(currentblend)
+            savepath = incrpaths[1] if event.alt else incrpaths[0]
 
             if os.path.exists(savepath):
                 self.report({'ERROR'}, "File '%s' exists already!\nBlend has NOT been saved incrementally!" % (savepath))
+                return {'CANCELLED'}
+
             else:
+
+                # add it to the recent files list
+                add_path_to_recent_files(savepath)
+
                 bpy.ops.wm.save_as_mainfile(filepath=savepath)
 
                 t = time.time()
                 localt = time.strftime('%H:%M:%S', time.localtime(t))
-                print("%s | Saved blend incrementally: %s" % (localt, savepath))
-                self.report({'INFO'}, 'Incrementally saved "%s"' % (os.path.basename(savepath)))
+                print(f"{localt} | Saved {os.path.basename(currentblend)} incrementally to {savepath}")
+                self.report({'INFO'}, f"Incrementally saved to {os.path.basename(savepath)}")
 
         else:
             bpy.ops.wm.save_mainfile('INVOKE_DEFAULT')
