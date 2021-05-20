@@ -42,7 +42,7 @@ class Save(bpy.types.Operator):
         currentblend = bpy.data.filepath
 
         if currentblend:
-            return f"Save {os.path.basename(currentblend)}"
+            return f"Save {currentblend}"
         return "Save unsaved file as..."
 
     def execute(self, context):
@@ -75,7 +75,7 @@ class SaveIncremental(bpy.types.Operator):
             incrpaths = get_incremented_paths(currentblend)
 
             if incrpaths:
-                return f"Save {os.path.basename(currentblend)} incrementally to {incrpaths[0]}\nALT: Save to {os.path.basename(incrpaths[1])}"
+                return f"Save {currentblend} incrementally to {os.path.basename(incrpaths[0])}\nALT: Save to {os.path.basename(incrpaths[1])}"
 
         return "Save unsaved file as..."
 
