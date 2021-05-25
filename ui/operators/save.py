@@ -416,16 +416,26 @@ class LoadNext(bpy.types.Operator):
 class Purge(bpy.types.Operator):
     bl_idname = "machin3.purge_orphans"
     bl_label = "MACHIN3: Purge Orphans"
-    bl_description = "Purge Orphans\nALT: Purge Orphans 5 times"
     bl_options = {'REGISTER', 'UNDO'}
 
+    @classmethod
+    def description(cls, context, properties):
+        if bpy.app.version >= (2, 93, 0):
+            return "Purge Orphans\nALT: Purge Orphans Recursively"
+        else:
+            return "Purge Orphans\nALT: Purge Orphans 5 times"
+
     def invoke(self, context, event):
-        if event.alt:
-            for i in range(5):
-                bpy.ops.outliner.orphans_purge()
+        if bpy.app.version >= (2, 93, 0):
+            bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=event.alt)
 
         else:
-            bpy.ops.outliner.orphans_purge()
+            if event.alt:
+                for i in range(5):
+                    bpy.ops.outliner.orphans_purge()
+
+            else:
+                bpy.ops.outliner.orphans_purge()
 
         return {'FINISHED'}
 
