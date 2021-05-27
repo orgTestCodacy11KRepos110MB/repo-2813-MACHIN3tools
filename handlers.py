@@ -45,7 +45,7 @@ def update_group(none):
 
         # HIDE / UNHIDE
 
-        if context.scene.M3.group_hide:
+        if context.scene.M3.group_hide and getattr(context, 'visible_objects', None):
             selected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and obj.select_get()]
             unselected = [obj for obj in context.visible_objects if obj.M3.is_group_empty and not obj.select_get()]
 
