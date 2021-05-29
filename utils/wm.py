@@ -87,7 +87,13 @@ def get_last_operators(context, debug=False):
 
                 mode = 'Merge' if modeint== 0 else 'Connect'
                 mergetype = 'AtMouse' if mousemerge else 'AtLast' if mergetypeint == 0 else 'AtCenter' if mergetypeint == 1 else 'Paths'
-                prop = mode + mergetype
+
+                if mode == 'Merge':
+                    prop = mode + mergetype
+                else:
+                    pathtype = getattr(op, 'pathtype', False)
+                    prop = mode + 'Pathsby' + pathtype.title()
+
 
         elif idname == 'machin3.smart_edge':
             if op.properties.get('is_knife_project', False):
