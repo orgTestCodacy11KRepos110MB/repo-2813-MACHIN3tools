@@ -1,6 +1,9 @@
 import bpy
-from .. utils.registration import get_prefs
+from .. utils.registration import get_prefs, get_addon
 from .. utils.group import get_group_polls
+
+
+hypercursor = None
 
 
 # MACHIN3tools SUB MENU
@@ -10,11 +13,19 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
     bl_label = "MACHIN3tools"
 
     def draw(self, context):
+        global hypercursor
+
+        if hypercursor is None:
+            hypercursor = get_addon('HyperCursor')[0]
+
         layout = self.layout
         p = get_prefs()
 
         if p.activate_mirror:
             layout.operator("machin3.unmirror", text="Un-Mirror")
+
+        if hypercursor:
+            layout.operator("machin3.remove_array", text="Un-Array")
 
         if p.activate_select:
             layout.operator("machin3.select_center_objects", text="Select Center Objects")
