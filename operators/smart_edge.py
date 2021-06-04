@@ -18,8 +18,8 @@ class SmartEdge(bpy.types.Operator):
     sharp_mode: EnumProperty(name="Sharp Mode", items=smartedge_sharp_mode_items, default='SHARPEN')
     bevel_weight: FloatProperty(name="Weight", default=1, min=0.01, max=1)
     bevel_amount: FloatProperty(name="Amount", default=0.1, min=0, step=0.3, precision=4)
-    bevel_clamp: BoolProperty(name="Clamp Overlap", default=True)
-    bevel_loop: BoolProperty(name="Loop Slide", default=True)
+    bevel_clamp: BoolProperty(name="Clamp Overlap", default=False)
+    bevel_loop: BoolProperty(name="Loop Slide", default=False)
     is_unbevel: BoolProperty(name="Is Unbevel")
 
     offset: BoolProperty(name="Offset Edge Slide", default=False)
