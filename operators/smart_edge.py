@@ -17,7 +17,9 @@ class SmartEdge(bpy.types.Operator):
     sharp: BoolProperty(name="Toggle Sharp", default=False)
     sharp_mode: EnumProperty(name="Sharp Mode", items=smartedge_sharp_mode_items, default='SHARPEN')
     bevel_weight: FloatProperty(name="Weight", default=1, min=0.01, max=1)
-    bevel_amount: FloatProperty(name="Amount", default=0.1, min=0)
+    bevel_amount: FloatProperty(name="Amount", default=0.1, min=0, step=0.3, precision=4)
+    bevel_clamp: BoolProperty(name="Clamp Overlap", default=True)
+    bevel_loop: BoolProperty(name="Loop Slide", default=True)
     is_unbevel: BoolProperty(name="Is Unbevel")
 
     offset: BoolProperty(name="Offset Edge Slide", default=False)
@@ -51,6 +53,10 @@ class SmartEdge(bpy.types.Operator):
                 row.prop(self, "bevel_amount")
                 row.prop(self, "bevel_weight")
 
+                row = column.row(align=True)
+                row.prop(self, "bevel_clamp", toggle=True)
+                row.prop(self, "bevel_loop", toggle=True)
+
         elif self.draw_bridge_props:
             row.prop(self, "bridge_cuts")
             row.prop(self, "bridge_interpolation", text="")
@@ -81,6 +87,18 @@ class SmartEdge(bpy.types.Operator):
         if self.is_selection_separated(bm, verts, edges, faces):
             self.is_knife_projectable = True
             self.is_knife_project = True
+
+
+        if self.sharp and self.sharp_mode in ['CHAMFER', 'KOREAN']:
+            bevels = [mod for mod in active.modifiers if mod.type == 'BEVEL' and mod.limit_method == 'WEIGHT' and mod.name in ['Chamfer', 'Korean Bevel']]
+
+            if bevels:
+                bevel = bevels[-1]
+
+                self.bevel_amount = bevel.width
+                self.bevel_clamp = bevel.use_clamp_overlap
+                self.bevel_loop = bevel.loop_slide
+
 
         return self.execute(context)
 
@@ -291,6 +309,8 @@ class SmartEdge(bpy.types.Operator):
             bevel = bevels[-1]
 
         bevel.width = self.bevel_amount
+        bevel.use_clamp_overlap = self.bevel_clamp
+        bevel.loop_slide = self.bevel_loop
 
         if self.sharp_mode == 'CHAMFER':
             bevel.name = 'Chamfer'
