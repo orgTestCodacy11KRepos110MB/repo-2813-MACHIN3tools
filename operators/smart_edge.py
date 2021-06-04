@@ -188,6 +188,27 @@ class SmartEdge(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+    # KNIFE PROJECT
+
+    def is_selection_separated(self, bm, verts, edges, faces):
+        '''
+        figure out of selecting is separated from the rest of the mesh
+        '''
+
+        # abort if nothing is selected or the entire mesh is selected
+        if not verts or len(faces) == len(bm.faces):
+            return False
+
+        # check for each selected vert, if every connected edge or face is also selected
+        for v in verts:
+            if not all(e in edges for e in v.link_edges):
+                return False
+
+            if not all(f in faces for f in v.link_faces):
+                return False
+        return True
+
     def knife_project(self, context, active, cut_through=False):
         bpy.ops.mesh.separate(type='SELECTED')
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -210,23 +231,8 @@ class SmartEdge(bpy.types.Operator):
             bpy.data.meshes.remove(cutter.data, do_unlink=True)
             bpy.ops.object.mode_set(mode='EDIT')
 
-    def is_selection_separated(self, bm, verts, edges, faces):
-        '''
-        figure out of selecting is separated from the rest of the mesh
-        '''
 
-        # abort if nothing is selected or the entire mesh is selected
-        if not verts or len(faces) == len(bm.faces):
-            return False
-
-        # check for each selected vert, if every connected edge or face is also selected
-        for v in verts:
-            if not all(e in edges for e in v.link_edges):
-                return False
-
-            if not all(f in faces for f in v.link_faces):
-                return False
-        return True
+    # SHARP / CHAMFER / KOREAN BEVEL (mod)
 
     def toggle_sharp(self, active, edges):
         '''
@@ -307,6 +313,9 @@ class SmartEdge(bpy.types.Operator):
             for bevel in bevels:
                 active.modifiers.remove(bevel)
 
+
+    # KOREAN BEVEL (mesh)
+
     def offset_edges(self, active, edges):
         '''
         offset parallel edges creating a "korean bevel", choosing either the bevel tool or the offset_edge_loop_slide tool to do so, depending on the circumstances, remove sharps too
@@ -328,6 +337,9 @@ class SmartEdge(bpy.types.Operator):
                                                  MESH_OT_offset_edge_loops={"use_cap_endpoint": False},
                                                  TRANSFORM_OT_edge_slide={"value": -1, "use_even": True, "flipped": False, "use_clamp": True, "correct_uv": True})
         bmesh.update_edit_mesh(active.data)
+
+
+    # STAR CONNECT
 
     def star_connect(self, active, bm):
         '''

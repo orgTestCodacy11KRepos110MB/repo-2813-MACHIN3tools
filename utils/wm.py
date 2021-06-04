@@ -100,7 +100,14 @@ def get_last_operators(context, debug=False):
                 prop = 'KnifeProject'
 
             elif op.properties.get('sharp', False):
-                prop = 'ToggleSharp'
+                mode = getattr(op, 'sharp_mode')
+
+                if mode == 'SHARPEN':
+                    prop = 'ToggleSharp'
+                elif mode == 'CHAMFER':
+                    prop = 'ToggleChamfer'
+                elif mode == 'KOREAN':
+                    prop = 'ToggleKoreanBevel'
 
             elif op.properties.get('offset', False):
                 prop = 'OffsetEdges / KoreanBevel'

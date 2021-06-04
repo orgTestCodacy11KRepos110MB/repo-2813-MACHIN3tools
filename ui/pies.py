@@ -969,9 +969,9 @@ class PieShading(Menu):
 
                 row = column.split(factor=0.2, align=True)
                 row.label(text='Edges')
-                row.prop(view.overlay, "show_edge_crease", text="Creases", toggle=True)
                 row.prop(view.overlay, "show_edge_sharp", text="Sharp", toggle=True)
                 row.prop(view.overlay, "show_edge_bevel_weight", text="Bevel", toggle=True)
+                row.prop(view.overlay, "show_edge_crease", text="Creases", toggle=True)
                 row.prop(view.overlay, "show_edge_seams", text="Seams", toggle=True)
                 # row.prop(view.overlay, "show_freestyle_edge_marks", text="Freestyle", toggle=True)
 
