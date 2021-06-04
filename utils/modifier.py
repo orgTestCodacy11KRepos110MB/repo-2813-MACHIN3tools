@@ -29,6 +29,14 @@ def add_mods_from_dict(obj, modsdict):
                 setattr(mod, pname, pvalue)
 
 
+def add_bevel(obj, method='WEIGHT'):
+    mod = obj.modifiers.new(name='Bevel', type='BEVEL')
+    mod.limit_method = method
+
+    mod.show_expanded = False
+    return mod
+
+
 # REMOVE
 
 def remove_triangulate(obj):

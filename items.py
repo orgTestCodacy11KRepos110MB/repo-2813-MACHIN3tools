@@ -42,6 +42,10 @@ smartvert_path_type_items = [("TOPO", "Topo", ""),
                              ("LENGTH", "Length", "")]
 
 
+smartedge_sharp_mode_items = [('SHARPEN', 'Sharpen', ''),
+                              ('CHAMFER', 'Chamfer', ''),
+                              ('KOREAN', 'Korean Bevel', '')]
+
 focus_method_items = [('VIEW_SELECTED', 'View Selected', ''),
                       ('LOCAL_VIEW', 'Local View', '')]
 

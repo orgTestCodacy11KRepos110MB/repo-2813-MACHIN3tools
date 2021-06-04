@@ -1,7 +1,8 @@
 import bpy
-from bpy.props import BoolProperty, IntProperty, EnumProperty
+from bpy.props import BoolProperty, IntProperty, EnumProperty, FloatProperty
 import bmesh
-from .. items import bridge_interpolation_items
+from .. items import bridge_interpolation_items, smartedge_sharp_mode_items
+from .. utils.modifier import add_bevel
 from .. utils.ui import popup_message
 
 
@@ -14,6 +15,11 @@ class SmartEdge(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     sharp: BoolProperty(name="Toggle Sharp", default=False)
+    sharp_mode: EnumProperty(name="Sharp Mode", items=smartedge_sharp_mode_items, default='SHARPEN')
+    bevel_weight: FloatProperty(name="Weight", default=1, min=0.01, max=1)
+    bevel_amount: FloatProperty(name="Amount", default=0.1, min=0)
+    is_unbevel: BoolProperty(name="Is Unbevel")
+
     offset: BoolProperty(name="Offset Edge Slide", default=False)
 
     bridge_cuts: IntProperty(name="Cuts", default=0, min=0)
@@ -23,21 +29,29 @@ class SmartEdge(bpy.types.Operator):
     is_knife_project: BoolProperty(name="Is Knife Project", default=False)
     cut_through: BoolProperty(name="Cut Trough", default=False)
 
+
     def draw(self, context):
         layout = self.layout
 
-        column = layout.column()
+        column = layout.column(align=True)
+        row = column.row(align=True)
 
         if self.is_knife_projectable:
-            row = column.row(align=True)
             row.prop(self, 'is_knife_project', text='Knife Project', toggle=True)
 
             r = row.row(align=True)
             r.active = self.is_knife_project
             r.prop(self, "cut_through", toggle=True)
 
+        elif self.draw_sharp_props:
+            row.prop(self, "sharp_mode", expand=True)
+
+            if self.sharp_mode in ['CHAMFER', 'KOREAN'] and not self.is_unbevel:
+                row = column.row(align=True)
+                row.prop(self, "bevel_amount")
+                row.prop(self, "bevel_weight")
+
         elif self.draw_bridge_props:
-            row = column.row(align=True)
             row.prop(self, "bridge_cuts")
             row.prop(self, "bridge_interpolation", text="")
 
@@ -48,9 +62,10 @@ class SmartEdge(bpy.types.Operator):
 
     def invoke(self, context, event):
         self.draw_bridge_props = False
-        self.draw_knife_props = False
+        self.draw_sharp_props = False
         self.is_knife_projectable = False
         self.do_knife_project = False
+        self.is_unbevel = False
 
         active = context.active_object
 
@@ -76,6 +91,8 @@ class SmartEdge(bpy.types.Operator):
         bm.normal_update()
         bm.verts.ensure_lookup_table()
 
+        bw = bm.edges.layers.bevel_weight.verify()
+
         verts = [v for v in bm.verts if v.select]
         faces = [f for f in bm.faces if f.select]
         edges = [e for e in bm.edges if e.select]
@@ -94,10 +111,23 @@ class SmartEdge(bpy.types.Operator):
         # TOGGLE SHARP
 
         if self.sharp and edges:
-            self.toggle_sharp(active, bm, edges)
+            self.draw_sharp_props = True
+
+            if self.sharp_mode == 'SHARPEN':
+                self.toggle_sharp(active, edges)
+
+            else:
+                self.set_bevel_weight(active, bw, edges)
+                self.bevel(active, bw, edges)
+
+            self.clean_up_bevels(active, bm, bw, edges)
+
+
+        # OFFSET EDGES
 
         elif self.offset and edges:
-            self.offset_edges(active, bm, edges)
+            self.offset_edges(active, edges)
+
 
         # SMART
 
@@ -171,10 +201,9 @@ class SmartEdge(bpy.types.Operator):
 
             try:
                 bpy.ops.mesh.knife_project(cut_through=cut_through)
-                self.draw_knife_props = True
 
             except RuntimeError:
-                self.draw_knife_props = False
+                pass
 
             # remove cutter
             bpy.ops.object.mode_set(mode='OBJECT')
@@ -199,16 +228,16 @@ class SmartEdge(bpy.types.Operator):
                 return False
         return True
 
-    def toggle_sharp(self, active, bm, edges):
+    def toggle_sharp(self, active, edges):
         '''
         sharpen or unsharpen selected edges
         '''
 
-        # existing sharp edges among selection unsharpen
+        # existing sharp edges among selection: unsharpen
         if any([not e.smooth for e in edges]):
             smooth = True
 
-        # no sharp edges found - sharpen
+        # no sharp edges found: sharpen
         else:
             smooth = False
 
@@ -218,7 +247,67 @@ class SmartEdge(bpy.types.Operator):
 
         bmesh.update_edit_mesh(active.data)
 
-    def offset_edges(self, active, bm, edges):
+    def set_bevel_weight(self, active, bw, edges):
+        '''
+        add or remove bevel weight on selected edges
+        '''
+
+        # existing bevelled edges among selection: remove weigts
+        if any([e[bw] > 0 for e in edges]):
+            self.bevel_weight = max(e[bw] for e in edges)
+            weight = 0
+
+            self.is_unbevel = True
+
+        # no weighted edges found: set weights
+        else:
+            weight = self.bevel_weight
+
+        # bevel weighing
+        for e in edges:
+            e[bw] = weight
+
+        bmesh.update_edit_mesh(active.data)
+
+    def bevel(self, active, bw, edges):
+        '''
+        add bevel mod and name it according to the "sharp_method"
+        '''
+
+        bevels = [mod for mod in active.modifiers if mod.type == 'BEVEL' and mod.limit_method == 'WEIGHT' and mod.name in ['Chamfer', 'Korean Bevel']]
+
+        # add new mod
+        if not bevels:
+            bevel = add_bevel(active)
+
+        # use the existing mod
+        else:
+            bevel = bevels[-1]
+
+        bevel.width = self.bevel_amount
+
+        if self.sharp_mode == 'CHAMFER':
+            bevel.name = 'Chamfer'
+            bevel.profile = 0.5
+            bevel.segments = 1
+
+        else:
+            bevel.name = 'Korean Bevel'
+            bevel.profile = 1
+            bevel.segments = 2
+
+    def clean_up_bevels(self, active, bm, bw, edges):
+        '''
+        remove chamfer/korean bevel mods if no weighted edges are found anymore
+        '''
+
+        if all([e[bw] == 0 for e in bm.edges]):
+            bevels = [mod for mod in active.modifiers if mod.type == 'BEVEL' and mod.limit_method == 'WEIGHT' and mod.name in ['Chamfer', 'Korean Bevel']]
+
+            for bevel in bevels:
+                active.modifiers.remove(bevel)
+
+    def offset_edges(self, active, edges):
         '''
         offset parallel edges creating a "korean bevel", choosing either the bevel tool or the offset_edge_loop_slide tool to do so, depending on the circumstances, remove sharps too
         '''
