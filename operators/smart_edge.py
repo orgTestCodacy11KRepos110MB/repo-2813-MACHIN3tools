@@ -74,6 +74,7 @@ class SmartEdge(bpy.types.Operator):
         self.is_unbevel = False
 
         active = context.active_object
+        self.show_wire = active.show_wire
 
         bm = bmesh.from_edit_mesh(active.data)
         bm.normal_update()
@@ -139,6 +140,9 @@ class SmartEdge(bpy.types.Operator):
                 self.bevel(active, bw, edges)
 
             self.clean_up_bevels(active, bm, bw, edges)
+
+            if not self.show_wire:
+                active.show_wire = self.sharp_mode == 'KOREAN'
 
 
         # OFFSET EDGES
