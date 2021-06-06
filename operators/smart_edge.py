@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import BoolProperty, IntProperty, EnumProperty, FloatProperty
 import bmesh
-from .. items import bridge_interpolation_items, smartedge_sharp_mode_items
+from .. items import bridge_interpolation_items, smartedge_sharp_mode_items, smartedge_select_mode_items
 from .. utils.modifier import add_bevel
 from .. utils.ui import popup_message
 
@@ -30,6 +30,11 @@ class SmartEdge(bpy.types.Operator):
     is_knife_projectable: BoolProperty(name="Can be Knife Projected", default=False)
     is_knife_project: BoolProperty(name="Is Knife Project", default=False)
     cut_through: BoolProperty(name="Cut Trough", default=False)
+
+    select_mode: EnumProperty(name="Select Mode", items=smartedge_select_mode_items, default='BOUNDS')
+
+    # screen cast
+    is_select = False
 
 
     def draw(self, context):
@@ -61,6 +66,10 @@ class SmartEdge(bpy.types.Operator):
             row.prop(self, "bridge_cuts")
             row.prop(self, "bridge_interpolation", text="")
 
+        elif self.is_select:
+            row.label(text="Select")
+            row.prop(self, "select_mode", expand=True)
+
     @classmethod
     def poll(cls, context):
         mode = tuple(context.scene.tool_settings.mesh_select_mode)
@@ -72,6 +81,7 @@ class SmartEdge(bpy.types.Operator):
         self.is_knife_projectable = False
         self.do_knife_project = False
         self.is_unbevel = False
+        self.is_select = False
 
         active = context.active_object
         self.show_wire = active.show_wire
@@ -176,10 +186,13 @@ class SmartEdge(bpy.types.Operator):
             elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
 
                 # LOOPCUT
+
                 if len(edges) == 0:
                     bpy.ops.mesh.loopcut_slide('INVOKE_DEFAULT')
 
+
                 # BRIDGE
+
                 elif all([not e.is_manifold for e in edges]):
                     try:
                         bpy.ops.mesh.bridge_edge_loops(number_cuts=self.bridge_cuts, interpolation=self.bridge_interpolation)
@@ -187,26 +200,55 @@ class SmartEdge(bpy.types.Operator):
                     except:
                         popup_message("SmartEdge in Bridge mode requires two separate, non-manifold edge loops.")
 
+
                 # TURN EDGE
+
                 elif 1 <= len(edges) < 4:
                     bpy.ops.mesh.edge_rotate(use_ccw=False)
 
-                # LOOP TO REGION
+
+                # SELECT
+
                 elif len(edges) >= 4:
-                    bpy.ops.mesh.loop_to_region()
-                    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
+                    self.is_select = True
+
+                    # LOOP TO REGION
+
+                    if self.select_mode == 'BOUNDS':
+                        bpy.ops.mesh.loop_to_region()
+                        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
+
+                    # ADJACENT FACES
+
+                    elif self.select_mode == 'ADJACENT':
+                        self.select_adjacent_faces(active, edges)
+
 
             # face mode:
             elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
                 faces = [f for f in bm.faces if f.select]
 
-                # REGION TO LOOP
-                if faces:
-                    bpy.ops.mesh.region_to_loop()
-
                 # LOOPCUT
-                else:
+
+                if not faces:
                     bpy.ops.mesh.loopcut_slide('INVOKE_DEFAULT')
+
+
+                # SELECT
+
+                else:
+                    self.is_select = True
+
+                    # REGION TO LOOP
+
+                    if self.select_mode == 'BOUNDS':
+                        bpy.ops.mesh.region_to_loop()
+
+                    # ADJACENT EDGES
+
+                    elif self.select_mode == 'ADJACENT':
+                        self.select_adjacent_edges(active, edges, faces)
+
 
         return {'FINISHED'}
 
@@ -422,3 +464,37 @@ class SmartEdge(bpy.types.Operator):
 
         bmesh.update_edit_mesh(active.data)
         return True
+
+
+    # SELECT
+
+    def select_adjacent_edges(self, active, edges, faces):
+        '''
+        selecting unselected edges, connected to the selected faces
+        '''
+
+        adjacent = {e for f in faces for v in f.verts for e in v.link_edges if e not in edges}
+
+        bpy.ops.mesh.select_all(action='DESELECT')
+
+        for e in adjacent:
+            e.select_set(True)
+
+        bmesh.update_edit_mesh(active.data)
+        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='EDGE')
+
+
+    def select_adjacent_faces(self, active, edges):
+        '''
+        select unselected faces, connected to the selected edges
+        '''
+
+        adjacent = {f for e in edges for f in e.link_faces}
+
+        bpy.ops.mesh.select_all(action='DESELECT')
+
+        for f in adjacent:
+            f.select_set(True)
+
+        bmesh.update_edit_mesh(active.data)
+        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')

@@ -112,6 +112,11 @@ def get_last_operators(context, debug=False):
             elif op.properties.get('offset', False):
                 prop = 'OffsetEdges / KoreanBevel'
 
+            elif getattr(op, 'is_select'):
+                mode = getattr(op, 'select_mode')
+                prop = f'Select{mode.title()}'
+
+
         elif idname == 'machin3.focus':
             if op.properties.get('method', 0) == 1:
                 prop = 'LocalView'
