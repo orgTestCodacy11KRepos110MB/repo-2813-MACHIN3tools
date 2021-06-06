@@ -26,6 +26,7 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
 
         if hypercursor:
             layout.operator("machin3.remove_array", text="Un-Array")
+            layout.operator("machin3.remove_boolean", text="Un-Boolean")
 
         if p.activate_select:
             layout.operator("machin3.select_center_objects", text="Select Center Objects")
