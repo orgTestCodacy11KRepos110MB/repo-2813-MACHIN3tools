@@ -110,11 +110,33 @@ def get_last_operators(context, debug=False):
                     prop = 'ToggleKoreanBevel'
 
             elif op.properties.get('offset', False):
-                prop = 'OffsetEdges / KoreanBevel'
+                prop = 'KoreanBevel'
+
+            elif getattr(op, 'draw_bridge_props'):
+                prop = 'Bridge'
+
+            elif getattr(op, 'is_knife'):
+                prop = 'Knife'
+
+            elif getattr(op, 'is_connect'):
+                prop = 'Connect'
+
+            elif getattr(op, 'is_starconnect'):
+                prop = 'StarConnect'
 
             elif getattr(op, 'is_select'):
                 mode = getattr(op, 'select_mode')
-                prop = f'Select{mode.title()}'
+
+                if getattr(op, 'is_region'):
+                    prop = 'SelectRegion'
+                else:
+                    prop = f'Select{mode.title()}'
+
+            elif getattr(op, 'is_loop_cut'):
+                prop = 'LoopCut'
+
+            elif getattr(op, 'is_turn'):
+                prop = 'Turn'
 
 
         elif idname == 'machin3.focus':

@@ -46,7 +46,7 @@ smartedge_sharp_mode_items = [('SHARPEN', 'Sharpen', ''),
                               ('CHAMFER', 'Chamfer', ''),
                               ('KOREAN', 'Korean Bevel', '')]
 
-smartedge_select_mode_items = [('BOUNDS', 'Bounds', ''),
+smartedge_select_mode_items = [('BOUNDS', 'Bounds/Region', ''),
                                ('ADJACENT', 'Adjacent', '')]
 
 focus_method_items = [('VIEW_SELECTED', 'View Selected', ''),

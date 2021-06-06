@@ -34,7 +34,13 @@ class SmartEdge(bpy.types.Operator):
     select_mode: EnumProperty(name="Select Mode", items=smartedge_select_mode_items, default='BOUNDS')
 
     # screen cast
+    is_knife = False
+    is_connect = False
+    is_starconnect = False
     is_select = False
+    is_region = False
+    is_loop_cut = False
+    is_turn = False
 
 
     def draw(self, context):
@@ -81,7 +87,13 @@ class SmartEdge(bpy.types.Operator):
         self.is_knife_projectable = False
         self.do_knife_project = False
         self.is_unbevel = False
+        self.is_knife = False
+        self.is_connect = False
+        self.is_starconnect = False
         self.is_select = False
+        self.is_region = False
+        self.is_loop_cut = False
+        self.is_turn = False
 
         active = context.active_object
         self.show_wire = active.show_wire
@@ -171,6 +183,7 @@ class SmartEdge(bpy.types.Operator):
 
                 # KNIFE
                 if len(verts) <= 1:
+                    self.is_knife = True
                     bpy.ops.mesh.knife_tool('INVOKE_DEFAULT')
 
                 # PATH / STAR CONNECT
@@ -179,7 +192,11 @@ class SmartEdge(bpy.types.Operator):
                     # star connects when appropriate, fall back to path connect otherwise
                     connected = self.star_connect(active, bm)
 
-                    if not connected:
+                    if connected:
+                        self.is_starconnect = True
+
+                    else:
+                        self.is_connect = True
                         bpy.ops.mesh.vert_connect_path()
 
             # edge mode
@@ -188,6 +205,7 @@ class SmartEdge(bpy.types.Operator):
                 # LOOPCUT
 
                 if len(edges) == 0:
+                    self.is_loop_cut = True
                     bpy.ops.mesh.loopcut_slide('INVOKE_DEFAULT')
 
 
@@ -199,11 +217,13 @@ class SmartEdge(bpy.types.Operator):
                         self.draw_bridge_props = True
                     except:
                         popup_message("SmartEdge in Bridge mode requires two separate, non-manifold edge loops.")
+                        return {'CANCELLED'}
 
 
                 # TURN EDGE
 
                 elif 1 <= len(edges) < 4:
+                    self.is_turn = True
                     bpy.ops.mesh.edge_rotate(use_ccw=False)
 
 
@@ -215,6 +235,7 @@ class SmartEdge(bpy.types.Operator):
                     # LOOP TO REGION
 
                     if self.select_mode == 'BOUNDS':
+                        self.is_region = True
                         bpy.ops.mesh.loop_to_region()
                         bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
 
@@ -231,6 +252,7 @@ class SmartEdge(bpy.types.Operator):
                 # LOOPCUT
 
                 if not faces:
+                    self.is_loop_cut = True
                     bpy.ops.mesh.loopcut_slide('INVOKE_DEFAULT')
 
 
