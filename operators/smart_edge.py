@@ -196,8 +196,12 @@ class SmartEdge(bpy.types.Operator):
                         self.is_starconnect = True
 
                     else:
-                        self.is_connect = True
-                        bpy.ops.mesh.vert_connect_path()
+                        try:
+                            bpy.ops.mesh.vert_connect_path()
+                            self.is_connect = True
+                        except:
+                            self.report({'ERROR'}, "Could not connect vertices")
+                            return {'CANCELLED'}
 
             # edge mode
             elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
