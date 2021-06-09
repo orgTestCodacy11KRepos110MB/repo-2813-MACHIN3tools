@@ -227,19 +227,23 @@ class SmartVert(bpy.types.Operator):
         # CANCEL
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-
-            # reset original vert locations
-            for v, data in self.verts.items():
-                v.co = data['co']
-
-            self.bm.normal_update()
-            bmesh.update_edit_mesh(self.active.data)
-
-            self.finish()
-
+            self.cancel_modal()
             return {'CANCELLED'}
 
         return {'RUNNING_MODAL'}
+
+    def cancel_modal(self):
+        '''
+        restore original vert locations, then finish op
+        '''
+
+        for v, data in self.verts.items():
+            v.co = data['co']
+
+        self.bm.normal_update()
+        bmesh.update_edit_mesh(self.active.data)
+
+        self.finish()
 
     def finish(self):
         bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
