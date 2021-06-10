@@ -135,6 +135,16 @@ def set_obj_origin(obj, mx, bm=None, decalmachine=False, meshmachine=False):
             if getattr(stash, 'version', False) and float('.'.join([v for v in stash.version.split('.')[:2]])) >= 0.7:
                 stashdeltamx = stash.obj.MM.stashdeltamx
 
+                # duplicate "instanced" stash objs, to prevent offsetting stashes on object's whose origin is not changed
+                # NOTE: it seems this is only required for self stashes for some reason
+                if stash.self_stash:
+                    if stash.obj.users > 2:
+                        print(f"INFO: Duplicating {stash.name}'s stashobj {stash.obj.name} as it's used by multiple stashes")
+
+                        dup = stash.obj.copy()
+                        dup.data = stash.obj.data.copy()
+                        stash.obj = dup
+
                 stash.obj.MM.stashdeltamx = flatten_matrix(deltamx @ stashdeltamx)
                 stash.obj.MM.stashorphanmx = flatten_matrix(mx)
 
