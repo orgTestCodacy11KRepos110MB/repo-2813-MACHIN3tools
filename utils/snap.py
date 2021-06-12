@@ -46,7 +46,7 @@ class Snap:
     _edit_mesh_objs = []
     _modifiers = []
 
-    def __init__(self, context, include=[], exclude=[], exclude_wire=False, alternative=[], debug=False):
+    def __init__(self, context, include=None, exclude=None, exclude_wire=False, alternative=None, debug=False):
         self.debug = debug
 
         self.log("\nInitialize Snapping")
@@ -55,8 +55,7 @@ class Snap:
         self._init_edit_mode(context)
 
         # init include/exclude
-        self.exclude = [obj for obj in context.visible_objects if obj not in include] if include else exclude
-        self.exclude_wire = exclude_wire
+        self._init_exclude(context, include, exclude, exclude_wire)
 
         # init alternatives
         self._init_alternatives(context, alternative)
@@ -154,6 +153,22 @@ class Snap:
             self._update_meshes(context)
             self._disable_modifiers()
 
+    def _init_exclude(self, context, include, exclude, exclude_wire):
+        '''
+        NOTE: this is done in favour of mutables default arguments such as [] in __init__
+        see https://docs.python-guide.org/writing/gotchas/#mutable-default-arguments
+        '''
+        if include:
+            self.exclude = [obj for obj in context.visible_objects if obj not in include]
+
+        elif exclude:
+            self.exclude = exclude
+
+        else:
+            self.exclude = []
+
+        self.exclude_wire = exclude_wire
+
     def _init_alternatives(self, context, alternative):
         '''
         create a duplicate for each object in the alternative list
@@ -164,18 +179,19 @@ class Snap:
 
         self.alternative = []
 
-        for obj in alternative:
-            if obj not in self.exclude:
-                self.exclude.append(obj)
+        if alternative:
+            for obj in alternative:
+                if obj not in self.exclude:
+                    self.exclude.append(obj)
 
-            dup = obj.copy()
-            dup.data = obj.data.copy()
-            context.scene.collection.objects.link(dup)
-            dup.hide_set(True)
+                dup = obj.copy()
+                dup.data = obj.data.copy()
+                context.scene.collection.objects.link(dup)
+                dup.hide_set(True)
 
-            self.alternative.append(dup)
+                self.alternative.append(dup)
 
-            self.log(f" Created alternative object {dup.name} for {obj.name}")
+                self.log(f" Created alternative object {dup.name} for {obj.name}")
 
     def _remove_alternatives(self):
         for obj in self.alternative:
