@@ -319,7 +319,7 @@ class SmartVert(bpy.types.Operator):
                 self.coords = []
 
                 # init snapping
-                self.snap = Snap(context, alternative=[self.active], debug=True)
+                self.snap = Snap(context, alternative=[self.active], debug=False)
 
                 self.is_snapping = False
                 self.is_diverging = False
