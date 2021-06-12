@@ -8,7 +8,7 @@ from mathutils.geometry import intersect_point_line, intersect_line_line, inters
 from .. utils.graph import get_shortest_path
 from .. utils.ui import popup_message
 from .. utils.draw import draw_line, draw_lines, draw_point, draw_tris, draw_vector
-from .. utils.raycast import cast_bvh_ray_from_mouse
+from .. utils.snap import Snap
 from .. utils.math import average_locations, get_center_between_verts, get_face_center
 from .. utils.selection import get_edges_vert_sequences, get_selection_islands
 from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items, ctrl, alt
@@ -154,27 +154,11 @@ class SmartVert(bpy.types.Operator):
 
             # snap to edge or face
             elif event.ctrl:
-                hitobj, hitlocation, hitnormal, hitindex, hitdistance, cache = cast_bvh_ray_from_mouse(self.mousepos, candidates=self.snappable, bmeshes=self.snap_bms, bvhs=self.snap_bvhs, debug=False)
-
-                # cache bmeshes
-                if cache['bmesh']:
-                    for name, bm in cache['bmesh'].items():
-                        if name not in self.snap_bms:
-                            bm.faces.ensure_lookup_table()
-                            loop_triangles = bm.calc_loop_triangles()
-                            tri_coords = {}
-
-                            self.snap_bms[name] = (bm, loop_triangles, tri_coords)
-
-                # cache bvhs
-                if cache['bvh']:
-                    for name, bvh in cache['bvh'].items():
-                        if name not in self.snap_bvhs:
-                            self.snap_bvhs[name] = bvh
+                self.snap.get_hit(self.mousepos)
 
                 # snap to geometry
-                if hitobj:
-                    self.slide_snap(context, hitobj, hitlocation, hitindex)
+                if self.snap.hit:
+                    self.slide_snap(context)
 
                 # side normally if nothing is hit
                 else:
@@ -251,11 +235,7 @@ class SmartVert(bpy.types.Operator):
         # reset the statusbar
         statusbar.draw = self.bar_orig
 
-        # remove snap copy of active
-        bpy.data.meshes.remove(self.snap_copy.data, do_unlink=True)
-
-        # remove snap bmeshes and bhs
-        del self.snap_bms, self.snap_bvhs
+        self.snap.finish()
 
     def invoke(self, context, event):
 
@@ -339,24 +319,19 @@ class SmartVert(bpy.types.Operator):
                 self.coords = []
 
                 # init snapping
+                self.snap = Snap(context, alternative=[self.active], debug=True)
+
                 self.is_snapping = False
                 self.is_diverging = False
                 self.snap_element = None
-                self.snap_bms = {}
-                self.snap_bvhs = {}
                 self.snap_coords = []
                 self.snap_tri_coords = []
                 self.snap_proximity_coords = []
                 self.snap_ortho_coords = []
 
-                # create copy of the active to raycast on, this prevents an issue where the raycast flips from one face to the other because moving a vert changes the topology
-                self.active.update_from_editmode()
-                self.snap_copy = self.active.copy()
-                self.snap_copy.data = self.active.data.copy()
-
-                # snappable objects are all edit mesh object nicluding the the active's copy
-                edit_mesh_objects = [obj for obj in context.visible_objects if obj.mode == 'EDIT' and obj != self.active]
-                self.snappable = edit_mesh_objects + [self.snap_copy]
+                # statusbar
+                self.bar_orig = statusbar.draw
+                statusbar.draw = draw_slide_status(self)
 
                 # handlers
                 self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
@@ -633,36 +608,29 @@ class SmartVert(bpy.types.Operator):
         self.bm.normal_update()
         bmesh.update_edit_mesh(self.active.data)
 
-    def slide_snap(self, context, hitobj, hitlocation, hitindex):
+    def slide_snap(self, context):
         '''
         slide snap to edges of all edit mode objects
         '''
 
-        # hit location in hitobj's local space
-        hitmx = hitobj.matrix_world
-        hit = hitmx.inverted() @ hitlocation
+        hitmx = self.snap.hitmx
+        hit_co = hitmx.inverted_safe() @ self.snap.hitlocation
 
-        # fetch cached bmesh, all loop triangles for it as well as any cachaed tri_coords for view3d face drawing
-        bm, loop_triangles, tri_coords = self.snap_bms[hitobj.name]
+        hitface = self.snap.hitface
+        tri_coords = self.snap.cache.tri_coords[self.snap.hitobj.name][self.snap.hitindex]
 
-        # get hitface from the cached bmesh
-        hitface = bm.faces[hitindex]
-
-        # cache tri coords for that face
-        if hitindex not in tri_coords:
-            tri_coords[hitindex] = [hitmx @ l.vert.co for tri in loop_triangles if tri[0].face == hitface for l in tri]
 
         # weigh the following distances, to influence how easily the individual elements can be selected
         face_weight = 25
         edge_weight = 1
 
         # get distance to face center
-        face_distance = (hitface, (hit - hitface.calc_center_median_weighted()).length / face_weight)
+        face_distance = (hitface, (hit_co - hitface.calc_center_median_weighted()).length / face_weight)
 
         # evaluate all hitface edges and get their proximity to the hit, as well as the proximity to the hit from the edge center
         # get the closest edge by multiplying the distance with the center distance, and divide the result by the edge length, this is necessary to deal with split edges
         # edge = min([(e, (hit - intersect_point_line(hit, e.verts[0].co, e.verts[1].co)[0]).length, (hit - get_center_between_verts(*e.verts)).length) for e in hitface.edges if e.calc_length()], key=lambda x: (x[1] * x[2]) / x[0].calc_length())[0]
-        edge = min([(e, (hit - intersect_point_line(hit, e.verts[0].co, e.verts[1].co)[0]).length, (hit - get_center_between_verts(*e.verts)).length) for e in hitface.edges if e.calc_length()], key=lambda x: (x[1] * x[2]) / x[0].calc_length())
+        edge = min([(e, (hit_co - intersect_point_line(hit_co, e.verts[0].co, e.verts[1].co)[0]).length, (hit_co - get_center_between_verts(*e.verts)).length) for e in hitface.edges if e.calc_length()], key=lambda x: (x[1] * x[2]) / x[0].calc_length())
         edge_distance = (edge[0], ((edge[1] * edge[2]) / edge[0].calc_length()) / edge_weight)
 
         # based on the two distances get the closest edge or face
@@ -742,7 +710,7 @@ class SmartVert(bpy.types.Operator):
 
             # avoid drawing unnecessary faces
             if foundintersection:
-                self.snap_tri_coords = tri_coords[hitindex]
+                self.snap_tri_coords = tri_coords
 
 
         self.bm.normal_update()

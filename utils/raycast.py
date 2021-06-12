@@ -171,3 +171,66 @@ def get_closest(origin, candidates=[], depsgraph=None, debug=False):
         return nearestobj, nearestobj.evaluated_get(depsgraph), nearestlocation, nearestnormal, nearestindex, nearestdistance
 
     return None, None, None, None, None, None
+
+
+# SCENE RAYCASTING
+
+def cast_scene_ray_from_mouse(mousepos, depsgraph, exclude=[], exclude_wire=False, unhide=[], debug=False):
+    region = bpy.context.region
+    region_data = bpy.context.region_data
+
+    view_origin = region_2d_to_origin_3d(region, region_data, mousepos)
+    view_dir = region_2d_to_vector_3d(region, region_data, mousepos)
+
+    scene = bpy.context.scene
+
+    # temporary unhide obects in the unhide list, usefuly if you want to self.snap edit mesh objects, which is achieved by excluding the active object and snapping on an unchanging duplicate that is hidden
+    for ob in unhide:
+        ob.hide_set(False)
+
+    # initial cast
+    hit, location, normal, index, obj, mx = scene.ray_cast(depsgraph=depsgraph, origin=view_origin, direction=view_dir)
+
+
+    # objects are excluded by temporary hiding them, collect them to reveal them at the end
+    hidden = []
+
+    # additional casts in case the hit object should be excluded
+    if hit:
+        if obj in exclude or (exclude_wire and obj.display_type == 'WIRE'):
+            ignore = True
+
+            while ignore:
+                if debug:
+                    print(" Ignoring object", obj.name)
+
+                # temporarily hide and collect excluded object
+                obj.hide_set(True)
+                hidden.append(obj)
+
+                hit, location, normal, index, obj, mx = scene.ray_cast(depsgraph=depsgraph, origin=view_origin, direction=view_dir)
+
+                if hit:
+                    ignore = obj in exclude or (exclude_wire and obj.display_type == 'WIRE')
+                else:
+                    break
+
+    # hide the unhide objects again
+    for ob in unhide:
+        ob.hide_set(True)
+
+    # reveal hidden objects again
+    for ob in hidden:
+        ob.hide_set(False)
+
+    if hit:
+        if debug:
+            print(obj.name, index, location, normal)
+
+        return hit, obj, index, location, normal, mx
+
+    else:
+        if debug:
+            print(None)
+
+        return None, None, None, None, None, None
