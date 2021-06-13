@@ -154,10 +154,10 @@ class SmartVert(bpy.types.Operator):
 
             # snap to edge or face
             elif event.ctrl:
-                self.snap.get_hit(self.mousepos)
+                self.S.get_hit(self.mousepos)
 
                 # snap to geometry
-                if self.snap.hit:
+                if self.S.hit:
                     self.slide_snap(context)
 
                 # side normally if nothing is hit
@@ -235,7 +235,7 @@ class SmartVert(bpy.types.Operator):
         # reset the statusbar
         statusbar.draw = self.bar_orig
 
-        self.snap.finish()
+        self.S.finish()
 
     def invoke(self, context, event):
 
@@ -319,7 +319,7 @@ class SmartVert(bpy.types.Operator):
                 self.coords = []
 
                 # init snapping
-                self.snap = Snap(context, alternative=[self.active], debug=False)
+                self.S = Snap(context, alternative=[self.active], debug=False)
 
                 self.is_snapping = False
                 self.is_diverging = False
@@ -613,11 +613,11 @@ class SmartVert(bpy.types.Operator):
         slide snap to edges of all edit mode objects
         '''
 
-        hitmx = self.snap.hitmx
-        hit_co = hitmx.inverted_safe() @ self.snap.hitlocation
+        hitmx = self.S.hitmx
+        hit_co = hitmx.inverted_safe() @ self.S.hitlocation
 
-        hitface = self.snap.hitface
-        tri_coords = self.snap.cache.tri_coords[self.snap.hitobj.name][self.snap.hitindex]
+        hitface = self.S.hitface
+        tri_coords = self.S.cache.tri_coords[self.S.hitobj.name][self.S.hitindex]
 
 
         # weigh the following distances, to influence how easily the individual elements can be selected
