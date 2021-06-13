@@ -5,26 +5,18 @@ from . math import flatten_matrix
 
 
 def parent(obj, parentobj):
-    if not parentobj.parent and parentobj.matrix_parent_inverse != Matrix():
-        print("WARNING: Resetting %s's parent inverse matrix, as no parent is defined." % (parentobj.name))
-        parentobj.matrix_parent_inverse = Matrix()
-
-    p = parentobj
-    while p.parent:
-        p = p.parent
+    if obj.parent:
+        unparent(obj)
 
     obj.parent = parentobj
-    obj.matrix_world = p.matrix_parent_inverse @ obj.matrix_world
+    obj.matrix_parent_inverse = parentobj.matrix_world.inverted()
 
 
 def unparent(obj):
     if obj.parent:
-        p = obj.parent
-        while p.parent:
-            p = p.parent
-
+        omx = obj.matrix_world.copy()
         obj.parent = None
-        obj.matrix_world = p.matrix_parent_inverse.inverted_safe() @ obj.matrix_world
+        obj.matrix_world = omx
 
 
 def unparent_children(obj):
