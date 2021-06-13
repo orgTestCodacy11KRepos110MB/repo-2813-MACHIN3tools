@@ -9,7 +9,7 @@ def parent(obj, parentobj):
         unparent(obj)
 
     obj.parent = parentobj
-    obj.matrix_parent_inverse = parentobj.matrix_world.inverted()
+    obj.matrix_parent_inverse = parentobj.matrix_world.inverted_safe()
 
 
 def unparent(obj):
