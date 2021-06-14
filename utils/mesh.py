@@ -154,7 +154,7 @@ def flip_normals(mesh):
 
 
 def join(target, objects, select=[]):
-    mxi = target.matrix_world.inverted()
+    mxi = target.matrix_world.inverted_safe()
 
     bm = bmesh.new()
     bm.from_mesh(target.data)

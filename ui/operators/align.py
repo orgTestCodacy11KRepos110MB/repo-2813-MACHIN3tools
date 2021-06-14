@@ -182,7 +182,7 @@ class AlignEditMesh(bpy.types.Operator):
             elif type == "CURSOR":
                 if space == 'LOCAL':
                     c_world = context.scene.cursor.location
-                    c_local = mx.inverted() @ c_world
+                    c_local = mx.inverted_safe() @ c_world
                     target = c_local[axis]
 
                 elif space == 'WORLD':
@@ -303,7 +303,7 @@ class CenterEditMesh(bpy.types.Operator):
             target[axis] = 0
 
             # create translation matrix (in local space again)
-            mxt = get_loc_matrix(active.matrix_world.inverted().to_3x3() @ (target - origin))
+            mxt = get_loc_matrix(active.matrix_world.inverted_safe().to_3x3() @ (target - origin))
 
         elif space == 'CURSOR':
             # bring into cursor space
@@ -312,7 +312,7 @@ class CenterEditMesh(bpy.types.Operator):
             target[axis] = 0
 
             # create translation matrix (in local space again)
-            mxt = get_loc_matrix(active.matrix_world.inverted().to_3x3() @ mx.to_3x3() @ (target - origin))
+            mxt = get_loc_matrix(active.matrix_world.inverted_safe().to_3x3() @ mx.to_3x3() @ (target - origin))
 
         # move the selection
         for v in verts:

@@ -156,7 +156,7 @@ def set_obj_origin(obj, mx, bm=None, decalmachine=False, meshmachine=False):
             # older versions use the stashmx and targetmx
             else:
                 # stashmx in stashtargetmx's local space, aka the stash difference matrix(which is all that's actually needed for stashes, just like for decal backups)
-                stashdeltamx = stash.obj.MM.stashtargetmx.inverted() @ stash.obj.MM.stashmx
+                stashdeltamx = stash.obj.MM.stashtargetmx.inverted_safe() @ stash.obj.MM.stashmx
 
                 stash.obj.MM.stashmx = flatten_matrix(omx @ stashdeltamx)
                 stash.obj.MM.stashtargetmx = flatten_matrix(mx)

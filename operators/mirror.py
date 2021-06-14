@@ -198,7 +198,7 @@ class Mirror(bpy.types.Operator):
         if mirror_object:
             mirror_empty.matrix_world = mirror_object.matrix_world
 
-        mirror_empty.matrix_world = obj.matrix_world.inverted() @ mirror_empty.matrix_world
+        mirror_empty.matrix_world = obj.matrix_world.inverted_safe() @ mirror_empty.matrix_world
 
         col.objects.link(mirror_empty)
 
