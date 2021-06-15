@@ -34,12 +34,6 @@ class PieModes(Menu):
         layout = self.layout
         toolsettings = context.tool_settings
 
-        global decalmachine
-
-        if decalmachine is None:
-            decalmachine, _, _, _ = get_addon("DECALmachine")
-
-
         active = context.active_object
 
         pie = layout.menu_pie()
