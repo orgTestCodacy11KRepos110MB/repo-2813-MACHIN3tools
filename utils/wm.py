@@ -143,6 +143,12 @@ def get_last_operators(context, debug=False):
             if op.properties.get('method', 0) == 1:
                 prop = 'LocalView'
 
+        # DECALmachine
+
+        elif idname == 'machin3.decal_library_visibility_preset':
+            label = f"{label} {op.properties.get('name')}"
+            prop = 'Store' if op.properties.get('store') else 'Recall'
+
 
         # MESHmachine
 
