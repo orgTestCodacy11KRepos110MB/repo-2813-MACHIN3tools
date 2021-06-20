@@ -170,7 +170,7 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
         'FILEBROWSER': [{'label': 'Open Filebrowser', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_open', 'type': 'O', 'value': 'PRESS'},
                         {'label': 'Toggle Sorting', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'ONE', 'value': 'PRESS', 'properties': [('type', 'SORT')]},
                         {'label': 'Toggle Display', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'TWO', 'value': 'PRESS', 'properties': [('type', 'DISPLAY_TYPE')]},
-                        {'label': 'Toggle Hidden', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_cycle_thumbnail_size', 'type': 'THREE', 'value': 'PRESS'},
+                        {'label': 'Cycle Thumbnails', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_cycle_thumbnail_size', 'type': 'THREE', 'value': 'PRESS'},
                         {'label': 'Toggle Hidden', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'FOUR', 'value': 'PRESS', 'properties': [('type', 'HIDDEN')]}],
         'GROUP': [{'label': 'Create Group', 'keymap': 'Object Mode', 'idname': 'machin3.group', 'type': 'G', 'value': 'PRESS', 'ctrl': True},
                   {"label": "Select Group", "keymap": "Object Mode", "idname": "machin3.select_group", "type": "LEFTMOUSE", "value": "DOUBLE_CLICK", 'shift': True},
