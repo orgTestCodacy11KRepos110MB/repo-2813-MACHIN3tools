@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import StringProperty
 from .. utils.system import abspath, open_folder
+from .. utils.property import step_list
 
 
 class Open(bpy.types.Operator):
@@ -53,5 +54,23 @@ class Toggle(bpy.types.Operator):
 
         elif self.type == 'HIDDEN':
             context.space_data.params.show_hidden = not context.space_data.params.show_hidden
+
+        return {'FINISHED'}
+
+
+class CycleThumbs(bpy.types.Operator):
+    bl_idname = "machin3.filebrowser_cycle_thumbnail_size"
+    bl_label = "MACHIN3: Cycle Thumbnail Size"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.area.type == 'FILE_BROWSER' and context.space_data.params.display_type == 'THUMBNAIL'
+
+    def execute(self, context):
+        sizes = ['TINY', 'SMALL', 'NORMAL', 'LARGE']
+        size = bpy.context.space_data.params.display_size
+        bpy.context.space_data.params.display_size = step_list(size, sizes, 1, loop=True)
 
         return {'FINISHED'}
