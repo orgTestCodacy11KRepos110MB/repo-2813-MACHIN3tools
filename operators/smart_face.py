@@ -1,6 +1,8 @@
 import bpy
 from bpy.props import BoolProperty
 import bmesh
+from .. utils.view import update_local_view
+from .. utils.registration import get_prefs
 
 
 class SmartFace(bpy.types.Operator):
@@ -9,6 +11,7 @@ class SmartFace(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     automerge: BoolProperty(name="Merge to closeby Vert", default=True)
+    use_focus: BoolProperty(name="Focus on new Object", default=False)
 
     def draw(self, context):
         layout = self.layout
@@ -18,6 +21,9 @@ class SmartFace(bpy.types.Operator):
         if self.mode[0] or self.mode[1]:
             if len(self.verts) == 1:
                 column.prop(self, "automerge")
+
+        elif self.mode[2] and get_prefs().activate_focus:
+            column.prop(self, "use_focus", text="Use Focus", toggle=True)
 
     @classmethod
     def poll(cls, context):
@@ -49,6 +55,8 @@ class SmartFace(bpy.types.Operator):
                 else:
                     bpy.ops.mesh.edge_face_add()
 
+                return {'FINISHED'}
+
         # face mode - duplicate and separate selection
         elif self.mode[2]:
             faces = [f for f in bm.faces if f.select]
@@ -67,9 +75,43 @@ class SmartFace(bpy.types.Operator):
                     active.select_set(False)
                     obj.select_set(True)
                     context.view_layer.objects.active = obj
+
+                    if get_prefs().activate_focus and self.use_focus:
+                        self.focus(context)
+
                     bpy.ops.object.mode_set(mode='EDIT')
 
-        return {'FINISHED'}
+                return {'FINISHED'}
+        return {'CANCELLED'}
+
+    def focus(self, context):
+        view = context.space_data
+        history = context.scene.M3.focus_history
+
+        vis = context.visible_objects
+        hidden = [obj for obj in vis if obj != context.active_object]
+
+        # already in local view
+        if view.local_view:
+            update_local_view(view, [(obj, False) for obj in hidden])
+
+        # initialize local view
+        else:
+            # if you are not in local view, and yet there is a history, clear it
+            if history:
+                history.clear()
+
+            bpy.ops.view3d.localview(frame_selected=False)
+
+        # create new epoch
+        epoch = history.add()
+        epoch.name = "Epoch %d" % (len(history) - 1)
+
+        # store hidden objects in epoch
+        for obj in hidden:
+            entry = epoch.objects.add()
+            entry.obj = obj
+            entry.name = obj.name
 
     def f3(self, active, bm):
         verts = self.verts

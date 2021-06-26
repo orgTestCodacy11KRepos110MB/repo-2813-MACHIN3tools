@@ -143,7 +143,6 @@ class Focus(bpy.types.Operator):
                 else:
                     sel[0].select_set(True)
 
-
         def unfocus(context, view, history):
             last_epoch = history[-1]
 

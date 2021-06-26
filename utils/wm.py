@@ -138,6 +138,15 @@ def get_last_operators(context, debug=False):
             elif getattr(op, 'is_turn'):
                 prop = 'Turn'
 
+        elif idname == 'machin3.smart_face':
+            mode = getattr(op, 'mode')
+
+            if mode[0]:
+                prop = "FaceFromVert"
+            if mode[1]:
+                prop = "FaceFromEdge"
+            elif mode[2]:
+                prop = "MeshFromFaces"
 
         elif idname == 'machin3.focus':
             if op.properties.get('method', 0) == 1:
