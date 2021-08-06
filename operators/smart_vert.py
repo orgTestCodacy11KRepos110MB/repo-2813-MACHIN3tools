@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import EnumProperty, BoolProperty
+from bpy.props import EnumProperty, BoolProperty, IntProperty
 from bpy_extras.view3d_utils import region_2d_to_origin_3d, region_2d_to_vector_3d, region_2d_to_location_3d
 from bl_ui.space_statusbar import STATUSBAR_HT_header as statusbar
 import bmesh
@@ -11,9 +11,15 @@ from .. utils.draw import draw_line, draw_lines, draw_point, draw_tris, draw_vec
 from .. utils.snap import Snap
 from .. utils.math import average_locations, get_center_between_verts, get_face_center
 from .. utils.selection import get_edges_vert_sequences, get_selection_islands
+from .. utils.registration import get_addon
 from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items, ctrl, alt
 
 from .. colors import yellow, white, green
+
+
+hypercursor = None
+
+# TODO: when sliding a single edge/vert, you could have a flatten option, that ensures the end face is planar!
 
 
 def draw_slide_status(op):
@@ -57,6 +63,8 @@ class SmartVert(bpy.types.Operator):
     slideoverride: BoolProperty(name="Slide Override", default=False)
     vertbevel: BoolProperty(name="Single Vertex Bevelling", default=False)
 
+    index: IntProperty(name="Index of Edge accociated with HyperCursor Gizmo, that is to be removed")
+
     # hidden
     snapping = False
     passthrough = False
@@ -64,9 +72,11 @@ class SmartVert(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if context.mode == 'EDIT_MESH':
-            bm = bmesh.from_edit_mesh(context.active_object.data)
-            return [v for v in bm.verts if v.select]
+        if context.active_object:
+            if context.mode == 'EDIT_MESH':
+                bm = bmesh.from_edit_mesh(context.active_object.data)
+                return [v for v in bm.verts if v.select]
+            return context.mode == 'OBJECT'
 
     def draw(self, context):
         layout = self.layout
@@ -202,21 +212,25 @@ class SmartVert(bpy.types.Operator):
                 # use it for dissolveing to ensure it works on very small scales as you'd expect
                 bmesh.ops.dissolve_degenerate(self.bm, edges=self.bm.edges, dist=avg_dist / 100)
                 self.bm.normal_update()
-                bmesh.update_edit_mesh(self.active.data)
 
-            self.finish()
+                if context.mode == 'EDIT_MESH':
+                    bmesh.update_edit_mesh(self.active.data)
+                else:
+                    self.bm.to_mesh(self.active.data)
+
+            self.finish(context)
 
             return {'FINISHED'}
 
         # CANCEL
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            self.cancel_modal()
+            self.cancel_modal(context)
             return {'CANCELLED'}
 
         return {'RUNNING_MODAL'}
 
-    def cancel_modal(self):
+    def cancel_modal(self, context):
         '''
         restore original vert locations, then finish op
         '''
@@ -225,11 +239,15 @@ class SmartVert(bpy.types.Operator):
             v.co = data['co']
 
         self.bm.normal_update()
-        bmesh.update_edit_mesh(self.active.data)
 
-        self.finish()
+        if context.mode == 'EDIT_MESH':
+            bmesh.update_edit_mesh(self.active.data)
+        else:
+            self.bm.to_mesh(self.active.data)
 
-    def finish(self):
+        self.finish(context)
+
+    def finish(self, context):
         bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
 
         # reset the statusbar
@@ -237,7 +255,27 @@ class SmartVert(bpy.types.Operator):
 
         self.S.finish()
 
+        if context.mode == 'OBJECT':
+            # re-enabled geoemetry gizmos
+            context.active_object.HC.show_geometry_gizmos = True
+
+            # force gizmo update
+            context.active_object.select_set(True)
+
     def invoke(self, context, event):
+
+        # in object mode only allow slide/extend the passed in index from HyperCursor
+        if context.mode == 'OBJECT':
+            global hypercursor
+
+            if hypercursor is None:
+                hypercursor = get_addon('HyperCursor')[0]
+
+            if self.slideoverride and hypercursor:
+                context.active_object.HC.show_geometry_gizmos = False
+
+            else:
+                return {'CANCELLED'}
 
         # init mouse
         self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
@@ -247,61 +285,83 @@ class SmartVert(bpy.types.Operator):
             if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
                 return {'CANCELLED'}
 
-            self.bm = bmesh.from_edit_mesh(context.active_object.data)
-            self.bm.normal_update()
-
             self.active = context.active_object
             self.mx = self.active.matrix_world
 
-            # VERT MODE
+            if context.mode == 'EDIT_MESH':
+                self.bm = bmesh.from_edit_mesh(self.active.data)
+                self.bm.normal_update()
 
-            if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
+                # VERT MODE
 
-                # get selected verts and history
-                selected = [v for v in self.bm.verts if v.select]
-                history = list(self.bm.select_history)
+                if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (True, False, False):
 
-                if len(selected) == 1:
-                    popup_message("Select more than 1 vertex.")
-                    return {'CANCELLED'}
+                    # get selected verts and history
+                    selected = [v for v in self.bm.verts if v.select]
+                    history = list(self.bm.select_history)
 
-                elif not history:
-                    popup_message("Select the last vertex without Box or Circle Select.")
-                    return {'CANCELLED'}
+                    if len(selected) == 1:
+                        popup_message("Select more than 1 vertex.")
+                        return {'CANCELLED'}
 
-                else:
+                    elif not history:
+                        popup_message("Select the last vertex without Box or Circle Select.")
+                        return {'CANCELLED'}
 
-                    # get each vert that is slid and the target it pushed away from or towards
-                    # also store the initial location of the moved verts
-
-                    # multi target sliding
-                    if len(selected) > 3 and len(selected) % 2 == 0 and set(history) == set(selected):
-                        self.verts = {history[i]: {'co': history[i].co.copy(), 'target': history[i + 1]} for i in range(0, len(history), 2)}
-
-                    # single target sliding
                     else:
-                        last = history[-1]
-                        self.verts = {v: {'co': v.co.copy(), 'target': last} for v in selected if v != last}
 
-            # EDGE MODE
+                        # get each vert that is slid and the target it pushed away from or towards
+                        # also store the initial location of the moved verts
 
-            elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
+                        # multi target sliding
+                        if len(selected) > 3 and len(selected) % 2 == 0 and set(history) == set(selected):
+                            self.verts = {history[i]: {'co': history[i].co.copy(), 'target': history[i + 1]} for i in range(0, len(history), 2)}
 
-                # get selected edges
-                selected = [e for e in self.bm.edges if e.select]
-                self.verts = {}
+                        # single target sliding
+                        else:
+                            last = history[-1]
+                            self.verts = {v: {'co': v.co.copy(), 'target': last} for v in selected if v != last}
 
-                # for each edge find the closest vert to the mouse pointer (based on proximity to the mouse projected into the edge center depth)
-                for edge in selected:
-                    edge_center = average_locations([self.mx @ v.co for v in edge.verts])
+                # EDGE MODE
 
-                    mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.mousepos, edge_center)
-                    mouse_3d_local = self.mx.inverted_safe() @ mouse_3d
+                elif tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, True, False):
 
-                    closest = min([(v, (v.co - mouse_3d_local).length) for v in edge.verts], key=lambda x: x[1])[0]
+                    # get selected edges
+                    selected = [e for e in self.bm.edges if e.select]
+                    self.verts = {}
 
-                    self.verts[closest] = {'co': closest.co.copy(), 'target': edge.other_vert(closest)}
+                    # for each edge find the closest vert to the mouse pointer (based on proximity to the mouse projected into the edge center depth)
+                    for edge in selected:
+                        edge_center = average_locations([self.mx @ v.co for v in edge.verts])
 
+                        mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.mousepos, edge_center)
+                        mouse_3d_local = self.mx.inverted_safe() @ mouse_3d
+
+                        closest = min([(v, (v.co - mouse_3d_local).length) for v in edge.verts], key=lambda x: x[1])[0]
+
+                        self.verts[closest] = {'co': closest.co.copy(), 'target': edge.other_vert(closest)}
+
+            else:
+                # init mousepos and cursor warp the cursor too, as it's called from the HyperCursor Edit Edge pie menu
+                wm = context.window_manager
+                context.window.cursor_warp(wm.hyper_mousepos[0], wm.hyper_mousepos[1] + 20 * context.preferences.view.ui_scale)
+                self.mousepos = Vector(wm.hyper_mousepos)
+
+                self.bm = bmesh.new()
+                self.bm.from_mesh(self.active.data)
+                self.bm.normal_update()
+                self.bm.edges.ensure_lookup_table()
+
+                edge = self.bm.edges[self.index]
+
+                edge_center = average_locations([self.mx @ v.co for v in edge.verts])
+
+                mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.mousepos, edge_center)
+                mouse_3d_local = self.mx.inverted_safe() @ mouse_3d
+
+                closest = min([(v, (v.co - mouse_3d_local).length) for v in edge.verts], key=lambda x: x[1])[0]
+
+                self.verts = {closest: {'co': closest.co.copy(), 'target': edge.other_vert(closest)}}
 
             # get average target and slid vert locations in world space
             self.target_avg = self.mx @ average_locations([data['target'].co for _, data in self.verts.items()])
@@ -606,7 +666,11 @@ class SmartVert(bpy.types.Operator):
             self.coords.extend([v.co, target.co])
 
         self.bm.normal_update()
-        bmesh.update_edit_mesh(self.active.data)
+
+        if context.mode == 'EDIT_MESH':
+            bmesh.update_edit_mesh(self.active.data)
+        else:
+            self.bm.to_mesh(self.active.data)
 
     def slide_snap(self, context):
         '''
@@ -714,4 +778,8 @@ class SmartVert(bpy.types.Operator):
 
 
         self.bm.normal_update()
-        bmesh.update_edit_mesh(self.active.data)
+
+        if context.mode == 'EDIT_MESH':
+            bmesh.update_edit_mesh(self.active.data)
+        else:
+            self.bm.to_mesh(self.active.data)

@@ -11,10 +11,6 @@ from . raycast import cast_scene_ray_from_mouse
 # ####: this would allow you to do cache = self.cache[name], and then just cache.bmeshes
 
 
-# NOTE: since this is no longer using BVH rays, but still does correct edit mesh snapping for objects in edit mode
-# ####: you can now use this in MACHIN3tools to snap to non-edit mode objest from SmartVert.SlideExtend
-
-
 # TODO: actually include vert, edge and face snapping logic here?
 # ####: could be tricky because of how varied it is uses in TransformCursor() alone
 # ####: you'd definitely also expose the view3d drawing coords then, mayby via a SnapDraw() object, or SnapCoords()?
@@ -173,7 +169,7 @@ class Snap:
         '''
         create a duplicate for each object in the alternative list
         each of the original objects will be exluded from snapping
-        while the duplicates are created hidden, but are temporary revealved when raycasting
+        while the duplicates are created hidden, but are temporary revealed when raycasting
         this is useful for cases where self-snapping on edit mesh objects would lead to twitching, and where static duplicates are snapped on instead
         '''
 
