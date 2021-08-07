@@ -12,14 +12,13 @@ from .. utils.snap import Snap
 from .. utils.math import average_locations, get_center_between_verts, get_face_center
 from .. utils.selection import get_edges_vert_sequences, get_selection_islands
 from .. utils.registration import get_addon
+from .. utils.system import printd
 from .. items import smartvert_mode_items, smartvert_merge_type_items, smartvert_path_type_items, ctrl, alt
 
 from .. colors import yellow, white, green
 
 
 hypercursor = None
-
-# TODO: when sliding a single edge/vert, you could have a flatten option, that ensures the end face is planar!
 
 
 def draw_slide_status(op):
@@ -38,6 +37,10 @@ def draw_slide_status(op):
         row.label(text="Cancel")
 
         row.separator(factor=10)
+
+        if op.can_flatten:
+            row.label(text="", icon='EVENT_F')
+            row.label(text=f"Flatten: {op.flatten}")
 
         if not op.is_snapping:
             row.label(text="", icon='EVENT_CTRL')
@@ -64,6 +67,8 @@ class SmartVert(bpy.types.Operator):
     vertbevel: BoolProperty(name="Single Vertex Bevelling", default=False)
 
     index: IntProperty(name="Index of Edge accociated with HyperCursor Gizmo, that is to be removed")
+    can_flatten: BoolProperty(name="Can Flatten", default=False)
+    flatten: BoolProperty(name="Flatten End Face", default=False)
 
     # hidden
     snapping = False
@@ -154,7 +159,14 @@ class SmartVert(bpy.types.Operator):
 
         events = ['MOUSEMOVE', *ctrl, *alt]
 
+        if self.can_flatten:
+            events.append('F')
+
         if event.type in events:
+
+            if event.type == 'F' and event.value == 'PRESS':
+                self.flatten = not self.flatten
+
             if self.passthrough:
                 self.passthrough = False
 
@@ -188,6 +200,7 @@ class SmartVert(bpy.types.Operator):
                 self.loc = self.get_slide_vector_intersection(context)
 
                 self.slide(context)
+
 
 
         # VIEWPORT control
@@ -237,6 +250,10 @@ class SmartVert(bpy.types.Operator):
 
         for v, data in self.verts.items():
             v.co = data['co']
+
+        if self.can_flatten:
+            for v, vdict in self.flatten_dict['other_verts'].items():
+                v.co = vdict['co']
 
         self.bm.normal_update()
 
@@ -362,6 +379,50 @@ class SmartVert(bpy.types.Operator):
                 closest = min([(v, (v.co - mouse_3d_local).length) for v in edge.verts], key=lambda x: x[1])[0]
 
                 self.verts = {closest: {'co': closest.co.copy(), 'target': edge.other_vert(closest)}}
+
+
+            # check if the conditions are met to flatten the end face next the the vert that is slid
+            self.can_flatten = False
+            self.flatten_dict = {}
+
+            if len(self.verts) == 1:
+                # printd(self.verts)
+
+                # get planar edges and end face
+                vert = next(iter(self.verts))
+
+                planar_edges = [e for e in vert.link_edges if not e.other_vert(vert) == self.verts[vert]['target']]
+                # print("planar edges:", [e.index for e in planar_edges])
+
+                if len(planar_edges) == 2:
+                    end_faces = [f for f in planar_edges[0].link_faces if f in planar_edges[1].link_faces]
+
+                    if len(end_faces) == 1:
+                        end_face = end_faces[0]
+                        # print("end face:", end_face.index)
+
+                        # only faces with more than 3 verts should be flattened
+                        if len(end_face.verts) > 3:
+                            self.can_flatten = True
+
+                            # get the 3 verts used to establigh the face normal
+                            tri_verts = set(v for e in planar_edges for v in e.verts)
+                            self.flatten_dict = {'tri_verts': list(tri_verts),
+                                                 'other_verts': {}}
+
+                            # get the other verts, es well as slide edges coordinates
+                            other_verts = [v for v in end_face.verts if v not in tri_verts]
+
+                            for v in other_verts:
+                                slide_edges = [e for e in v.link_edges if e not in end_face.edges]
+
+                                if slide_edges:
+                                    line = [slide_edges[0].verts[0].co.copy(), slide_edges[0].verts[1].co.copy()]
+                                    self.flatten_dict['other_verts'][v] = {'co': v.co.copy(),
+                                                                           'line': line}
+
+                            # printd(self.flatten_dict)
+
 
             # get average target and slid vert locations in world space
             self.target_avg = self.mx @ average_locations([data['target'].co for _, data in self.verts.items()])
@@ -665,6 +726,17 @@ class SmartVert(bpy.types.Operator):
 
             self.coords.extend([v.co, target.co])
 
+        if self.can_flatten:
+
+            # flatten
+            if self.flatten:
+                self.flatten_verts()
+
+            # reset verts that can be flattened to their original locations
+            else:
+                for v, vdict in self.flatten_dict['other_verts'].items():
+                    v.co = vdict['co']
+
         self.bm.normal_update()
 
         if context.mode == 'EDIT_MESH':
@@ -776,6 +848,16 @@ class SmartVert(bpy.types.Operator):
             if foundintersection:
                 self.snap_tri_coords = tri_coords
 
+        if self.can_flatten:
+
+            # flatten
+            if self.flatten:
+                self.flatten_verts()
+
+            # reset verts that can be flattened to their original locations
+            else:
+                for v, vdict in self.flatten_dict['other_verts'].items():
+                    v.co = vdict['co']
 
         self.bm.normal_update()
 
@@ -783,3 +865,23 @@ class SmartVert(bpy.types.Operator):
             bmesh.update_edit_mesh(self.active.data)
         else:
             self.bm.to_mesh(self.active.data)
+
+    def flatten_verts(self):
+        '''
+        ensure end face at slid vert is flat
+        '''
+
+        tri_verts = self.flatten_dict['tri_verts']
+
+        tri_dir1 = (tri_verts[0].co - tri_verts[1].co).normalized()
+        tri_dir2 = (tri_verts[2].co - tri_verts[1].co).normalized()
+
+        plane_no = tri_dir1.cross(tri_dir2)
+        plane_co = tri_verts[1].co
+
+        for v, vdict in self.flatten_dict['other_verts'].items():
+
+            i = intersect_line_plane(*vdict['line'], plane_co, plane_no)
+
+            if i:
+                v.co = i
