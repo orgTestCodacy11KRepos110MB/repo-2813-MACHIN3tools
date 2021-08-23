@@ -115,7 +115,7 @@ class LoadMostRecent(bpy.types.Operator):
     bl_options = {"REGISTER"}
 
     def execute(self, context):
-        recent_path = bpy.utils.user_resource('CONFIG', "recent-files.txt")
+        recent_path = bpy.utils.user_resource('CONFIG', path="recent-files.txt")
 
         try:
             with open(recent_path) as file:
