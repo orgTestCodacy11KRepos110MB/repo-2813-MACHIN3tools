@@ -306,9 +306,22 @@ class SmartEdge(bpy.types.Operator):
         sel = [obj for obj in context.selected_objects if obj != active]
 
         if sel:
-            cutter = sel[0]
-            cutter.select_set(True)
-            bpy.ops.object.mode_set(mode='EDIT')
+            for obj in sel:
+                obj.select_set(False)
+
+            # starting with 2.93.4 only the to-be-cut object has to be in edit mode
+            if bpy.app.version < (2, 93, 4):
+                cutter = sel[0]
+                cutter.select_set(True)
+
+                bpy.ops.object.mode_set(mode='EDIT')
+
+            # so select the cutter only after entire edit mode
+            else:
+                bpy.ops.object.mode_set(mode='EDIT')
+
+                cutter = sel[0]
+                cutter.select_set(True)
 
             try:
                 bpy.ops.mesh.knife_project(cut_through=cut_through)
@@ -316,10 +329,14 @@ class SmartEdge(bpy.types.Operator):
             except RuntimeError:
                 pass
 
-            # remove cutter
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.data.meshes.remove(cutter.data, do_unlink=True)
-            bpy.ops.object.mode_set(mode='EDIT')
+            # the knife project changes allows us to skip a mode change too, when removing the cutter
+            if bpy.app.version < (2, 93, 4):
+                bpy.ops.object.mode_set(mode='OBJECT')
+                bpy.data.meshes.remove(cutter.data, do_unlink=True)
+                bpy.ops.object.mode_set(mode='EDIT')
+
+            else:
+                bpy.data.meshes.remove(cutter.data, do_unlink=True)
 
 
     # SHARP / CHAMFER / KOREAN BEVEL (mod)
