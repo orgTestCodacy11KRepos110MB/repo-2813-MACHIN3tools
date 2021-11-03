@@ -239,6 +239,7 @@ class SmartVert(bpy.types.Operator):
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
             self.cancel_modal(context)
+
             return {'CANCELLED'}
 
         return {'RUNNING_MODAL'}
@@ -449,10 +450,6 @@ class SmartVert(bpy.types.Operator):
                 self.snap_tri_coords = []
                 self.snap_proximity_coords = []
                 self.snap_ortho_coords = []
-
-                # statusbar
-                self.bar_orig = statusbar.draw
-                statusbar.draw = draw_slide_status(self)
 
                 # handlers
                 self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
