@@ -313,7 +313,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     # VIEW3D
 
-    use_legacy_line_smoothing: BoolProperty(name="Use Legacy Line Smoothing", description="Legacy Line Smoothing using the depreciated bgl module", default=False)
+    use_legacy_line_smoothing: BoolProperty(name="Use Legacy Line Smoothing", description="Legacy Line Smoothing using the depreciated bgl module\nIf this is disabled, lines drawn by MACHIN3tools won't be anti aliased.", default=False)
 
 
     # hidden
