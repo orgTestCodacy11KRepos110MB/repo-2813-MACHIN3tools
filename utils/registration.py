@@ -51,7 +51,7 @@ def get_addon_operator_idnames(addon):
     if addon in ['MACHIN3tools', 'DECALmachine', 'MESHmachine', 'HyperCursor']:
         if addon in ['DECALmachine', 'MESHmachine', 'HyperCursor']:
             if not get_addon(addon)[0]:
-                return
+                return []
 
         classes = import_module(f'{addon}.registration').classes
 
