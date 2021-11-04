@@ -310,6 +310,12 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     use_group_sub_menu: BoolProperty(name="Use Group Sub-Menu", default=False)
     use_group_outliner_toggles: BoolProperty(name="Show Group Outliner Toggles", default=True)
 
+
+    # VIEW3D
+
+    use_legacy_line_smoothing: BoolProperty(name="Use Legacy Line Smoothing", description="Legacy Line Smoothing using the depreciated bgl module", default=False)
+
+
     # hidden
 
     tabs: EnumProperty(name="Tabs", items=preferences_tabs, default="GENERAL")
@@ -497,6 +503,17 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         b = split.box()
         b.label(text="Settings")
+
+
+        # VIEW 3D settings
+
+        if getattr(bpy.types, "MACHIN3_OT_smart_vert", False):
+            bb = b.box()
+            bb.label(text="View 3D")
+
+            column = bb.column()
+            column.prop(self, "use_legacy_line_smoothing")
+
 
         # FOCUS
 
