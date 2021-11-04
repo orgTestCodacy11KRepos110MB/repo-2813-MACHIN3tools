@@ -7,7 +7,6 @@ from ... utils.registration import get_prefs, get_addon
 from ... utils.append import append_material, append_world
 from ... utils.system import add_path_to_recent_files, get_incremented_paths
 from ... utils.ui import popup_message, get_icon
-from ... utils.wm import get_last_operators
 
 
 class New(bpy.types.Operator):

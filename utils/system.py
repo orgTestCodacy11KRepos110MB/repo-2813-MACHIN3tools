@@ -24,7 +24,7 @@ def add_path_to_recent_files(path):
     '''
 
     try:
-        recent_path = bpy.utils.user_resource('CONFIG', "recent-files.txt")
+        recent_path = bpy.utils.user_resource('CONFIG', path="recent-files.txt")
         with open(recent_path, "r+", encoding=enc) as f:
             content = f.read()
             f.seek(0, 0)

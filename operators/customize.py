@@ -1010,7 +1010,7 @@ class Customize(bpy.types.Operator):
     def bookmarks(self, context):
         print("\n» Setting Custom Bookmarks")
 
-        path = bpy.utils.user_resource('CONFIG', "bookmarks.txt")
+        path = bpy.utils.user_resource('CONFIG', path="bookmarks.txt")
 
         lines = ['[Bookmarks]',
                  '!Archive',
