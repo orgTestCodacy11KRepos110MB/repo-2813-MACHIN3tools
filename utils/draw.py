@@ -85,7 +85,7 @@ def draw_object_axes(args):
                 gpu.state.blend_set('ALPHA' if alpha < 1 else 'NONE')
                 gpu.state.line_width_set(2)
 
-                use_legacy_line_smoothing(alpha)
+                use_legacy_line_smoothing(alpha, 2)
 
                 batch = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
                 batch.draw(shader)
@@ -295,7 +295,7 @@ def draw_label(context, title='', coords=None, center=True, color=(1, 1, 1), alp
 
 # BASIC
 
-def use_legacy_line_smoothing(alpha):
+def use_legacy_line_smoothing(alpha, width):
     '''
     legacy line smoothing using the depreciated bgl module
     be prepared for blg no longer being available
@@ -306,6 +306,7 @@ def use_legacy_line_smoothing(alpha):
             import bgl
 
             bgl.glEnable(bgl.GL_BLEND)
+            bgl.glLineWidth(width)
             bgl.glEnable(bgl.GL_LINE_SMOOTH)
         except:
             pass
@@ -382,7 +383,7 @@ def draw_line(coords, indices=None, mx=Matrix(), color=(1, 1, 1), width=1, alpha
         gpu.state.blend_set('ALPHA' if alpha < 1 else 'NONE')
         gpu.state.line_width_set(width)
 
-        use_legacy_line_smoothing(alpha)
+        use_legacy_line_smoothing(alpha, width)
 
         batch = batch_for_shader(shader, 'LINES', {"pos": [mx @ co for co in coords]}, indices=indices)
         batch.draw(shader)
@@ -412,7 +413,7 @@ def draw_lines(coords, indices=None, mx=Matrix(), color=(1, 1, 1), width=1, alph
         gpu.state.blend_set('ALPHA' if alpha < 1 else 'NONE')
         gpu.state.line_width_set(width)
 
-        use_legacy_line_smoothing(alpha)
+        use_legacy_line_smoothing(alpha, width)
 
         if mx != Matrix():
             batch = batch_for_shader(shader, 'LINES', {"pos": [mx @ co for co in coords]}, indices=indices)
@@ -441,7 +442,7 @@ def draw_vector(vector, origin=Vector((0, 0, 0)), mx=Matrix(), color=(1, 1, 1), 
         gpu.state.blend_set('ALPHA' if alpha < 1 else 'NONE')
         gpu.state.line_width_set(width)
 
-        use_legacy_line_smoothing(alpha)
+        use_legacy_line_smoothing(alpha, width)
 
         batch = batch_for_shader(shader, 'LINES', {"pos": coords})
         batch.draw(shader)
@@ -472,7 +473,7 @@ def draw_vectors(vectors, origins, mx=Matrix(), color=(1, 1, 1), width=1, alpha=
         gpu.state.blend_set('ALPHA' if alpha < 1 else 'NONE')
         gpu.state.line_width_set(width)
 
-        use_legacy_line_smoothing(alpha)
+        use_legacy_line_smoothing(alpha, width)
 
         batch = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
         batch.draw(shader)
@@ -501,7 +502,7 @@ def draw_mesh_wire(batch, color=(1, 1, 1), width=1, alpha=1, xray=True, modal=Tr
         gpu.state.blend_set('ALPHA' if alpha < 1 else 'NONE')
         gpu.state.line_width_set(width)
 
-        use_legacy_line_smoothing(alpha)
+        use_legacy_line_smoothing(alpha, width)
 
         b = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
         b.draw(shader)
