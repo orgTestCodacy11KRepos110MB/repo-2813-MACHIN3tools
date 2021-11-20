@@ -728,12 +728,11 @@ class Customize(bpy.types.Operator):
             print(" Changed Pie Menu Animation Timeout to 0")
             v.pie_animation_timeout = 0
 
-            if bpy.app.version >= (2, 90, 0):
-                print(" Enabled Status Bar System Memory")
-                v.show_statusbar_memory = True
+            print(" Enabled Status Bar System Memory")
+            v.show_statusbar_memory = True
 
-                print(" Enabled Status Bar Video Memory")
-                v.show_statusbar_vram = True
+            print(" Enabled Status Bar Video Memory")
+            v.show_statusbar_vram = True
 
         if get_prefs().custom_preferences_viewport:
             print("\n» Changing Preferences: Viewport")
@@ -763,7 +762,7 @@ class Customize(bpy.types.Operator):
             keyconfigpath = bpy.utils.preset_paths(subdir='keyconfig')
 
             if keyconfigpath:
-                keymappath = os.path.join(keyconfigpath[0], f"{'b' if bpy.app.version < (2, 93, 0) else 'B'}lender_27x.py")
+                keymappath = os.path.join(keyconfigpath[0], "Blender_27x.py")
 
                 print(" Set 2.7X keymap")
                 bpy.ops.preferences.keyconfig_activate(filepath=keymappath)

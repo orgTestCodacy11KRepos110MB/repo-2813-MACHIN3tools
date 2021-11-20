@@ -269,9 +269,7 @@ class PieModes(Menu):
                     elif context.mode == "EDIT_GPENCIL":
                         row = column.row(align=True)
                         row.prop(toolsettings, "gpencil_selectmode_edit", text="", expand=True)
-
-                        if bpy.app.version >= (2, 92, 0):
-                            row.prop(active.data, "use_curve_edit", text="", icon='IPO_BEZIER')
+                        row.prop(active.data, "use_curve_edit", text="", icon='IPO_BEZIER')
 
 
                     # 3 - BOTTOM - RIGHT
@@ -779,9 +777,7 @@ class PieShading(Menu):
         column = layout.column(align=True)
         row = column.row(align=True)
 
-        if bpy.app.version >= (2, 90, 0):
-            row.prop(view.overlay, "show_stats", text="Stats")
-
+        row.prop(view.overlay, "show_stats", text="Stats")
         row.prop(view.overlay, "show_cursor", text="Cursor")
         row.prop(view.overlay, "show_object_origins", text="Origins")
 
@@ -992,14 +988,13 @@ class PieShading(Menu):
             if active.mode == 'EDIT' and view.overlay.show_overlays:
                 column.separator()
 
-                if bpy.app.version >= (2, 90, 0):
-                    splines = curve.splines
-                    if splines:
-                        spline = curve.splines[0]
-                        if spline.type == 'BEZIER':
-                            row = column.split(factor=0.2, align=True)
-                            row.label(text='Handles')
-                            row.prop(view.overlay, "display_handle", text="")
+                splines = curve.splines
+                if splines:
+                    spline = curve.splines[0]
+                    if spline.type == 'BEZIER':
+                        row = column.split(factor=0.2, align=True)
+                        row.label(text='Handles')
+                        row.prop(view.overlay, "display_handle", text="")
 
                 row = column.split(factor=0.2, align=True)
                 row.label(text='Normals')
@@ -2053,14 +2048,13 @@ class PieTransform(Menu):
 
 
         elif context.mode == 'EDIT_MESH':
-            if bpy.app.version >= (2, 90, 0):
-                column.label(text="Transform")
+            column.label(text="Transform")
 
-                column.prop(scene.tool_settings, "use_transform_correct_face_attributes")
+            column.prop(scene.tool_settings, "use_transform_correct_face_attributes")
 
-                row = column.row(align=True)
-                row.active = scene.tool_settings.use_transform_correct_face_attributes
-                row.prop(scene.tool_settings, "use_transform_correct_keep_connected")
+            row = column.row(align=True)
+            row.active = scene.tool_settings.use_transform_correct_face_attributes
+            row.prop(scene.tool_settings, "use_transform_correct_keep_connected")
 
             column.label(text="Mirror")
 

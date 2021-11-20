@@ -55,12 +55,7 @@ def makedir(pathstring):
 
 def printd(d, name=''):
     print(f"\n{name}")
-
-    if bpy.app.version < (2, 93, 0):
-        pprint(d)
-
-    else:
-        pprint(d, sort_dicts=False)
+    pprint(d, sort_dicts=False)
 
 
 def get_incremented_paths(currentblend):

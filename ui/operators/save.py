@@ -419,22 +419,10 @@ class Purge(bpy.types.Operator):
 
     @classmethod
     def description(cls, context, properties):
-        if bpy.app.version >= (2, 93, 0):
-            return "Purge Orphans\nALT: Purge Orphans Recursively"
-        else:
-            return "Purge Orphans\nALT: Purge Orphans 5 times"
+        return "Purge Orphans\nALT: Purge Orphans Recursively"
 
     def invoke(self, context, event):
-        if bpy.app.version >= (2, 93, 0):
-            bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=event.alt)
-
-        else:
-            if event.alt:
-                for i in range(5):
-                    bpy.ops.outliner.orphans_purge()
-
-            else:
-                bpy.ops.outliner.orphans_purge()
+        bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=event.alt)
 
         return {'FINISHED'}
 
