@@ -223,6 +223,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     cursor_set_transform_preset: BoolProperty(name="Set Transform Preset when Setting Cursor", default=True)
     cursor_toggle_axes_drawing: BoolProperty(name="Toggle Cursor Axes Drawing", default=True)
 
+    snap_show_absolute_grid: BoolProperty(name="Show Absolute Grid Snapping", default=False)
+
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
     sync_tools: BoolProperty(name="Sync Tool if possible, when switching Modes", default=True)
     focus_view_transition: BoolProperty(name="Viewport Tweening", default=True)
@@ -790,6 +792,14 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
                     if self.activate_shading_pie:
                         column.prop(self, "cursor_toggle_axes_drawing")
+
+
+        if getattr(bpy.types, "MACHIN3_MT_snapping_pie", False):
+            bb = b.box()
+            bb.label(text="Snapping Pie")
+            column = bb.column()
+
+            column.prop(self, "snap_show_absolute_grid")
 
 
         # TOOLS PIE

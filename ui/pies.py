@@ -2079,24 +2079,38 @@ class PieSnapping(Menu):
         scene = context.scene
         ts = scene.tool_settings
 
+        absolute_grid = get_prefs().snap_show_absolute_grid
+
 
         # 4 - LEFT
-        op = pie.operator('machin3.set_snapping_preset', text='Vertex', depress=ts.snap_elements == {'VERTEX'} and ts.snap_target == 'CLOSEST' and not ts.use_snap_align_rotation)
+        op = pie.operator('machin3.set_snapping_preset', text='Vertex', depress=ts.snap_elements == {'VERTEX'} and ts.snap_target == 'CLOSEST' and not ts.use_snap_align_rotation, icon='SNAP_VERTEX')
         op.element = 'VERTEX'
         op.target = 'CLOSEST'
         op.align_rotation = False
 
         # 6 - RIGHT
-        op = pie.operator('machin3.set_snapping_preset', text='Surface', depress=ts.snap_elements == {'FACE'} and ts.snap_target == 'MEDIAN' and ts.use_snap_align_rotation)
-        op.element = 'FACE'
-        op.target = 'MEDIAN'
-        op.align_rotation = True
+        if absolute_grid:
+            op = pie.operator('machin3.set_snapping_preset', text='Absolute Grid', depress=ts.snap_elements == {'INCREMENT'} and ts.use_snap_grid_absolute, icon='SNAP_GRID')
+            op.element = 'INCREMENT'
+
+        else:
+            op = pie.operator('machin3.set_snapping_preset', text='Surface', depress=ts.snap_elements == {'FACE'} and ts.snap_target == 'MEDIAN' and ts.use_snap_align_rotation, icon='SNAP_FACE')
+            op.element = 'FACE'
+            op.target = 'MEDIAN'
+            op.align_rotation = True
 
         # 2 - BOTTOM
-        op = pie.operator('machin3.set_snapping_preset', text='Edge', depress=ts.snap_elements == {'EDGE'} and ts.snap_target == 'CLOSEST' and not ts.use_snap_align_rotation)
-        op.element = 'EDGE'
-        op.target = 'CLOSEST'
-        op.align_rotation = False
+        if absolute_grid:
+            op = pie.operator('machin3.set_snapping_preset', text='Surface', depress=ts.snap_elements == {'FACE'} and ts.snap_target == 'MEDIAN' and ts.use_snap_align_rotation, icon='SNAP_FACE')
+            op.element = 'FACE'
+            op.target = 'MEDIAN'
+            op.align_rotation = True
+
+        else:
+            op = pie.operator('machin3.set_snapping_preset', text='Edge', depress=ts.snap_elements == {'EDGE'} and ts.snap_target == 'CLOSEST' and not ts.use_snap_align_rotation, icon='SNAP_EDGE')
+            op.element = 'EDGE'
+            op.target = 'CLOSEST'
+            op.align_rotation = False
 
         # 8 - TOP
 
@@ -2104,7 +2118,7 @@ class PieSnapping(Menu):
 
         b = box.box()
         column = b.column()
-        self.draw_left_column(ts, column)
+        self.draw_center_column(ts, column)
 
 
         # 7 - TOP - LEFT
@@ -2114,27 +2128,45 @@ class PieSnapping(Menu):
         pie.separator()
 
         # 1 - BOTTOM - LEFT
-        pie.separator()
+        if absolute_grid:
+            op = pie.operator('machin3.set_snapping_preset', text='Edge', depress=ts.snap_elements == {'EDGE'} and ts.snap_target == 'CLOSEST' and not ts.use_snap_align_rotation, icon='SNAP_EDGE')
+            op.element = 'EDGE'
+            op.target = 'CLOSEST'
+            op.align_rotation = False
+
+        else:
+            pie.separator()
 
         # 3 - BOTTOM - RIGHT
         pie.separator()
 
 
-    def draw_left_column(self, tool_settings, layout):
+    def draw_center_column(self, tool_settings, layout):
         column = layout.column(align=True)
+
+        if tool_settings.snap_elements == {'INCREMENT'}:
+            column.scale_x = 1.5
 
         row = column.row(align=True)
         row.scale_y = 1.25
         row.popover(panel="VIEW3D_PT_snapping", text="More...")
+        row.prop(get_prefs(), 'snap_show_absolute_grid', text='', icon='SNAP_GRID')
 
-        row = column.row(align=True)
-        row.scale_y = 1.5
-        row.scale_x = 0.9
-        row.prop(tool_settings, 'snap_target', expand=True)
 
-        row = column.row(align=True)
-        row.scale_y = 1.25
-        row.prop(tool_settings, 'use_snap_align_rotation')
+        if tool_settings.snap_elements == {'INCREMENT'}:
+            row = column.row(align=True)
+            row.scale_y = 1.25
+            row.prop(tool_settings, 'use_snap_grid_absolute')
+
+        else:
+            row = column.row(align=True)
+            row.scale_y = 1.5
+            row.scale_x = 0.9
+            row.prop(tool_settings, 'snap_target', expand=True)
+
+            row = column.row(align=True)
+            row.scale_y = 1.25
+            row.prop(tool_settings, 'use_snap_align_rotation')
 
 
 class PieCollections(Menu):
