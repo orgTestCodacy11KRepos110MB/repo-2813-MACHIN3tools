@@ -213,7 +213,7 @@ class NextCam(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.space_data.region_3d.view_perspective == 'CAMERA'
+        return context.space_data.type == 'VIEW_3D' and context.space_data.region_3d.view_perspective == 'CAMERA'
 
     def execute(self, context):
         cams = sorted([obj for obj in context.scene.objects if obj.type == "CAMERA"], key=lambda x: x.name)

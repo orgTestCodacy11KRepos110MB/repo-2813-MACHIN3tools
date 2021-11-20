@@ -106,8 +106,9 @@ class MatcapSwitch(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        shading = context.space_data.shading
-        return shading.type == "SOLID" and shading.light == "MATCAP"
+        if context.space_data.type == 'VIEW_3D':
+            shading = context.space_data.shading
+            return shading.type == "SOLID" and shading.light == "MATCAP"
 
     def execute(self, context):
         view = context.space_data
