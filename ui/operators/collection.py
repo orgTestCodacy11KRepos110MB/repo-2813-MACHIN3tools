@@ -58,45 +58,63 @@ class CreateCollection(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AddToCollection(bpy.types.Operator):
-    bl_idname = "machin3.add_to_collection"
-    bl_label = "MACHIN3: Add to Collection"
-    bl_description = "description"
+class RemoveFromCollection(bpy.types.Operator):
+    bl_idname = "machin3.remove_from_collection"
+    bl_label = "MACHIN3: Remove from Collection"
+    bl_description = "Remove Selection from a Collection"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
-        return context.selected_objects
+        view = context.space_data
+        return view.type == 'VIEW_3D' and context.selected_objects
 
     def execute(self, context):
-        # ensure selection has an active object, otherwise link_to_collection will throw and error
-        active = context.active_object
-        if active not in context.selected_objects:
+
+        # this op needs to have an active object for some reason, otherwise the collection list will stay empty
+        if context.active_object not in context.selected_objects:
             context.view_layer.objects.active = context.selected_objects[0]
 
-        bpy.ops.object.link_to_collection('INVOKE_DEFAULT')
+        bpy.ops.collection.objects_remove('INVOKE_DEFAULT')
 
         return {'FINISHED'}
 
 
-class RemoveFromCollection(bpy.types.Operator):
-    bl_idname = "machin3.remove_from_collection"
-    bl_label = "MACHIN3: Remove from Collection"
-    bl_description = "description"
+class AddToCollection(bpy.types.Operator):
+    bl_idname = "machin3.add_to_collection"
+    bl_label = "MACHIN3: Add to Collection"
+    bl_description = "Add Selection to a Collection"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
-        return context.selected_objects
+        view = context.space_data
+
+        if view.type == 'VIEW_3D' and context.selected_objects:
+
+            # if in local view, then you have to have the outliner visible, so can't be in fullscreen
+            # this is because for whatever reason we need to override the context for the move_to_collection() op to work in local_view
+            if view.local_view:
+                for area in context.screen.areas:
+                    if area.type == 'OUTLINER':
+                        return True
+            else:
+                return True
 
     def execute(self, context):
-        # ensure selection has an active object, otherwise link_to_collection will throw and error
-        active = context.active_object
-        if active not in context.selected_objects:
-            context.view_layer.objects.active = context.selected_objects[0]
+        view = context.space_data
 
+        # use a context override when in local view
+        if view.local_view:
+            for area in context.screen.areas:
+                if area.type == 'OUTLINER':
+                    override = {'area': area}
+                    break
 
-        bpy.ops.collection.objects_remove('INVOKE_DEFAULT')
+            bpy.ops.object.link_to_collection(override, 'INVOKE_DEFAULT')
+
+        else:
+            bpy.ops.object.link_to_collection('INVOKE_DEFAULT')
 
         return {'FINISHED'}
 
@@ -104,43 +122,38 @@ class RemoveFromCollection(bpy.types.Operator):
 class MoveToCollection(bpy.types.Operator):
     bl_idname = "machin3.move_to_collection"
     bl_label = "MACHIN3: Move to Collection"
-    bl_description = "description"
+    bl_description = "Move Selection to a Collection"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self, context):
-        # ensure selection has an active object, otherwise link_to_collection will throw and error
-        active = context.active_object
-        if active not in context.selected_objects:
-            context.view_layer.objects.active = context.selected_objects[0]
+    @classmethod
+    def poll(cls, context):
+        view = context.space_data
 
-        bpy.ops.object.move_to_collection('INVOKE_DEFAULT')
+        if view.type == 'VIEW_3D' and context.selected_objects:
 
-        return {'FINISHED'}
-
-
-class SortGroupProGroups(bpy.types.Operator):
-    bl_idname = "machin3.sort_grouppro_groups"
-    bl_label = "MACHIN3: sort_grouppro_groups"
-    bl_description = "Sort GroupPro Groups into Groups Collection"
-    bl_options = {'REGISTER', 'UNDO'}
-
+            # if in local view, then you have to have the outlienr visible, so can't be in fullscreen
+            # this is because for whatever reason we need to override the context for the move_to_collection() op to work in local_view
+            if view.local_view:
+                for area in context.screen.areas:
+                    if area.type == 'OUTLINER':
+                        return True
+            else:
+                return True
 
     def execute(self, context):
-        gpcol = get_groups_collection(context.scene)
+        view = context.space_data
 
-        groups = [obj for obj in bpy.data.objects if obj.type == "EMPTY" and obj.instance_collection]
+        # use a context override when in local view
+        if view.local_view:
+            for area in context.screen.areas:
+                if area.type == 'OUTLINER':
+                    override = {'area': area}
+                    break
 
-        # link
-        for group in groups:
-            if group.name not in gpcol.objects:
-                gpcol.objects.link(group)
+            bpy.ops.object.move_to_collection(override, 'INVOKE_DEFAULT')
 
-        # TODO: investigate why GP has a once collection requirement for the empties
-        # remove from other collections
-        for group in groups:
-            for col in group.users_collection:
-                if col != gpcol:
-                    col.objects.unlink(group)
+        else:
+            bpy.ops.object.move_to_collection('INVOKE_DEFAULT')
 
         return {'FINISHED'}
 
