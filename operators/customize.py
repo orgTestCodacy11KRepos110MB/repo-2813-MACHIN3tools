@@ -329,9 +329,10 @@ class Customize(bpy.types.Operator):
 
             for kmi in km.keymap_items:
                 if kmi.idname == "image.view_selected":
-                    print("  Changed", kmi_to_string(kmi))
-                    kmi.type = "F"
-                    print("       to", kmi_to_string(kmi))
+                    if kmi.type == "NUMPAD_PERIOD":
+                        print("  Changed", kmi_to_string(kmi))
+                        kmi.type = "F"
+                        print("       to", kmi_to_string(kmi))
 
             # MESH
 
@@ -476,8 +477,6 @@ class Customize(bpy.types.Operator):
                     if kmi.properties.name == "VIEW3D_MT_edit_mesh_split":
                         print("  Deactivated", kmi_to_string(kmi))
                         kmi.active = False
-
-
 
 
             # CURVE
@@ -637,11 +636,28 @@ class Customize(bpy.types.Operator):
                     kmi.type = 'EVT_TWEAK_R'
                     print("       to", kmi_to_string(kmi))
 
-            for kmi in km.keymap_items:
                 if kmi.idname == "node.add_reroute":
                     print("  Changed", kmi_to_string(kmi))
                     kmi.type = 'EVT_TWEAK_R'
                     print("       to", kmi_to_string(kmi))
+
+                if kmi.idname == "node.view_selected":
+                    if kmi.type == "NUMPAD_PERIOD":
+                        print("  Changed", kmi_to_string(kmi))
+                        kmi.type = "F"
+                        print("       to", kmi_to_string(kmi))
+
+                if kmi.idname == "node.view_all":
+                    if kmi.type == "HOME":
+                        print("  Changed", kmi_to_string(kmi))
+                        kmi.type = "F"
+                        kmi.shift = True
+                        print("       to", kmi_to_string(kmi))
+
+                if kmi.idname == "node.link_make":
+                    if kmi.type == "F" and kmi.active:
+                        print("  Deactivated", kmi_to_string(kmi))
+                        kmi.active = False
 
 
             # FILE BROWSER
@@ -655,7 +671,6 @@ class Customize(bpy.types.Operator):
                     kmi.type = 'SLASH'
                     kmi.ctrl = False
                     print("       to", kmi_to_string(kmi))
-
 
         def add_keymaps(kc):
             '''
