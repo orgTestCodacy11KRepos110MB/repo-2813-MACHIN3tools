@@ -233,7 +233,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     tools_show_hardops_menu: BoolProperty(name="Show Hard Ops Menu", default=True)
     tools_show_quick_favorites: BoolProperty(name="Show Quick Favorites", default=False)
     tools_show_tool_bar: BoolProperty(name="Show Tool Bar", default=False)
-    tools_HUD_fade: FloatProperty(name="HUD Fade Time (seconds)", default=0.75, min=0.1, max=3)
 
     matpick_workspace_names: StringProperty(name="Workspaces the Material Picker should appear on", default="Shading, Material")
     matpick_spacing_obj: FloatProperty(name="Object Mode Spacing", min=0, default=20)
@@ -316,6 +315,16 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     # VIEW3D
 
     use_legacy_line_smoothing: BoolProperty(name="Use Legacy Line Smoothing", description="Legacy Line Smoothing using the depreciated bgl module\nIf this is disabled, lines drawn by MACHIN3tools won't be anti aliased.", default=False)
+
+
+    # HUD
+
+    HUD_scale: FloatProperty(name="HUD Scale", description="Scale of HUD elements", default=1, min=0.1)
+    HUD_fade_clean_up: FloatProperty(name="Clean Up HUD Fade Time (seconds)", default=1, min=0.1, max=3)
+    HUD_fade_clipping_toggle: FloatProperty(name="Clipping Toggle HUD Fade Time (seconds)", default=1, min=0.1)
+    HUD_fade_material_picker: FloatProperty(name="Material Picker HUD Fade Time (seconds)", default=0.5, min=0.1)
+    HUD_fade_group: FloatProperty(name="Group HUD Fade Time (seconds)", default=1, min=0.1)
+    HUD_fade_tools_pie: FloatProperty(name="Tools Pie HUD Fade Time (seconds)", default=0.75, min=0.1)
 
 
     # hidden
@@ -505,6 +514,38 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         b = split.box()
         b.label(text="Settings")
+
+        if any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_material_picker", "OT_surface_slide", "OT_clean_up", "OT_clipping_toggle", "OT_group", "OT_transform_edge_constrained", "OT_focus", "MT_tools_pie"]]):
+            bb = b.box()
+            bb.label(text="HUD")
+
+            column = bb.column()
+            row = column.row()
+            r = row.split(factor=0.2)
+            r.prop(self, "HUD_scale", text="")
+            r.label(text="HUD Scale")
+
+            if any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_material_picker", "OT_clean_up", "OT_clipping_toggle", "OT_group", "MT_tools_pie"]]):
+                column = bb.column()
+                column.label(text="HUD Fade time")
+
+                column = bb.column()
+                row = column.row()
+
+                if getattr(bpy.types, "MACHIN3_OT_clean_up", False):
+                    row.prop(self, "HUD_fade_clean_up", text="Clean Up")
+
+                if getattr(bpy.types, "MACHIN3_OT_clipping_toggle", False):
+                    row.prop(self, "HUD_fade_clipping_toggle", text="Clipping Toggle")
+
+                if getattr(bpy.types, "MACHIN3_OT_material_picker", False):
+                    row.prop(self, "HUD_fade_material_picker", text="Material Picker")
+
+                if getattr(bpy.types, "MACHIN3_OT_group", False):
+                    row.prop(self, "HUD_fade_group", text="Group")
+
+                if getattr(bpy.types, "MACHIN3_MT_tools_pie", False):
+                    row.prop(self, "HUD_fade_tools_pie", text="Tools Pie")
 
 
         # VIEW 3D settings
@@ -811,12 +852,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             split = bb.split(factor=0.5)
 
             col = split.column()
-            col.prop(self, "tools_HUD_fade", slider=True)
             col.prop(self, "tools_show_boxcutter_presets")
             col.prop(self, "tools_show_hardops_menu")
 
             col = split.column()
-            col.label(text='')
             col.prop(self, "tools_show_quick_favorites")
             col.prop(self, "tools_show_tool_bar")
 

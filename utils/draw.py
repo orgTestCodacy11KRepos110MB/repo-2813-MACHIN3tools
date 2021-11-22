@@ -5,6 +5,7 @@ from gpu_extras.batch import batch_for_shader
 import blf
 from . wm import get_last_operators
 from . registration import get_prefs
+from . ui import require_header_offset
 from .. colors import red, green, blue, black, white
 
 
@@ -117,19 +118,12 @@ def draw_focus_HUD(context, color=(1, 1, 1), alpha=1, width=2):
 
             # draw title
 
-            # check if title needs to be offset down due to the header position
-            area = context.area
-            headers = [r for r in area.regions if r.type == 'HEADER']
-
-            scale = context.preferences.view.ui_scale
+            scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
             offset = 4
 
-            if headers:
-                header = headers[0]
-
-                # only offset when the header is on top and when show_region_tool_header is disabled
-                if area.y - header.y and not view.show_region_tool_header:
-                    offset += int(25 * scale)
+            # add additional offset if necessary
+            if require_header_offset(context, top=True):
+                offset += int(25)
 
             title = "Focus Level: %d" % len(context.scene.M3.focus_history)
 
@@ -149,21 +143,12 @@ def draw_focus_HUD(context, color=(1, 1, 1), alpha=1, width=2):
 def draw_surface_slide_HUD(context, color=(1, 1, 1), alpha=1, width=2):
     if context.space_data.overlay.show_overlays:
         region = context.region
-        view = context.space_data
 
-        # check if title needs to be offset down due to the header position
-        area = context.area
-        headers = [r for r in area.regions if r.type == 'HEADER']
-
-        scale = context.preferences.view.ui_scale
+        scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
         offset = 0
 
-        if headers:
-            header = headers[0]
-
-            # only offset when the header is on top and when show_region_tool_header is disabled
-            if not (area.y - header.y) and not view.show_region_tool_header:
-                offset += int(25 * scale)
+        if require_header_offset(context, top=False):
+            offset += int(20)
 
         title = "Surface Sliding"
 
@@ -182,10 +167,20 @@ def draw_screen_cast_HUD(context):
     operators = get_last_operators(context, debug=False)[-p.screencast_operator_count:]
 
     font = 0
-    scale = context.preferences.view.ui_scale
+    scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
 
-    offset_x = 7 if p.screencast_show_addon else 15
-    offset_y = 70
+    # initiate the horizontal offset based on the presence of the tools bar
+    tools = [r for r in context.area.regions if r.type == 'TOOLS']
+    offset_x = tools[0].width if tools else 0
+
+    # then add some more depending on wether the addon prefix is used
+    offset_x += 7 if p.screencast_show_addon else 15
+
+    # initiate the vertical offset based on the height of the redo panel, use a 50px base offset
+    redo = [r for r in context.area.regions if r.type == 'HUD']
+    offset_y = redo[0].height + 50 if redo else 50
+
+    print(scale)
 
     # emphasize the last op
     emphasize = 1.25
@@ -275,7 +270,7 @@ def draw_label(context, title='', coords=None, center=True, color=(1, 1, 1), alp
     else:
         width, height = coords
 
-    scale = context.preferences.view.ui_scale
+    scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
 
     font = 1
     fontsize = int(12 * scale)

@@ -4,6 +4,7 @@ import bmesh
 from mathutils.geometry import distance_point_to_plane
 from mathutils import Vector
 import math
+from .. utils.registration import get_prefs
 from .. items import cleanup_select_items
 from .. colors import white, green, red, yellow
 
@@ -132,10 +133,10 @@ class CleanUp(bpy.types.Operator):
             text = f"Removed:{' Verts: ' + str(verts) if verts else ''}{' Edges: ' + str(edges) if edges else ''}{' Faces: ' + str(faces) if faces else ''}"
 
             extreme = any([c >= 10 for c in [verts, edges, faces]])
-            bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=yellow if extreme else white, alpha=1)
+            bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=yellow if extreme else white, time=get_prefs().HUD_fade_clean_up, alpha=1)
         else:
             text = "Nothing to remove."
-            bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=green, alpha=0.5)
+            bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=green, time=get_prefs().HUD_fade_clean_up, alpha=0.5)
 
         # self.report({'INFO'}, text)
 

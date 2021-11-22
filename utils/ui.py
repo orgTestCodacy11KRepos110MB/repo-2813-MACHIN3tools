@@ -88,6 +88,30 @@ def popup_message(message, title="Info", icon="INFO", terminal=True):
             print(" »", message)
 
 
+# HEADER
+
+def require_header_offset(context, top=True):
+    '''
+    determine if anything written at the top of the screen requires an additional offset due to the presense of tool options
+
+    depending on the Blender version, this varies
+    get the header(2.03) or tool_header(3.0), but only if it's y location is under (bottom) / above (top) the halve the height of the area
+    '''
+
+    area = context.area
+    headers = [r for r in area.regions if r.type == ('HEADER' if bpy.app.version < (3, 0, 0) else 'TOOL_HEADER') and ((r.y > area.height / 2) if top else (r.y < area.height / 2))]
+
+    if headers:
+
+        # in 2.93 we need to check if the tool header is hidden, to determine if an offset should be used
+        if bpy.app.version < (3, 0, 0):
+            return not context.space_data.show_region_tool_header
+
+        # in 3.0,0 we need to check if the tool header is shown
+        else:
+            return context.space_data.show_region_tool_header
+
+
 # KEYMAPS
 
 def kmi_to_string(kmi):

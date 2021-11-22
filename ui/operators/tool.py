@@ -40,7 +40,7 @@ class SetToolByName(bpy.types.Operator):
         name = prettify_tool_name(self.name)
 
         coords = (context.region.width / 2, 100)
-        bpy.ops.machin3.draw_label(text=name, coords=coords, color=white, time=get_prefs().tools_HUD_fade)
+        bpy.ops.machin3.draw_label(text=name, coords=coords, color=white, time=get_prefs().HUD_fade_tools_pie)
 
         # return {'RUNNING_MODAL'}
         return {'FINISHED'}

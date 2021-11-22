@@ -4,6 +4,7 @@ from bl_ui.space_statusbar import STATUSBAR_HT_header as statusbar
 from mathutils import Vector
 from .. utils.raycast import cast_obj_ray_from_mouse, cast_bvh_ray_from_mouse
 from .. utils.draw import draw_label
+from .. utils.registration import get_prefs
 
 
 def draw_material_pick_status(self, context):
@@ -49,7 +50,7 @@ class MaterialPicker(bpy.types.Operator):
 
         if event.type == 'LEFTMOUSE':
             if context.mode == 'OBJECT':
-                hitobj, hitobj_eval, _, _, hitindex, _ = cast_obj_ray_from_mouse(self.mousepos, depsgraph=context.evaluated_depsgraph_get(), debug=False)
+                hitobj, hitobj_eval, _, _, hitindex, _ = cast_obj_ray_from_mouse(self.mousepos, depsgraph=self.dg, debug=False)
 
             elif context.mode == 'EDIT_MESH':
                 hitobj, _, _, hitindex, _, _ = cast_bvh_ray_from_mouse(self.mousepos, candidates=[obj for obj in context.visible_objects if obj.mode == 'EDIT'])
@@ -77,13 +78,13 @@ class MaterialPicker(bpy.types.Operator):
                                 obj.material_slots[obj.active_material_index].material = mat
 
 
-                    bpy.ops.machin3.draw_label(text=mat.name, coords=self.mousepos, alpha=1, time=0.5)
+                    bpy.ops.machin3.draw_label(text=mat.name, coords=self.mousepos, alpha=1, time=get_prefs().HUD_fade_material_picker)
 
                 else:
-                    bpy.ops.machin3.draw_label(text="Empty", coords=self.mousepos, color=(0.5, 0.5, 0.5), alpha=1, time=0.7)
+                    bpy.ops.machin3.draw_label(text="Empty", coords=self.mousepos, color=(0.5, 0.5, 0.5), alpha=1, time=get_prefs().HUD_fade_material_picker + 0.2)
 
             else:
-                bpy.ops.machin3.draw_label(text="None", coords=self.mousepos, color=(1, 0, 0), alpha=1, time=0.7)
+                bpy.ops.machin3.draw_label(text="None", coords=self.mousepos, color=(1, 0, 0), alpha=1, time=get_prefs().HUD_fade_material_picker + 0.2)
 
             self.finish(context)
             return {'FINISHED'}
@@ -113,6 +114,8 @@ class MaterialPicker(bpy.types.Operator):
         # init
         context.window.cursor_set("EYEDROPPER")
         self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
+
+        self.dg = context.evaluated_depsgraph_get()
 
         self.bar_orig = statusbar.draw
         statusbar.draw = draw_material_pick_status

@@ -157,7 +157,7 @@ class Group(bpy.types.Operator):
             fade_group_sizes(context, init=True)
 
         # draw label
-        bpy.ops.machin3.draw_label(text=f"{'Sub' if new_parent else 'Root'}: {empty.name}", coords=self.coords, color=(0.5, 1, 0.5) if new_parent else (1, 1, 1), alpha=0.75)
+        bpy.ops.machin3.draw_label(text=f"{'Sub' if new_parent else 'Root'}: {empty.name}", coords=self.coords, color=(0.5, 1, 0.5) if new_parent else (1, 1, 1), time=get_prefs().HUD_fade_group, alpha=0.75)
 
 
 class UnGroup(bpy.types.Operator):
