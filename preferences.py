@@ -369,87 +369,87 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         bb = b.box()
         bb.label(text="Tools")
 
-        column = bb.column()
+        column = bb.column(align=True)
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_smart_vert", toggle=True)
-        row.label(text="Smart vertex manipulation.")
+        row.label(text="Smart Vertex Merging, Connecting and Sliding.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_smart_edge", toggle=True)
-        row.label(text="Smart edge creation, manipulation and selection conversion.")
+        row.label(text="Smart Edge Creation, Manipulation, Projection and Selection Conversion.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_smart_face", toggle=True)
-        row.label(text="Smart face creation and object-from-face creation.")
+        row.label(text="Smart Face Creation and Object-from-Face Creation.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_clean_up", toggle=True)
-        row.label(text="Quick geometry clean up.")
+        row.label(text="Quick Geometry Clean-up.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_clipping_toggle", toggle=True)
-        row.label(text="Viewport clipping plane toggle.")
+        row.label(text="Viewport Clipping Plane Toggle.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_focus", toggle=True)
-        row.label(text="Object isolation with history.")
+        row.label(text="Object Focus and Multi-Level Isolation.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_mirror", toggle=True)
-        row.label(text="Object Mirroring + Un-Mirroring")
+        row.label(text="Object Mirroring and Un-Mirroring.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_align", toggle=True)
-        row.label(text="Object per-axis location, rotation and scale alignment.")
+        row.label(text="Object per-axis Location, Rotation and Scale Alignment.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_apply", toggle=True)
-        row.label(text="Apply Transformations while keeping the bevel width as well as the child transformations unchanged")
+        row.label(text="Apply Transformations while keeping the Bevel Width as well as the Child Transformations unchanged.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_select", toggle=True)
         row.label(text="Select Center Objects or Wire Objects.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_mesh_cut", toggle=True)
-        row.label(text="Knife intersect a mesh, using another object.")
+        row.label(text="Knife Intersect a Mesh-Object, using another one.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_surface_slide", toggle=True)
-        row.label(text="Easily modify mesh topology, while maintaining form.")
+        row.label(text="Easily modify Mesh Topology, while maintaining Form.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_filebrowser_tools", toggle=True)
-        row.label(text="Additional tools for the Filebrowser.")
+        row.label(text="Additional Tools/Shortcuts for the Filebrowser.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_smart_drive", toggle=True)
-        row.label(text="Quickly use one object to drive another.")
+        row.label(text="Use one Object to drive another.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_unity", toggle=True)
-        row.label(text="Unity related Tools")
+        row.label(text="Unity related Tools.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_material_picker", toggle=True)
-        row.label(text="Pick Materials from the Material Workspace's 3D View")
+        row.label(text="Pick Materials from the Material Workspace's 3D View.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_group", toggle=True)
-        row.label(text="Group Objects using Empties as Parents")
+        row.label(text="Group Objects using Empties as Parents.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_thread", toggle=True)
-        row.label(text="Easily turn Cylinder Faces into Thread")
+        row.label(text="Easily turn Cylinder Faces into Thread.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_spin", toggle=True)
-        row.label(text="Fixing Blender's Spin Operator")
+        row.label(text="Fixing Blender's Spin Operator.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_smooth", toggle=True)
-        row.label(text="Toggle Smoothing in Korean Bevel and SubD workflows")
+        row.label(text="Toggle Smoothing in Korean Bevel and SubD workflows.")
 
         row = column.split(factor=0.25)
         row.prop(self, "activate_customize", toggle=True)
@@ -461,51 +461,51 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         bb = b.box()
         bb.label(text="Pie Menus")
 
-        column = bb.column()
+        column = bb.column(align=True)
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_modes_pie", toggle=True)
         row.label(text="Quick mode changing.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_save_pie", toggle=True)
         row.label(text="Save, open, append. Load recent, previous and next. Append World and Materials.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_shading_pie", toggle=True)
         row.label(text="Control shading, overlays, eevee and some object properties.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_views_pie", toggle=True)
         row.label(text="Control views. Create and manage cameras.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_align_pie", toggle=True)
         row.label(text="Edit mesh and UV alignments.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_cursor_pie", toggle=True)
         row.label(text="Cursor and Origin manipulation.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_transform_pie", toggle=True)
         row.label(text="Transform Orientations and Pivots.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_snapping_pie", toggle=True)
         row.label(text="Snapping.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_collections_pie", toggle=True)
         row.label(text="Collection management.")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_workspace_pie", toggle=True)
         r = row.split(factor=0.4)
         r.label(text="Switch Workplaces.")
         r.label(text="If enabled, customize it in ui/pies.py", icon="INFO")
 
-        row = column.split(factor=0.25)
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_tools_pie", toggle=True)
         row.label(text="Switch Tools, used primarily for BoxCutter/HardOps.")
 
@@ -527,10 +527,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             if any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_material_picker", "OT_clean_up", "OT_clipping_toggle", "OT_group", "MT_tools_pie"]]):
                 column = bb.column()
-                column.label(text="HUD Fade time")
+                column.label(text="Fade time")
 
                 column = bb.column()
-                row = column.row()
+                row = column.row(align=True)
 
                 if getattr(bpy.types, "MACHIN3_OT_clean_up", False):
                     row.prop(self, "HUD_fade_clean_up", text="Clean Up")
@@ -574,19 +574,19 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             bb = b.box()
             bb.label(text="Material Picker")
 
-            column = bb.column()
-            row = column.row()
-            r = row.split(factor=0.2)
+            column = bb.column(align=True)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
             r.prop(self, "matpick_workspace_names", text="")
             r.label(text="Workspace Names")
 
-            row = column.row()
-            r = row.split(factor=0.2)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
             r.prop(self, "matpick_spacing_obj", text="")
-            r.label(text="Object Mode Spacing")
+            r.label(text="Object Mode fpacing")
 
-            row = column.row()
-            r = row.split(factor=0.2)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
             r.prop(self, "matpick_spacing_edit", text="")
             r.label(text="Edit Mode Spacing")
 
@@ -597,13 +597,13 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             bb = b.box()
             bb.label(text="Group")
 
-            column = bb.column()
+            column = bb.column(align=True)
 
-            row = column.split(factor=0.2)
+            row = column.split(factor=0.2, align=True)
             row.prop(self, "use_group_sub_menu", text='Sub Menu', toggle=True)
             row.label(text="Use Group Sub Menu in Object Context Menu.")
 
-            row = column.split(factor=0.2)
+            row = column.split(factor=0.2, align=True)
             row.prop(self, "use_group_outliner_toggles", text='Outliner Toggles', toggle=True)
             row.label(text="Show Group Toggles in Outliner Header.")
 
@@ -741,15 +741,15 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             split = bb.split(factor=0.5)
 
-            col = split.column()
+            col = split.column(align=True)
 
-            row = col.row()
-            r = row.split(factor=0.4)
+            row = col.row(align=True)
+            r = row.split(factor=0.4, align=True)
             r.prop(self, "screencast_operator_count", text="")
             r.label(text="Operator Count")
 
-            row = col.row()
-            r = row.split(factor=0.4)
+            row = col.row(align=True)
+            r = row.split(factor=0.4, align=True)
             r.prop(self, "screencast_fontsize", text="")
             r.label(text="Font Size")
 
