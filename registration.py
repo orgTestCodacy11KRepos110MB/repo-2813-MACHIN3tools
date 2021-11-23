@@ -153,7 +153,7 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
                        {'label': 'Connect Paths', 'keymap': 'Mesh', 'idname': 'machin3.smart_vert', 'type': 'ONE', 'value': 'PRESS', 'alt': True, 'ctrl': True, 'properties': [('mode', 'CONNECT'), ('slideoverride', False)]},
                        {'label': 'Slide Extend', 'keymap': 'Mesh', 'idname': 'machin3.smart_vert', 'type': 'ONE', 'value': 'PRESS', 'shift': True, 'alt': True, 'properties': [('slideoverride', True)]}],
         'SMART_EDGE': [{'label': 'Smart Edge', 'keymap': 'Mesh', 'idname': 'machin3.smart_edge', 'type': 'TWO', 'value': 'PRESS', 'properties': [('sharp', False), ('offset', False)]},
-                       {'label': 'Toggle Sharp', 'keymap': 'Mesh', 'idname': 'machin3.smart_edge', 'type': 'TWO', 'shift': True, 'value': 'PRESS', 'properties': [('sharp', True), ('offset', False)]},
+                       {'label': 'Toggle Sharp/Weight', 'keymap': 'Mesh', 'idname': 'machin3.smart_edge', 'type': 'TWO', 'shift': True, 'value': 'PRESS', 'properties': [('sharp', True), ('offset', False)]},
                        {'label': 'Offset Edges', 'keymap': 'Mesh', 'idname': 'machin3.smart_edge', 'type': 'TWO', 'ctrl': True, 'value': 'PRESS', 'properties': [('sharp', False), ('offset', True)]}],
         'SMART_FACE': [{'keymap': 'Mesh', 'idname': 'machin3.smart_face', 'type': 'FOUR', 'value': 'PRESS'}],
         'CLEAN_UP': [{'keymap': 'Mesh', 'idname': 'machin3.clean_up', 'type': 'THREE', 'value': 'PRESS'}],
