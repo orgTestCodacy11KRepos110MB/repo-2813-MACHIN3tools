@@ -180,8 +180,6 @@ def draw_screen_cast_HUD(context):
     redo = [r for r in context.area.regions if r.type == 'HUD']
     offset_y = redo[0].height + 50 if redo else 50
 
-    print(scale)
-
     # emphasize the last op
     emphasize = 1.25
 
