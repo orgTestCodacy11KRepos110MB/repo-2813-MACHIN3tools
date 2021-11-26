@@ -663,14 +663,24 @@ class PieSave(Menu):
     def draw_right_column(self, layout):
         column = layout.column(align=True)
 
-        row = column.row()
+        row = column.row(align=True)
         r = row.row(align=True)
         r.operator("wm.append", text="Append", icon_value=get_icon('append'))
         r.operator("wm.link", text="Link", icon_value=get_icon('link'))
 
+        row.separator()
+
         r = row.row(align=True)
         r.operator("wm.call_menu", text='', icon_value=get_icon('external_data')).name = "TOPBAR_MT_file_external_data"
         r.operator("machin3.purge_orphans", text="Purge")
+
+        # linked libraries
+        libs = bpy.data.libraries
+
+        if libs:
+            r = column.row(align=True)
+            r.scale_y = 1.2
+            r.operator("machin3.reload_linked_libraries", text=f"Reload {'Linked Library' if len(libs) == 1 else f'{len(libs)} Linked Libraries'}", icon_value=get_icon('revert'))
 
         # append world and materials
 

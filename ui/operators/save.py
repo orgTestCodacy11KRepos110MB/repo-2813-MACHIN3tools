@@ -469,6 +469,29 @@ class Clean(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class ReloadLinkedLibraries(bpy.types.Operator):
+    bl_idname = "machin3.reload_linked_libraries"
+    bl_label = "MACHIN3: Reload Linked Liraries"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return bpy.data.libraries
+
+    def execute(self, context):
+        reloaded = []
+
+        for lib in bpy.data.libraries:
+            lib.reload()
+            reloaded.append(lib.name)
+            print(f"Reloaded Library: {lib.name}")
+
+        self.report({'INFO'}, f"Reloaded {'Library' if len(reloaded) == 1 else f'{len(reloaded)} Libraries'}: {', '.join(reloaded)}")
+
+        return {'FINISHED'}
+
+
 class ScreenCast(bpy.types.Operator):
     bl_idname = "machin3.screen_cast"
     bl_label = "MACHIN3: Screen Cast"
