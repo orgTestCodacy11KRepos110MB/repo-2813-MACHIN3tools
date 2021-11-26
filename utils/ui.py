@@ -118,7 +118,7 @@ def kmi_to_string(kmi):
     '''
     return keymap item as printable string
     '''
-    return "%s, name: %s, active: %s, map type: %s, type: %s, value: %s, alt: %s, ctrl: %s, shift: %s, properties: %s" % (kmi.idname, kmi.name, kmi.active, kmi.map_type, kmi.type, kmi.value, kmi.alt, kmi.ctrl, kmi.shift, str(kmi.properties.items()))
+    return f"{kmi.idname}, name: {kmi.name}, active: {kmi.active}, map type: {kmi.map_type}, type: {kmi.type}, value: {kmi.value}, alt: {kmi.alt}, ctrl: {kmi.ctrl}, shift: {kmi.shift}, properties: {str(dict(kmi.properties))}"
 
 
 def draw_keymap_items(kc, name, keylist, layout):
