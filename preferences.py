@@ -14,6 +14,25 @@ meshmachine = None
 # TODO: check if the append world/materials paths exist and make them absolute
 
 
+has_settings = ['OT_smart_vert',
+                'OT_clean_up',
+                'OT_clipping_toggle',
+                'OT_transform_edge_constrained',
+                'OT_clipping_toggle',
+                'OT_focus',
+                'OT_group',
+                'OT_material_picker',
+                'OT_surface_slide',
+                'OT_customize',
+                'MT_cursor_pie',
+                'MT_modes_pie',
+                'MT_save_pie',
+                'MT_shading_pie',
+                'MT_snapping_pie',
+                'MT_tools_pie',
+                'MT_viewport_pie']
+
+
 class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     path = get_path()
     bl_idname = get_name()
@@ -846,7 +865,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         # NO SETTINGS
 
-        if not any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_focus", "OT_customize", "MT_modes_pie", "MT_save_pie", "MT_shading_pie", "MT_snapping_pie", "MT_tools_pie"]]):
+        if not any([getattr(bpy.types, "MACHIN3_" + name, False) for name in has_settings]):
             b.label(text="No tools or pie menus with settings have been activated.")
 
     def draw_keymaps(self, box):
