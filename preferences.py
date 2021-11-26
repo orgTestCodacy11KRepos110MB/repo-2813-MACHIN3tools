@@ -3,31 +3,15 @@ from bpy.props import IntProperty, StringProperty, CollectionProperty, BoolPrope
 import os
 from . properties import AppendMatsCollection
 from . utils.ui import get_icon, draw_keymap_items
-from . utils.registration import activate, get_path, get_name
-from . items import matcap_background_type_items
+from . utils.registration import activate, get_path, get_name, get_addon
+from . items import preferences_tabs, matcap_background_type_items
 
 
-preferences_tabs = [("GENERAL", "General", ""),
-                    ("KEYMAPS", "Keymaps", ""),
-                    ("ABOUT", "About", "")]
+decalmachine = None
+meshmachine = None
 
 
-links = [("Documentation", "https://machin3.io/MACHIN3tools/docs/", "INFO"),
-         ("MACHINƎ.io", "https://machin3.io", "WORLD"),
-         ("Youtube", "https://www.youtube.com/channel/UC4yaFzFDILd2yAqOWRuLOvA", "NONE"),
-         ("Twitter", "https://twitter.com/machin3io", "NONE"),
-         ("", "", ""),
-         ("", "", ""),
-         ("DECALmachine", "https://machin3.io/DECALmachine", "NONE"),
-         ("MESHmachine", "https://machin3.io/MESHmachine", "NONE"),
-         ("", "", ""),
-         ("", "", ""),
-         ("MACHINƎ @ Artstation", "https://www.artstation.com/artist/machin3", "NONE"),
-         ("", "", ""),
-         ]
-
-
-# TODO: check if the append world/materials paths exist and make them abosolute
+# TODO: check if the append world/materials paths exist and make them absolute
 
 
 class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
@@ -888,20 +872,35 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             b.label(text="No keymappings created, because none of the pies have been activated.")
 
     def draw_about(self, box):
-        column = box.column()
+        global decalmachine, meshmachine
 
-        for idx, (text, url, icon) in enumerate(links):
-            if idx % 2 == 0:
-                row = column.row()
-                if text == "":
-                    row.separator()
-                else:
-                    row.operator("wm.url_open", text=text, icon=icon).url = url
-            else:
-                if text == "":
-                    row.separator()
-                else:
-                    row.operator("wm.url_open", text=text, icon=icon).url = url
+        if decalmachine is None:
+            decalmachine = get_addon('DECALmachine')[0]
+
+        if meshmachine is None:
+            meshmachine = get_addon('MESHmachine')[0]
+
+        column = box.column(align=True)
+
+        row = column.row(align=True)
+
+        row.scale_y = 1.5
+        row.operator("wm.url_open", text='MACHIN3tools', icon='INFO').url = 'https://machin3.io/MACHIN3tools/'
+        row.operator("wm.url_open", text='MACHINƎ.io', icon='WORLD').url = 'https://machin3.io'
+        row.operator("wm.url_open", text='blenderartists', icon_value=get_icon('blenderartists')).url = 'https://blenderartists.org/t/machin3tools/1135716/'
+
+        row = column.row(align=True)
+        row.scale_y = 1.5
+        row.operator("wm.url_open", text='Twitter', icon_value=get_icon('twitter')).url = 'https://twitter.com/machin3io'
+        row.operator("wm.url_open", text='Youtube', icon_value=get_icon('youtube')).url = 'https://www.youtube.com/c/MACHIN3/'
+        row.operator("wm.url_open", text='Artstation', icon_value=get_icon('artstation')).url = 'https://www.artstation.com/machin3'
+
+        column.separator()
+
+        row = column.row(align=True)
+        row.scale_y = 1.5
+        row.operator("wm.url_open", text='DECALmachine', icon_value=get_icon('save' if decalmachine else 'cancel_grey')).url = 'https://decal.machin3.io'
+        row.operator("wm.url_open", text='MESHmachine', icon_value=get_icon('save' if meshmachine else 'cancel_grey')).url = 'https://mesh.machin3.io'
 
     def draw_tool_keymaps(self, kc, keysdict, layout):
         drawn = False

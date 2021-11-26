@@ -21,6 +21,9 @@ shift = ['LEFT_SHIFT', 'RIGHT_SHIFT']
 
 # PREFERENCES
 
+preferences_tabs = [("GENERAL", "General", ""),
+                    ("KEYMAPS", "Keymaps", ""),
+                    ("ABOUT", "About", "")]
 
 matcap_background_type_items = [("THEME", "Theme", ""),
                                 ("WORLD", "World", ""),
