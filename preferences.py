@@ -472,7 +472,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_save_pie", toggle=True)
-        row.label(text="Save, open, append. Load recent, previous and next. Append World and Materials.")
+        row.label(text="Save, Open, Append and Link. Load Recent, Previous and Next. Purge and Clean Out. ScreenCast.")
 
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_shading_pie", toggle=True)
