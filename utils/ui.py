@@ -114,11 +114,17 @@ def require_header_offset(context, top=True):
 
 # KEYMAPS
 
-def kmi_to_string(kmi):
+def kmi_to_string(kmi, docs_mode=False):
     '''
     return keymap item as printable string
     '''
-    return f"{kmi.idname}, name: {kmi.name}, active: {kmi.active}, map type: {kmi.map_type}, type: {kmi.type}, value: {kmi.value}, alt: {kmi.alt}, ctrl: {kmi.ctrl}, shift: {kmi.shift}, properties: {str(dict(kmi.properties))}"
+
+    kmi_str = f"{kmi.idname}, name: {kmi.name}, active: {kmi.active}, map type: {kmi.map_type}, type: {kmi.type}, value: {kmi.value}, alt: {kmi.alt}, ctrl: {kmi.ctrl}, shift: {kmi.shift}, properties: {str(dict(kmi.properties))}"
+
+    if docs_mode:
+        return f"`{kmi_str}`"
+    else:
+        return kmi_str
 
 
 def draw_keymap_items(kc, name, keylist, layout):
