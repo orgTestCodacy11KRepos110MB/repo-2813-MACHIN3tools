@@ -11,7 +11,7 @@ class CursorSpin(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     angle: FloatProperty(name="Angle", default=45)
-    steps: IntProperty(name="Steps", default=4)
+    steps: IntProperty(name="Steps", default=1, min=1)
     axis: EnumProperty(name="Axis", items=axis_items, default='Y')
 
     def draw(self, context):
