@@ -1,7 +1,7 @@
 bl_info = {
     "name": "MACHIN3tools",
     "author": "MACHIN3, TitusLVR",
-    "version": (0, 9, 0),
+    "version": (1, 0, 0),
     "blender": (2, 93, 0),
     "location": "",
     "description": "Streamlining Blender 2.93 and beyond.",
