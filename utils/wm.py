@@ -172,11 +172,20 @@ def get_last_operators(context, debug=False):
         elif idname == 'machin3.boolean':
             prop = getattr(op, 'method', False).capitalize()
 
+        elif idname == 'machin3.symmetrize':
+
+            if getattr(op, 'remove'):
+                prop = 'Remove'
+
+            if getattr(op, 'partial'):
+                label = 'Selected ' + label
+
 
         # HyperCursor
 
         elif idname == 'machin3.add_object_at_cursor':
-            prop = getattr(op, 'type', False).capitalize()
+            prop = getattr(op, 'remove', False)
+
 
 
         operators.append((addon, label, idname, prop))
