@@ -163,6 +163,13 @@ class Snap:
         else:
             self.exclude = []
 
+        # when in local view, always exclude scene objects outside of it
+        view = context.space_data
+
+        if view.local_view:
+            hidden = [obj for obj in context.view_layer.objects if not obj.visible_get()]
+            self.exclude += hidden
+
         self.exclude_wire = exclude_wire
 
     def _init_alternatives(self, context, alternative):
