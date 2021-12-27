@@ -187,6 +187,10 @@ class SurfaceDrawMode(bpy.types.Operator):
         layer = gp.data.layers.new(name="SurfaceLayer")
         layer.blend_mode = 'MULTIPLY'
 
+        # create a frame on the layer if there isn't anyone, otherwise you won't be able to draw
+        if not layer.frames:
+            layer.frames.new(0)
+
         context.view_layer.objects.active = gp
         active.select_set(False)
         gp.select_set(True)
@@ -229,9 +233,5 @@ class SurfaceDrawMode(bpy.types.Operator):
         # by default pick the brush
         else:
             bpy.ops.wm.tool_set_by_id(name="builtin_brush.Draw")
-
-        # enable auto keyframing in 2.93+, see https://developer.blender.org/rB6a662ffda836
-        if not ts.use_keyframe_insert_auto:
-            ts.use_keyframe_insert_auto = True
 
         return {'FINISHED'}
