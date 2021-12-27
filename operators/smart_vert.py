@@ -1,12 +1,11 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty, IntProperty
 from bpy_extras.view3d_utils import region_2d_to_origin_3d, region_2d_to_vector_3d, region_2d_to_location_3d
-from bl_ui.space_statusbar import STATUSBAR_HT_header as statusbar
 import bmesh
 from mathutils import Vector
 from mathutils.geometry import intersect_point_line, intersect_line_line, intersect_line_plane
 from .. utils.graph import get_shortest_path
-from .. utils.ui import popup_message
+from .. utils.ui import popup_message, init_status, finish_status
 from .. utils.draw import draw_line, draw_lines, draw_point, draw_tris, draw_vector
 from .. utils.snap import Snap
 from .. utils.math import average_locations, get_center_between_verts, get_face_center
@@ -269,7 +268,7 @@ class SmartVert(bpy.types.Operator):
         bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
 
         # reset the statusbar
-        statusbar.draw = self.bar_orig
+        finish_status(self)
 
         self.S.finish()
 
@@ -451,12 +450,11 @@ class SmartVert(bpy.types.Operator):
                 self.snap_proximity_coords = []
                 self.snap_ortho_coords = []
 
+                # statusbar
+                init_status(self, context, func=draw_slide_status(self))
+
                 # handlers
                 self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
-
-                # draw statusbar info
-                self.bar_orig = statusbar.draw
-                statusbar.draw = draw_slide_status(self)
 
                 context.window_manager.modal_handler_add(self)
                 return {'RUNNING_MODAL'}
