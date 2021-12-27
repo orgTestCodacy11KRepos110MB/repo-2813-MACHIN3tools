@@ -1,5 +1,6 @@
 import bpy
 import rna_keymap_ui
+from bl_ui.space_statusbar import STATUSBAR_HT_header as statusbar
 
 
 icons = None
@@ -193,3 +194,38 @@ def draw_keymap_items(kc, name, keylist, layout):
 
         drawn.append(isdrawn)
     return drawn
+
+
+# STATUS BAR
+
+def init_status(self, context, title='', func=None):
+    self.bar_orig = statusbar.draw
+
+    if func:
+        statusbar.draw = func
+    else:
+        statusbar.draw = draw_basic_status(self, context, title)
+
+
+def draw_basic_status(self, context, title):
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row(align=True)
+        row.label(text=title)
+
+        row.label(text="", icon='MOUSE_LMB')
+        row.label(text="Finish")
+
+        if context.window_manager.keyconfigs.active.name.startswith('blender'):
+            row.label(text="", icon='MOUSE_MMB')
+            row.label(text="Viewport")
+
+        row.label(text="", icon='MOUSE_RMB')
+        row.label(text="Cancel")
+
+    return draw
+
+
+def finish_status(self):
+    statusbar.draw = self.bar_orig
