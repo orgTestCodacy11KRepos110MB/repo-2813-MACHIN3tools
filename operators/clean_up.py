@@ -105,8 +105,13 @@ class CleanUp(bpy.types.Operator):
 
         removed = {}
 
+        is_any_non_manifold = False
+
         for obj in sel:
-            bm, elementcounts = self.clean_up(obj)
+            bm, elementcounts, is_non_manifold = self.clean_up(obj)
+
+            if is_non_manifold:
+                is_any_non_manifold = True
 
             if self.select:
                 self.select_geometry(bm)
@@ -131,12 +136,23 @@ class CleanUp(bpy.types.Operator):
                 faces += counts[2]
 
             text = f"Removed:{' Verts: ' + str(verts) if verts else ''}{' Edges: ' + str(edges) if edges else ''}{' Faces: ' + str(faces) if faces else ''}"
-
             extreme = any([c >= 10 for c in [verts, edges, faces]])
-            bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=yellow if extreme else white, time=get_prefs().HUD_fade_clean_up, alpha=1)
+            time = get_prefs().HUD_fade_clean_up
+
+            if is_any_non_manifold:
+                bpy.ops.machin3.draw_labels(text=text, text2="Non-Manifold Edges found!", coords=self.coords, center=False, color=yellow if extreme else white, color2=red, time=time, alpha=1)
+            else:
+                bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=yellow if extreme else white, time=time, alpha=1)
+
         else:
             text = "Nothing to remove."
-            bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=green, time=get_prefs().HUD_fade_clean_up, alpha=0.5)
+            time = get_prefs().HUD_fade_clean_up
+
+            if is_any_non_manifold:
+                bpy.ops.machin3.draw_labels(text=text, text2="Non-Manifold Edges found!", coords=self.coords, center=False, color=green, color2=red, time=time, alpha=0.5)
+            else:
+                bpy.ops.machin3.draw_label(text=text, coords=self.coords, center=False, color=green, time=get_prefs().HUD_fade_clean_up, alpha=0.5)
+
 
         # self.report({'INFO'}, text)
 
@@ -148,6 +164,8 @@ class CleanUp(bpy.types.Operator):
         bm.verts.ensure_lookup_table()
 
         elementcounts = self.get_element_counts(bm)
+
+        is_non_manifold = any([e for e in bm.edges if not e.is_manifold])
 
         if self.remove_doubles:
             bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=self.distance)
@@ -167,7 +185,7 @@ class CleanUp(bpy.types.Operator):
             if self.flip_normals:
                 for f in bm.faces:
                     f.normal_flip()
-        return bm, elementcounts
+        return bm, elementcounts, is_non_manifold
 
     def get_element_counts(self, bm):
         '''
