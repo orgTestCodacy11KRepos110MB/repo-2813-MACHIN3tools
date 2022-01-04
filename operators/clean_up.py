@@ -165,8 +165,6 @@ class CleanUp(bpy.types.Operator):
 
         elementcounts = self.get_element_counts(bm)
 
-        is_non_manifold = any([e for e in bm.edges if not e.is_manifold])
-
         if self.remove_doubles:
             bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=self.distance)
 
@@ -185,6 +183,9 @@ class CleanUp(bpy.types.Operator):
             if self.flip_normals:
                 for f in bm.faces:
                     f.normal_flip()
+
+        is_non_manifold = any([e for e in bm.edges if not e.is_manifold])
+
         return bm, elementcounts, is_non_manifold
 
     def get_element_counts(self, bm):
