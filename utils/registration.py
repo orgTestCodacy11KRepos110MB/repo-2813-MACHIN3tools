@@ -48,8 +48,8 @@ def get_addon(addon, debug=False):
 
 
 def get_addon_operator_idnames(addon):
-    if addon in ['MACHIN3tools', 'DECALmachine', 'MESHmachine', 'HyperCursor']:
-        if addon in ['DECALmachine', 'MESHmachine', 'HyperCursor']:
+    if addon in ['MACHIN3tools', 'DECALmachine', 'MESHmachine', 'HyperCursor', 'PUNCHit']:
+        if addon in ['DECALmachine', 'MESHmachine', 'HyperCursor', 'PUNCHit']:
             if not get_addon(addon)[0]:
                 return []
 
