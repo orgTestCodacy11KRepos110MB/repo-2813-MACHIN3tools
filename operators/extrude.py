@@ -1,8 +1,12 @@
 import bpy
 import bmesh
-from bpy.props import FloatProperty, IntProperty, EnumProperty
+from bpy.props import FloatProperty, IntProperty, EnumProperty, BoolProperty
 from math import radians
-from .. items import axis_vector_mappings, axis_items
+from mathutils.geometry import intersect_point_line
+from .. utils.math import average_locations, average_normals
+from .. utils.draw import draw_point, draw_vector
+from .. items import axis_vector_mappings, axis_items, cursor_spin_angle_preset_items
+from .. colors import yellow, blue, red
 
 
 class PunchItALittle(bpy.types.Operator):
@@ -59,9 +63,44 @@ class CursorSpin(bpy.types.Operator):
     bl_description = "Cursor Spin"
     bl_options = {'REGISTER', 'UNDO'}
 
-    angle: FloatProperty(name="Angle", default=45)
-    steps: IntProperty(name="Steps", default=1, min=1)
-    axis: EnumProperty(name="Axis", items=axis_items, default='Y')
+    def update_angle(self, context):
+        if self.angle_preset != 'None' and self.angle != int(self.angle_preset):
+            self.avoid_update = True
+            self.angle_preset = 'None'
+
+    def update_angle_preset(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        if self.angle_preset != 'None':
+            self.angle = int(self.angle_preset)
+
+    def update_offset_reset(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        self.offset = 0
+
+        self.avoid_update = True
+        self.offset_reset = False
+
+    angle: FloatProperty(name='Angle', default=45, min=0, update=update_angle)
+    angle_preset: EnumProperty(name='Angle Preset', items=cursor_spin_angle_preset_items, default='45', update=update_angle_preset)
+    angle_invert: BoolProperty(name='Invert', default=False)
+
+    steps: IntProperty(name='Steps', default=4, min=1)
+    adaptive: BoolProperty(name="Adaptive Steps", default=True)
+    adaptive_factor: FloatProperty(name="Adaptive Factor", default=0.1, step=0.05)
+
+    axis: EnumProperty(name='Axis', description='Cursor Axis', items=axis_items, default='Y')
+
+    offset: FloatProperty(name='Offset', default=0, step=0.1)
+    offset_reset: BoolProperty(name='Offset Reset', default=False, update=update_offset_reset)
+
+    # hidden
+    avoid_update: BoolProperty()
 
     def draw(self, context):
         layout = self.layout
@@ -69,14 +108,104 @@ class CursorSpin(bpy.types.Operator):
         column = layout.column(align=True)
 
         row = column.row(align=True)
-        row.prop(self, 'angle')
-        row.prop(self, 'steps')
+        r = row.row(align=True)
+        r.scale_y = 1.2
+        r.prop(self, 'angle_preset', expand=True)
+        row.prop(self, 'angle_invert', toggle=True)
 
-        row = column.row(align=True)
-        row.prop(self, 'axis', expand=True)
+        row = column.split(factor=0.4, align=True)
+        row.prop(self, 'angle')
+
+        r = row.split(factor=0.6, align=True)
+
+        if self.adaptive:
+            r.prop(self, 'adaptive_factor', text='Factor')
+        else:
+            r.prop(self, 'steps')
+
+        r.prop(self, 'adaptive', text='Adaptive', toggle=True)
+
+        column.separator()
+
+        row = column.split(factor=0.5, align=True)
+
+        r = row.row(align=True)
+        r.prop(self, 'axis', expand=True)
+
+        r = row.row(align=True)
+        r.prop(self, 'offset')
+        r.prop(self, 'offset_reset', text='', icon='LOOP_BACK', toggle=True)
 
     def execute(self, context):
-        cmx = context.scene.cursor.matrix
+        debug = False
+        # debug = True
 
-        bpy.ops.mesh.spin(angle=radians(-self.angle), steps=self.steps, center=cmx.to_translation(), axis=cmx.to_quaternion() @ axis_vector_mappings[self.axis])
+        if self.angle:
+            cmx = context.scene.cursor.matrix
+            mx = context.active_object.matrix_world
+
+            # get angle
+            angle = radians(-self.angle if self.angle_invert else self.angle)
+
+            # get axis
+            axis = cmx.to_quaternion() @ axis_vector_mappings[self.axis]
+
+            # get center from cursor
+            center = cmx.to_translation()
+
+            # but also attempt to get center from cursor + offset however, depends on whether there is a valid selection
+            # blender's spin up doesn't poll for a selection, it just runs without doing anything, so do the same here
+            bm = bmesh.from_edit_mesh(context.active_object.data)
+            verts = [v for v in bm.verts if v.select]
+
+            if verts:
+                center_sel = mx @ average_locations([v.co for v in verts])
+                if debug:
+                    draw_point(center_sel, modal=False)
+
+                i = intersect_point_line(center_sel, center, center + axis)
+
+                if i:
+                    closest_on_axis = i[0]
+                    if debug:
+                        draw_point(closest_on_axis, color=yellow, modal=False)
+
+                    offset_vector = (closest_on_axis - center_sel).normalized()
+                    if debug:
+                        draw_vector(offset_vector, closest_on_axis, color=yellow, modal=False)
+
+                    center = center + offset_vector * self.offset
+                    if debug:
+                        draw_point(center, color=blue, modal=False)
+
+                    # based on the avg face normal and the offset vector, set the angle to posiitve or negative accordingly
+                    faces = [f for f in bm.faces if f.select]
+
+                    avg_normal = average_normals([f.normal for f in faces])
+
+                    # cross = avg_normal.cross(offset_vector)
+                    cross = offset_vector.cross(avg_normal)
+                    if debug:
+                        draw_vector(cross, origin=center, color=red, modal=False)
+
+                    # compare the cross vector to the axis
+                    dot = cross.dot(axis)
+
+                    # the two vectors should point in the same direction, if they aren't then the extrusion will go inwards, even with a positive angle
+                    # so invert the angle in that case
+                    if dot < 0:
+                        angle = -angle
+
+                if debug:
+                    context.area.tag_redraw()
+
+            # get steps adaptively
+            if self.adaptive:
+                steps = max([int(self.angle * self.adaptive_factor), 1])
+
+            # get them directly
+            else:
+                steps = self.steps
+
+            bpy.ops.mesh.spin(angle=angle, steps=steps, center=center, axis=axis)
         return {'FINISHED'}

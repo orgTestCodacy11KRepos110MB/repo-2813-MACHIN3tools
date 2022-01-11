@@ -120,6 +120,15 @@ group_location_items = [('AVERAGE', 'Average', ''),
                         ('CURSOR', 'Cursor', ''),
                         ('WORLD', 'World', '')]
 
+cursor_spin_angle_preset_items = [('None', 'None', ''),
+                                  ('30', '30', ''),
+                                  ('45', '45', ''),
+                                  ('60', '60', ''),
+                                  ('90', '90', ''),
+                                  ('135', '135', ''),
+                                  ('180', '180', '')]
+
+
 # PIES
 
 eevee_preset_items = [('NONE', 'None', ''),
