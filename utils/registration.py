@@ -411,8 +411,8 @@ def get_tools():
     classlists, keylists, count = get_thread(classlists, keylists, count)
 
 
-    # SPIN
-    classlists, keylists, count = get_spin(classlists, keylists, count)
+    # EXTRUDE
+    classlists, keylists, count = get_extrude(classlists, keylists, count)
 
 
     # SMOOTH
@@ -650,10 +650,10 @@ def get_thread(classlists=[], keylists=[], count=0):
     return classlists, keylists, count
 
 
-def get_spin(classlists=[], keylists=[], count=0):
-    if get_prefs().activate_spin:
-        classlists.append(classesdict["SPIN"])
-        count +=1
+def get_extrude(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_extrude:
+        classlists.append(classesdict["EXTRUDE"])
+        count +=2
 
     return classlists, keylists, count
 

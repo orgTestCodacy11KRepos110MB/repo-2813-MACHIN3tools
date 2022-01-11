@@ -76,7 +76,7 @@ from bpy.props import PointerProperty, BoolProperty
 from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, register_msgbus, unregister_msgbus
-from . ui.menus import object_context_menu, mesh_context_menu, add_object_buttons, material_pick_button, outliner_group_toggles, cursor_spin
+from . ui.menus import object_context_menu, mesh_context_menu, add_object_buttons, material_pick_button, outliner_group_toggles, extrude_menu
 from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD, update_group, update_msgbus, screencast_HUD
 
 
@@ -107,7 +107,7 @@ def register():
     bpy.types.VIEW3D_MT_object_context_menu.prepend(object_context_menu)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.prepend(mesh_context_menu)
 
-    bpy.types.VIEW3D_MT_edit_mesh_extrude.append(cursor_spin)
+    bpy.types.VIEW3D_MT_edit_mesh_extrude.append(extrude_menu)
     bpy.types.VIEW3D_MT_mesh_add.prepend(add_object_buttons)
     bpy.types.VIEW3D_MT_editor_menus.append(material_pick_button)
     bpy.types.OUTLINER_HT_header.prepend(outliner_group_toggles)
@@ -182,7 +182,7 @@ def unregister():
     bpy.types.VIEW3D_MT_object_context_menu.remove(object_context_menu)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(mesh_context_menu)
 
-    bpy.types.VIEW3D_MT_edit_mesh_extrude.remove(cursor_spin)
+    bpy.types.VIEW3D_MT_edit_mesh_extrude.remove(extrude_menu)
     bpy.types.VIEW3D_MT_mesh_add.remove(add_object_buttons)
     bpy.types.VIEW3D_MT_editor_menus.remove(material_pick_button)
     bpy.types.OUTLINER_HT_header.remove(outliner_group_toggles)

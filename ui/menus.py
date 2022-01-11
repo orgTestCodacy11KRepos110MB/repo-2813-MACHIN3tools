@@ -283,9 +283,9 @@ def add_object_buttons(self, context):
     self.layout.operator("machin3.quadsphere", text="Quad Sphere", icon='SPHERE')
 
 
-# EXTRUDE - CURSOR SPIN
+# EXTRUDE
 
-def cursor_spin(self, context):
+def extrude_menu(self, context):
     if getattr(bpy.types, 'MACHIN3_OT_cursor_spin', False):
         self.layout.operator("machin3.cursor_spin", text="Cursor Spin")
 
