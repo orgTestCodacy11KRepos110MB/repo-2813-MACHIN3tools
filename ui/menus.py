@@ -1,6 +1,7 @@
 import bpy
 from .. utils.registration import get_prefs, get_addon
 from .. utils.group import get_group_polls
+from .. utils.ui import get_icon
 
 
 hypercursor = None
@@ -286,8 +287,17 @@ def add_object_buttons(self, context):
 # EXTRUDE
 
 def extrude_menu(self, context):
-    if getattr(bpy.types, 'MACHIN3_OT_cursor_spin', False):
-        self.layout.operator("machin3.cursor_spin", text="Cursor Spin")
+    is_cursor_spin = getattr(bpy.types, 'MACHIN3_OT_cursor_spin', False)
+    is_punch_it = getattr(bpy.types, 'MACHIN3_OT_punch_it_a_little', False)
+
+    if any([is_cursor_spin, is_punch_it]):
+        self.layout.separator()
+
+        if is_cursor_spin:
+            self.layout.operator("machin3.cursor_spin", text="Cursor Spin")
+
+        if is_punch_it:
+            self.layout.operator("machin3.punch_it_a_little", text="Punch It (a little)", icon_value=get_icon('fist'))
 
 
 # MATERIAL PICKER HEADER
