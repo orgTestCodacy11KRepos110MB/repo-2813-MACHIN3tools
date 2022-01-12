@@ -12,7 +12,7 @@ from .. colors import yellow, blue, red
 class PunchItALittle(bpy.types.Operator):
     bl_idname = "machin3.punch_it_a_little"
     bl_label = "MACHIN3: Punch It (a little)"
-    bl_description = "Manifold Extruding that works, somewhwat"
+    bl_description = "Manifold Extruding that works, somewhat"
     bl_options = {'REGISTER', 'UNDO'}
 
     amount: FloatProperty(name="Amount", description="Extrusion Depth", default=0.1, min=0, precision=4, step=0.1)
