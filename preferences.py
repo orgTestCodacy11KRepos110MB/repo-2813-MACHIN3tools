@@ -9,6 +9,7 @@ from . items import preferences_tabs, matcap_background_type_items
 
 decalmachine = None
 meshmachine = None
+punchit = None
 
 
 # TODO: check if the append world/materials paths exist and make them absolute
@@ -891,13 +892,16 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             b.label(text="No keymappings created, because none of the pies have been activated.")
 
     def draw_about(self, box):
-        global decalmachine, meshmachine
+        global decalmachine, meshmachine, punchit
 
         if decalmachine is None:
             decalmachine = get_addon('DECALmachine')[0]
 
         if meshmachine is None:
             meshmachine = get_addon('MESHmachine')[0]
+
+        if punchit is None:
+            punchit = get_addon('PUNCHit')[0]
 
         column = box.column(align=True)
 
@@ -921,6 +925,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row.scale_y = 1.5
         row.operator("wm.url_open", text='DECALmachine', icon_value=get_icon('save' if decalmachine else 'cancel_grey')).url = 'https://decal.machin3.io'
         row.operator("wm.url_open", text='MESHmachine', icon_value=get_icon('save' if meshmachine else 'cancel_grey')).url = 'https://mesh.machin3.io'
+        row.operator("wm.url_open", text='PUNCHit', icon_value=get_icon('save' if punchit else 'cancel_grey')).url = 'https://machin3.io/PUNCHit'
 
     def draw_tool_keymaps(self, kc, keysdict, layout):
         drawn = False
