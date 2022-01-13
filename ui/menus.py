@@ -289,6 +289,7 @@ def add_object_buttons(self, context):
 def extrude_menu(self, context):
     is_cursor_spin = getattr(bpy.types, 'MACHIN3_OT_cursor_spin', False)
     is_punch_it = getattr(bpy.types, 'MACHIN3_OT_punch_it_a_little', False)
+    is_punchit = getattr(bpy.types, 'MACHIN3_OT_punchit', False)
 
     if any([is_cursor_spin, is_punch_it]):
         self.layout.separator()
@@ -296,7 +297,7 @@ def extrude_menu(self, context):
         if is_cursor_spin:
             self.layout.operator("machin3.cursor_spin", text="Cursor Spin")
 
-        if is_punch_it:
+        if is_punch_it and not is_punchit:
             self.layout.operator("machin3.punch_it_a_little", text="Punch It (a little)", icon_value=get_icon('fist'))
 
 
