@@ -1,6 +1,7 @@
 import bpy
 from .. utils.registration import get_prefs
 from .. utils.group import get_group_polls
+from .. utils.ui import get_icon
 from .. import bl_info
 
 
@@ -14,36 +15,51 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return get_prefs().activate_smart_drive or get_prefs().activate_unity or get_prefs().activate_group
+        if context.mode == 'OBJECT':
+            return get_prefs().activate_smart_drive or get_prefs().activate_unity or get_prefs().activate_group
+        elif context.mode == 'EDIT_MESH':
+            return get_prefs().activate_extrude
 
     def draw(self, context):
         layout = self.layout
 
         m3 = context.scene.M3
 
-        if get_prefs().activate_smart_drive:
-            box = layout.box()
-            box.prop(m3, "show_smart_drive", text="Smart Drive", icon='TRIA_DOWN' if m3.show_smart_drive else 'TRIA_RIGHT', emboss=False)
+        if context.mode == 'OBJECT':
 
-            if m3.show_smart_drive:
-                self.draw_smart_drive(m3, box)
+            if get_prefs().activate_smart_drive:
+                box = layout.box()
+                box.prop(m3, "show_smart_drive", text="Smart Drive", icon='TRIA_DOWN' if m3.show_smart_drive else 'TRIA_RIGHT', emboss=False)
 
-        if get_prefs().activate_unity:
-            box = layout.box()
+                if m3.show_smart_drive:
+                    self.draw_smart_drive(m3, box)
 
-            box.prop(m3, "show_unity", text="Unity", icon='TRIA_DOWN' if m3.show_unity else 'TRIA_RIGHT', emboss=False)
+            if get_prefs().activate_unity:
+                box = layout.box()
 
-            if m3.show_unity:
-                self.draw_unity(context, m3, box)
+                box.prop(m3, "show_unity", text="Unity", icon='TRIA_DOWN' if m3.show_unity else 'TRIA_RIGHT', emboss=False)
+
+                if m3.show_unity:
+                    self.draw_unity(context, m3, box)
 
 
-        if get_prefs().activate_group:
-            box = layout.box()
+            if get_prefs().activate_group:
+                box = layout.box()
 
-            box.prop(m3, "show_group", text="Group", icon='TRIA_DOWN' if m3.show_group else 'TRIA_RIGHT', emboss=False)
+                box.prop(m3, "show_group", text="Group", icon='TRIA_DOWN' if m3.show_group else 'TRIA_RIGHT', emboss=False)
 
-            if m3.show_group:
-                self.draw_group(context, m3, box)
+                if m3.show_group:
+                    self.draw_group(context, m3, box)
+
+        elif context.mode == 'EDIT_MESH':
+
+            if get_prefs().activate_extrude:
+                box = layout.box()
+
+                box.prop(m3, "show_extrude", text="Extrude", icon='TRIA_DOWN' if m3.show_extrude else 'TRIA_RIGHT', emboss=False)
+
+                if m3.show_extrude:
+                    self.draw_extrude(context, m3, box)
 
     def draw_smart_drive(self, m3, layout):
         column = layout.column()
@@ -240,3 +256,11 @@ class PanelMACHIN3tools(bpy.types.Panel):
         r = row.row(align=True)
         r.active = removable
         r.operator("machin3.remove_from_group", text="Remove from Group")
+
+    def draw_extrude(self, context, m3, layout):
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.2
+        row.operator("machin3.cursor_spin", text='Cursor Spin')
+        row.operator("machin3.punch_it_a_little", text='Punch It (a little)', icon_value=get_icon('fist'))

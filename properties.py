@@ -486,6 +486,9 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     affect_only_group_origin: BoolProperty(name="Transform only the Group Origin(Empty)", description='Transform the Group Origin(Empty) only, disable Group Auto-Select and enable "affect Parents only"', default=False, update=update_affect_only_group_origin)
 
+    # EXTRUDE
+
+    show_extrude: BoolProperty(name="Show Extrude")
 
     # hidden
 
