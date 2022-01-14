@@ -326,3 +326,20 @@ def outliner_group_toggles(self, context):
             self.layout.prop(m3, "group_select", text='', icon='GROUP_VERTEX')
             self.layout.prop(m3, "group_recursive_select", text='', icon='CON_SIZELIKE')
             self.layout.prop(m3, "group_hide", text='', icon='HIDE_ON' if m3.group_hide else 'HIDE_OFF', emboss=False)
+
+
+# GROUP ORIGIN ADJUSTMENT
+
+def group_origin_adjustment_toggle(self, context):
+    if get_prefs().activate_group:
+        m3 = context.scene.M3
+
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        heading = 'Disable, when done!' if m3.affect_only_group_origin else ''
+        column = layout.column(heading=heading, align=True)
+
+        if (context.active_object and context.active_object.M3.is_group_empty) or m3.affect_only_group_origin:
+            column.prop(m3, "affect_only_group_origin", text="Group Origin")

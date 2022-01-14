@@ -186,6 +186,28 @@ class PanelMACHIN3tools(bpy.types.Panel):
         active_group, active_child, group_empties, groupable, ungroupable, addable, removable, selectable, duplicatable, groupifyable = get_group_polls(context)
 
 
+        # GROUP ORIGIN ADJUSTMENT
+
+        row = column.row()
+        row = column.split(factor=0.3, align=True)
+        row.active = active_group or m3.affect_only_group_origin
+        row.label(text="Group Origin")
+
+        if active_group or m3.affect_only_group_origin:
+
+            if m3.affect_only_group_origin:
+                row.prop(m3, "affect_only_group_origin", text="Disable, when done!", toggle=True, icon_value=get_icon('error'))
+            else:
+                row.prop(m3, "affect_only_group_origin", text="Adjust", toggle=True, icon='OBJECT_ORIGIN')
+
+        else:
+            r = row.split(factor=0.4)
+            r.separator()
+            r.label(text="None")
+
+        column.separator()
+
+
         # SCENE PROPS
 
         row = column.split(factor=0.3, align=True)
