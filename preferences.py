@@ -405,7 +405,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_align", toggle=True)
-        row.label(text="Object per-axis Location, Rotation and Scale Alignment.")
+        row.label(text="Object per-axis Location, Rotation and Scale Alignment, as well as Object Relative Alignments.")
 
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_apply", toggle=True)
