@@ -22,6 +22,9 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
         layout = self.layout
         p = get_prefs()
 
+        if p.activate_align:
+            layout.operator("machin3.align_relative", text="Align Relative")
+
         if p.activate_mirror:
             layout.operator("machin3.unmirror", text="Un-Mirror")
 
@@ -167,7 +170,7 @@ def object_context_menu(self, context):
     m3 = context.scene.M3
     p = get_prefs()
 
-    if any([p.activate_mirror, p.activate_select, p.activate_apply, p.activate_mesh_cut, p.activate_material_picker]):
+    if any([p.activate_align, p.activate_mirror, p.activate_select, p.activate_apply, p.activate_mesh_cut, p.activate_material_picker]):
         layout.menu("MACHIN3_MT_machin3tools_object_context_menu")
         layout.separator()
 

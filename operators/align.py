@@ -3,8 +3,12 @@ from bpy.props import BoolProperty, EnumProperty, FloatProperty
 from mathutils import Matrix, Vector, Euler, Quaternion
 from math import radians
 from .. utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix, average_locations
-from .. utils.object import compensate_children
+from .. utils.object import compensate_children, parent, unparent
+from .. utils.draw import draw_mesh_wire, draw_label, update_HUD_location
+from .. utils.mesh import get_coords
+from .. utils.ui import init_cursor, init_status, finish_status
 from .. items import obj_align_mode_items
+from .. colors import green, blue
 
 
 class Align(bpy.types.Operator):
@@ -381,3 +385,237 @@ class Align(bpy.types.Operator):
 
         if active.children and context.scene.tool_settings.use_transform_skip_children:
             compensate_children(active, oldmx, mx)
+
+
+def draw_align_relative_status(op):
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row(align=True)
+
+        row.label(text="Align Relative")
+
+        row.separator(factor=2)
+        row.label(text="", icon='EVENT_SPACEKEY')
+        row.label(text="Confirm")
+
+        row.label(text="", icon='MOUSE_RMB')
+        row.label(text="Cancel")
+
+        row.separator(factor=10)
+        row.label(text="", icon='MOUSE_LMB')
+        row.label(text="Select Single")
+
+        row.separator(factor=2)
+        row.label(text="", icon='EVENT_SHIFT')
+        row.label(text="", icon='MOUSE_LMB')
+        row.label(text="Select Multiple")
+
+        row.separator(factor=2)
+        row.label(text="", icon='MOUSE_MMB')
+        row.label(text=f"Instance: {op.instance}")
+
+    return draw
+
+
+class AlignRelative(bpy.types.Operator):
+    bl_idname = "machin3.align_relative"
+    bl_label = "MACHIN3: Align Relative"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    instance: BoolProperty(name="Instance", default=False)
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            active = context.active_object
+            return active and len([obj for obj in context.selected_objects if obj != active]) == 1
+
+    def draw_VIEW3D(self):
+        for obj in self.targets:
+            draw_mesh_wire(self.batches[obj], color=green if self.instance else blue, alpha=0.5)
+
+    def draw_HUD(self, args):
+        context, event = args
+
+        draw_label(context, title='Instance' if self.instance else 'Duplicate', coords=Vector((self.HUD_x, self.HUD_y)), center=False, color=green if self.instance else blue)
+
+    def modal(self, context, event):
+        context.area.tag_redraw()
+
+        if event.type == 'MOUSEMOVE':
+            update_HUD_location(self, event, offsetx=10, offsety=10)
+
+        # update target object list, usually you could do this only on LEFTMOUS events, but the retarded, default RELEASE select keymap prevents this
+        self.targets = [obj for obj in context.selected_objects if obj not in self.orig_sel]
+
+        # create batches for VIEW3D preview
+        for obj in self.targets:
+            if obj not in self.batches:
+                self.batches[obj] = get_coords(self.aligner.data, obj.matrix_world @ self.deltamx, indices=True)
+
+        events = ['MOUSEMOVE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE']
+
+        if event.type in events:
+
+            if event.type == 'MOUSEMOVE':
+                self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y))
+                update_HUD_location(self, event, offsetx=10, offsety=10)
+
+            # create instances or duplicates
+            elif event.type in ['WHEELUPMOUSE', 'WHEELDOWNMOUSE']:
+                self.instance = not self.instance
+                context.active_object.select_set(True)
+
+
+        # SELECTION PASSTHROUGH
+
+        if event.type == 'LEFTMOUSE':
+            return {'PASS_THROUGH'}
+
+
+        # NAVIGATION PASSTHROUGH
+
+        elif event.type == 'MIDDLEMOUSE':
+            return {'PASS_THROUGH'}
+
+
+        # FINISH
+
+        if event.type == 'SPACE':
+            self.finish()
+
+            # create duplicares/instances
+            cols = self.aligner.users_collection
+
+            dups = []
+
+            for obj in self.targets:
+                dup = self.aligner.copy()
+                dups.append(dup)
+
+                # parent dup to target object
+                if self.is_parented:
+                    unparent(dup)
+                    parent(dup, obj)
+
+                # regroup dup into target objects group
+                if self.is_grouped and obj.M3.is_group_object and obj.parent and obj.parent.M3.is_group_empty:
+                    unparent(dup)
+                    parent(dup, obj.parent)
+
+                if self.aligner.data:
+                    dup.data = self.aligner.data if self.instance else self.aligner.data.copy()
+
+                for col in cols:
+                    col.objects.link(dup)
+
+                dup.matrix_world = obj.matrix_world @ self.deltamx
+
+            # select only the new dups
+            bpy.ops.object.select_all(action='DESELECT')
+
+            for dup in dups:
+                dup.select_set(True)
+                context.view_layer.objects.active = dup
+
+            return {'FINISHED'}
+
+        elif event.type in ['RIGHTMOUSE', 'ESC']:
+            self.finish()
+
+            # restore original selection
+            bpy.ops.object.select_all(action='DESELECT')
+
+            for obj in self.orig_sel:
+                obj.select_set(True)
+
+                if obj != self.aligner:
+                    context.view_layer.objects.active = obj
+
+            return {'CANCELLED'}
+
+        return {'RUNNING_MODAL'}
+
+    def finish(self):
+        bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
+        bpy.types.SpaceView3D.draw_handler_remove(self.HUD, 'WINDOW')
+
+        # reset the statusbar
+        finish_status(self)
+
+    def invoke(self, context, event):
+        active = context.active_object
+        self.aligner = [obj for obj in context.selected_objects if obj != active][0]
+        # print("reference:", active.name)
+        # print("  aligner:", self.aligner.name)
+
+        self.orig_sel = [active, self.aligner]
+        self.targets = []
+        self.batches = {}
+
+        # get the deltamx, representing the relativ transform
+        self.deltamx = active.matrix_world.inverted_safe() @ self.aligner.matrix_world
+
+        # if the aligner parented to the reference?
+        self.is_parented = self.aligner.parent == active
+        # print("is parented:", self.is_parented)
+
+        # is the aligner part of the same group as the reference?
+        self.is_grouped = (self.aligner.M3.is_group_object and active.M3.is_group_object) and (self.aligner.parent and active.parent) and (self.aligner.parent.M3.is_group_empty and active.parent.M3.is_group_empty) and (self.aligner.parent == active.parent)
+        # print(" is grouped:", self.is_grouped)
+
+        # init the mouse cursor for the modal HUD
+        init_cursor(self, event)
+
+        # statusbar
+        init_status(self, context, func=draw_align_relative_status(self))
+        active.select_set(True)
+
+
+        # handlers
+        args = (context, event)
+        self.HUD = bpy.types.SpaceView3D.draw_handler_add(self.draw_HUD, (args, ), 'WINDOW', 'POST_PIXEL')
+        self.VIEW3D = bpy.types.SpaceView3D.draw_handler_add(self.draw_VIEW3D, (), 'WINDOW', 'POST_VIEW')
+
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        print("align relative")
+
+        # TODO: there is not selection history for object mode
+        # so use hard coded obj names for testing
+        # then to the other object selection in a modal
+
+        sel = context.selected_objects
+        print([obj.name for obj in sel])
+
+        aligner = bpy.data.objects['Cube.008']
+        reference = bpy.data.objects['Cube.006']
+        cols = aligner.users_collection
+
+
+        if aligner in sel:
+            sel.remove(aligner)
+
+        if reference in sel:
+            sel.remove(reference)
+
+        deltamx = reference.matrix_world.inverted_safe() @ aligner.matrix_world
+
+        for obj in sel:
+            print(obj.name)
+
+            dup = aligner.copy()
+            dup.data = aligner.data
+
+            for col in cols:
+                col.objects.link(dup)
+
+            dup.matrix_world = obj.matrix_world @ deltamx
+
+
+
+        return {'FINISHED'}
