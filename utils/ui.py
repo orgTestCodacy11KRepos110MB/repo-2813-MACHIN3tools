@@ -17,13 +17,17 @@ def get_icon(name):
 
 # CURSOR
 
-def init_cursor(self, event):
+def init_cursor(self, event, offsetx=0, offsety=20):
     self.last_mouse_x = event.mouse_x
     self.last_mouse_y = event.mouse_y
 
     # region offsets
     self.region_offset_x = event.mouse_x - event.mouse_region_x
     self.region_offset_y = event.mouse_y - event.mouse_region_y
+
+    # init HUD location (at mouse)
+    self.HUD_x = event.mouse_x - self.region_offset_x + offsetx
+    self.HUD_y = event.mouse_y - self.region_offset_y + offsety
 
 
 def wrap_cursor(self, context, event, x=False, y=False):

@@ -258,6 +258,20 @@ def draw_screen_cast_HUD(context):
             y += blf.dimensions(font, text)[1]
 
 
+# HUD
+
+def update_HUD_location(self, event, offsetx=20, offsety=20):
+    '''
+    previously, this was done in draw_init
+    however, due to a Blender issue this has some issues when tools are called from keymaps, not from the menu
+    see https://blenderartists.org/t/meshmachine/1102529/703
+    '''
+
+    # if get_prefs().modal_hud_follow_mouse:
+    self.HUD_x = event.mouse_x - self.region_offset_x + offsetx
+    self.HUD_y = event.mouse_y - self.region_offset_y + offsety
+
+
 def draw_label(context, title='', coords=None, center=True, color=(1, 1, 1), alpha=1):
 
     # centered, but slighly below
