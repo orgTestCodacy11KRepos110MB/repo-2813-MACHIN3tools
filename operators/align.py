@@ -505,6 +505,12 @@ class AlignRelative(bpy.types.Operator):
                     unparent(dup)
                     parent(dup, obj.parent)
 
+                # mirror dup
+                if self.is_mirrored:
+                    for mod in dup.modifiers:
+                        if mod.type == 'MIRROR' and mod.mirror_object == self.active:
+                            mod.mirror_object = obj
+
                 if self.aligner.data:
                     dup.data = self.aligner.data if self.instance else self.aligner.data.copy()
 
@@ -546,32 +552,35 @@ class AlignRelative(bpy.types.Operator):
         finish_status(self)
 
     def invoke(self, context, event):
-        active = context.active_object
-        self.aligner = [obj for obj in context.selected_objects if obj != active][0]
-        # print("reference:", active.name)
+        self.active = context.active_object
+        self.aligner = [obj for obj in context.selected_objects if obj != self.active][0]
+        # print("reference:", self.active.name)
         # print("  aligner:", self.aligner.name)
 
-        self.orig_sel = [active, self.aligner]
+        self.orig_sel = [self.active, self.aligner]
         self.targets = []
         self.batches = {}
 
         # get the deltamx, representing the relativ transform
-        self.deltamx = active.matrix_world.inverted_safe() @ self.aligner.matrix_world
+        self.deltamx = self.active.matrix_world.inverted_safe() @ self.aligner.matrix_world
 
         # if the aligner parented to the reference?
-        self.is_parented = self.aligner.parent == active
+        self.is_parented = self.aligner.parent == self.active
         # print("is parented:", self.is_parented)
 
         # is the aligner part of the same group as the reference?
-        self.is_grouped = (self.aligner.M3.is_group_object and active.M3.is_group_object) and (self.aligner.parent and active.parent) and (self.aligner.parent.M3.is_group_empty and active.parent.M3.is_group_empty) and (self.aligner.parent == active.parent)
+        self.is_grouped = (self.aligner.M3.is_group_object and self.active.M3.is_group_object) and (self.aligner.parent and self.active.parent) and (self.aligner.parent.M3.is_group_empty and self.active.parent.M3.is_group_empty) and (self.aligner.parent == self.active.parent)
         # print(" is grouped:", self.is_grouped)
+
+        # is the aligner mirrored across the reference?
+        self.is_mirrored = any([mod.mirror_object == self.active for mod in self.aligner.modifiers if mod.type == 'MIRROR'])
 
         # init the mouse cursor for the modal HUD
         init_cursor(self, event)
 
         # statusbar
         init_status(self, context, func=draw_align_relative_status(self))
-        active.select_set(True)
+        self.active.select_set(True)
 
 
         # handlers
