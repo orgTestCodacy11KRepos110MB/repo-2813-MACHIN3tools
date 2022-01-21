@@ -151,15 +151,23 @@ def get_group_matrix(context, objects, location_type='AVERAGE', rotation_type='W
 # HIERARCHY
 
 def select_group_children(view_layer, empty, recursive=False):
+    '''
+    note, that we only actually select objects and empties that are visible
+    they might not be visible when you are in local view, focusing on some of the group's objects
+    '''
+
     children = [c for c in empty.children if c.M3.is_group_object and c.name in view_layer.objects]
 
     # unhide any hidden group emtpies you may encounter
     if empty.hide_get():
         empty.hide_set(False)
-        empty.select_set(True)
+
+        if empty.visible_get(view_layer=view_layer):
+            empty.select_set(True)
 
     for obj in children:
-        obj.select_set(True)
+        if obj.visible_get(view_layer=view_layer):
+            obj.select_set(True)
 
         if obj.M3.is_group_empty and recursive:
             select_group_children(view_layer, obj, recursive=True)

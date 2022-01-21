@@ -29,6 +29,7 @@ def update_group(none):
         # avoid AttributeError: 'Context' object has no attribute 'active_object'
         active = context.active_object if getattr(context, 'active_object', None) and context.active_object.M3.is_group_empty and context.active_object.select_get() else None
 
+
         # AUTO SELECT
 
         if context.scene.M3.group_select and active:
