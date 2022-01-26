@@ -7,6 +7,7 @@ from .. utils.object import compensate_children, parent, unparent
 from .. utils.draw import draw_mesh_wire, draw_label, update_HUD_location
 from .. utils.mesh import get_coords
 from .. utils.ui import init_cursor, init_status, finish_status
+from .. utils.system import printd
 from .. items import obj_align_mode_items
 from .. colors import green, blue
 
@@ -430,11 +431,12 @@ class AlignRelative(bpy.types.Operator):
     def poll(cls, context):
         if context.mode == 'OBJECT':
             active = context.active_object
-            return active and len([obj for obj in context.selected_objects if obj != active]) == 1
+            return active and [obj for obj in context.selected_objects if obj != active]
 
     def draw_VIEW3D(self):
         for obj in self.targets:
-            draw_mesh_wire(self.batches[obj], color=green if self.instance else blue, alpha=0.5)
+            for batch in self.batches[obj]:
+                draw_mesh_wire(batch, color=green if self.instance else blue, alpha=0.5)
 
     def draw_HUD(self, args):
         context, event = args
@@ -447,13 +449,13 @@ class AlignRelative(bpy.types.Operator):
         if event.type == 'MOUSEMOVE':
             update_HUD_location(self, event, offsetx=10, offsety=10)
 
-        # update target object list, usually you could do this only on LEFTMOUS events, but the retarded, default RELEASE select keymap prevents this
+        # update target object list, usually you could do this only on LEFTMOUSE events, but the retarded, default RELEASE select keymap prevents this
         self.targets = [obj for obj in context.selected_objects if obj not in self.orig_sel]
 
         # create batches for VIEW3D preview
         for obj in self.targets:
             if obj not in self.batches:
-                self.batches[obj] = get_coords(self.aligner.data, obj.matrix_world @ self.deltamx, indices=True)
+                self.batches[obj] = [get_coords(aligner.data, obj.matrix_world @ self.deltamx[aligner], indices=True) for aligner in self.aligners]
 
         events = ['MOUSEMOVE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE']
 
@@ -487,37 +489,37 @@ class AlignRelative(bpy.types.Operator):
             self.finish()
 
             # create duplicares/instances
-            cols = self.aligner.users_collection
-
             dups = []
 
             for obj in self.targets:
-                dup = self.aligner.copy()
-                dups.append(dup)
+                for aligner in self.aligners:
+                    dup = aligner.copy()
+                    dups.append(dup)
 
-                # parent dup to target object
-                if self.is_parented:
-                    unparent(dup)
-                    parent(dup, obj)
+                    # parent dup to target object
+                    if aligner.parent == self.active:
+                        unparent(dup)
+                        parent(dup, obj)
 
-                # regroup dup into target objects group
-                if self.is_grouped and obj.M3.is_group_object and obj.parent and obj.parent.M3.is_group_empty:
-                    unparent(dup)
-                    parent(dup, obj.parent)
+                    # regroup dup into target objects group
+                    if obj.M3.is_group_object and obj.parent and obj.parent.M3.is_group_empty:
+                        if (aligner.M3.is_group_object and self.active.M3.is_group_object) and (aligner.parent and self.active.parent) and (aligner.parent.M3.is_group_empty and self.active.parent.M3.is_group_empty) and (aligner.parent == self.active.parent):
+                            unparent(dup)
+                            parent(dup, obj.parent)
 
-                # mirror dup
-                if self.is_mirrored:
-                    for mod in dup.modifiers:
-                        if mod.type == 'MIRROR' and mod.mirror_object == self.active:
-                            mod.mirror_object = obj
+                    # mirror dup
+                    if any([mod.mirror_object == self.active for mod in aligner.modifiers if mod.type == 'MIRROR']):
+                        for mod in dup.modifiers:
+                            if mod.type == 'MIRROR' and mod.mirror_object == self.active:
+                                mod.mirror_object = obj
 
-                if self.aligner.data:
-                    dup.data = self.aligner.data if self.instance else self.aligner.data.copy()
+                    if aligner.data:
+                        dup.data = aligner.data if self.instance else aligner.data.copy()
 
-                for col in cols:
-                    col.objects.link(dup)
+                    for col in aligner.users_collection:
+                        col.objects.link(dup)
 
-                dup.matrix_world = obj.matrix_world @ self.deltamx
+                    dup.matrix_world = obj.matrix_world @ self.deltamx[aligner]
 
             # select only the new dups
             bpy.ops.object.select_all(action='DESELECT')
@@ -553,27 +555,17 @@ class AlignRelative(bpy.types.Operator):
 
     def invoke(self, context, event):
         self.active = context.active_object
-        self.aligner = [obj for obj in context.selected_objects if obj != self.active][0]
+        self.aligners = [obj for obj in context.selected_objects if obj != self.active]
         # print("reference:", self.active.name)
-        # print("  aligner:", self.aligner.name)
+        # print(" aligners:", [obj.name for obj in self.aligners])
 
-        self.orig_sel = [self.active, self.aligner]
+        self.orig_sel = [self.active] + self.aligners
         self.targets = []
         self.batches = {}
 
-        # get the deltamx, representing the relativ transform
-        self.deltamx = self.active.matrix_world.inverted_safe() @ self.aligner.matrix_world
-
-        # if the aligner parented to the reference?
-        self.is_parented = self.aligner.parent == self.active
-        # print("is parented:", self.is_parented)
-
-        # is the aligner part of the same group as the reference?
-        self.is_grouped = (self.aligner.M3.is_group_object and self.active.M3.is_group_object) and (self.aligner.parent and self.active.parent) and (self.aligner.parent.M3.is_group_empty and self.active.parent.M3.is_group_empty) and (self.aligner.parent == self.active.parent)
-        # print(" is grouped:", self.is_grouped)
-
-        # is the aligner mirrored across the reference?
-        self.is_mirrored = any([mod.mirror_object == self.active for mod in self.aligner.modifiers if mod.type == 'MIRROR'])
+        # get the deltamatrices, representing the relativ transforms
+        self.deltamx = {obj: self.active.matrix_world.inverted_safe() @ obj.matrix_world for obj in self.aligners}
+        # printd(self.deltamx)
 
         # init the mouse cursor for the modal HUD
         init_cursor(self, event)
