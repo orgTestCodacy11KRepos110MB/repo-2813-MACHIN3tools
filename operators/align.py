@@ -419,6 +419,14 @@ def draw_align_relative_status(op):
     return draw
 
 
+# TODO: there are some issues with aligning multiple objects
+# ####: for instance, if you object's aren't mirrors across the refercne but across oneo of the other aligner objects, then the mirroring won#t be updated properly
+# ####: it's the same for parenting probably
+# ####: also if the aligners are in a group of their own, which is a sub group of the references, then that will also not properly updated
+
+# TODO: are group empties even duped at all?
+
+
 class AlignRelative(bpy.types.Operator):
     bl_idname = "machin3.align_relative"
     bl_label = "MACHIN3: Align Relative"
@@ -455,7 +463,7 @@ class AlignRelative(bpy.types.Operator):
         # create batches for VIEW3D preview
         for obj in self.targets:
             if obj not in self.batches:
-                self.batches[obj] = [get_coords(aligner.data, obj.matrix_world @ self.deltamx[aligner], indices=True) for aligner in self.aligners]
+                self.batches[obj] = [get_coords(aligner.data, obj.matrix_world @ self.deltamx[aligner], indices=True) for aligner in self.aligners if aligner.data]
 
         events = ['MOUSEMOVE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE']
 
@@ -582,41 +590,3 @@ class AlignRelative(bpy.types.Operator):
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
-
-    def execute(self, context):
-        print("align relative")
-
-        # TODO: there is not selection history for object mode
-        # so use hard coded obj names for testing
-        # then to the other object selection in a modal
-
-        sel = context.selected_objects
-        print([obj.name for obj in sel])
-
-        aligner = bpy.data.objects['Cube.008']
-        reference = bpy.data.objects['Cube.006']
-        cols = aligner.users_collection
-
-
-        if aligner in sel:
-            sel.remove(aligner)
-
-        if reference in sel:
-            sel.remove(reference)
-
-        deltamx = reference.matrix_world.inverted_safe() @ aligner.matrix_world
-
-        for obj in sel:
-            print(obj.name)
-
-            dup = aligner.copy()
-            dup.data = aligner.data
-
-            for col in cols:
-                col.objects.link(dup)
-
-            dup.matrix_world = obj.matrix_world @ deltamx
-
-
-
-        return {'FINISHED'}
