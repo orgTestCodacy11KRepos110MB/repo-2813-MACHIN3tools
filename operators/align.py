@@ -419,14 +419,6 @@ def draw_align_relative_status(op):
     return draw
 
 
-# TODO: there are some issues with aligning multiple objects
-# ####: for instance, if you object's aren't mirrors across the refercne but across oneo of the other aligner objects, then the mirroring won#t be updated properly
-# ####: it's the same for parenting probably
-# ####: also if the aligners are in a group of their own, which is a sub group of the references, then that will also not properly updated
-
-# TODO: are group empties even duped at all?
-
-
 class AlignRelative(bpy.types.Operator):
     bl_idname = "machin3.align_relative"
     bl_label = "MACHIN3: Align Relative"
