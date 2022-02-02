@@ -151,12 +151,18 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             eevee.use_bloom = False
             eevee.use_volumetric_lights = False
 
-            shading.use_scene_lights = False
-            shading.use_scene_world = False
+            if self.eevee_preset_set_use_scene_lights:
+                shading.use_scene_lights = False
+
+            if self.eevee_preset_set_use_scene_world:
+                shading.use_scene_world = False
 
             if context.scene.render.engine == 'BLENDER_EEVEE':
-                shading.use_scene_lights_render = False
-                shading.use_scene_world_render = False
+                if self.eevee_preset_set_use_scene_lights:
+                    shading.use_scene_lights_render = False
+
+                if self.eevee_preset_set_use_scene_world:
+                    shading.use_scene_world_render = False
 
         elif self.eevee_preset == 'LOW':
             eevee.use_ssr = True
@@ -166,12 +172,18 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             eevee.use_bloom = False
             eevee.use_volumetric_lights = False
 
-            shading.use_scene_lights = True
-            shading.use_scene_world = False
+            if self.eevee_preset_set_use_scene_lights:
+                shading.use_scene_lights = True
+
+            if self.eevee_preset_set_use_scene_world:
+                shading.use_scene_world = False
 
             if context.scene.render.engine == 'BLENDER_EEVEE':
-                shading.use_scene_lights_render = True
-                shading.use_scene_world_render = False
+                if self.eevee_preset_set_use_scene_lights:
+                    shading.use_scene_lights_render = True
+
+                if self.eevee_preset_set_use_scene_world:
+                    shading.use_scene_world_render = False
 
         elif self.eevee_preset == 'HIGH':
             eevee.use_ssr = True
@@ -181,12 +193,18 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             eevee.use_bloom = True
             eevee.use_volumetric_lights = False
 
-            shading.use_scene_lights = True
-            shading.use_scene_world = False
+            if self.eevee_preset_set_use_scene_lights:
+                shading.use_scene_lights = True
+
+            if self.eevee_preset_set_use_scene_world:
+                shading.use_scene_world = False
 
             if context.scene.render.engine == 'BLENDER_EEVEE':
-                shading.use_scene_lights_render = True
-                shading.use_scene_world_render = False
+                if self.eevee_preset_set_use_scene_lights:
+                    shading.use_scene_lights_render = True
+
+                if self.eevee_preset_set_use_scene_world:
+                    shading.use_scene_world_render = False
 
         elif self.eevee_preset == 'ULTRA':
             eevee.use_ssr = True
@@ -196,29 +214,32 @@ class M3SceneProperties(bpy.types.PropertyGroup):
             eevee.use_bloom = True
             eevee.use_volumetric_lights = True
 
-            shading.use_scene_lights = True
+            if self.eevee_preset_set_use_scene_lights:
+                shading.use_scene_lights = True
 
             if context.scene.render.engine == 'BLENDER_EEVEE':
-                shading.use_scene_lights_render = True
+                if self.eevee_preset_set_use_scene_lights:
+                    shading.use_scene_lights_render = True
 
-            world = context.scene.world
-            if world:
-                shading.use_scene_world = True
+            if self.eevee_preset_set_use_scene_lights:
+                world = context.scene.world
+                if world:
+                    shading.use_scene_world = True
 
-                if context.scene.render.engine == 'BLENDER_EEVEE':
-                    shading.use_scene_world_render = True
+                    if context.scene.render.engine == 'BLENDER_EEVEE':
+                        shading.use_scene_world_render = True
 
-                output = get_world_output(world)
-                links = output.inputs[1].links
+                    output = get_world_output(world)
+                    links = output.inputs[1].links
 
-                if not links:
-                    tree = world.node_tree
+                    if not links:
+                        tree = world.node_tree
 
-                    volume = tree.nodes.new('ShaderNodeVolumePrincipled')
-                    tree.links.new(volume.outputs[0], output.inputs[1])
+                        volume = tree.nodes.new('ShaderNodeVolumePrincipled')
+                        tree.links.new(volume.outputs[0], output.inputs[1])
 
-                    volume.inputs[2].default_value = 0.1
-                    volume.location = (-200, 200)
+                        volume.inputs[2].default_value = 0.1
+                        volume.location = (-200, 200)
 
     def update_eevee_gtao_factor(self, context):
         context.scene.eevee.gtao_factor = self.eevee_gtao_factor
@@ -337,6 +358,9 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     # SHADING
 
     eevee_preset: EnumProperty(name="Eevee Preset", description="Eevee Quality Presets", items=eevee_preset_items, default='NONE', update=update_eevee_preset)
+    eevee_preset_set_use_scene_lights: BoolProperty(name="Set Use Scene Lights", description="Set Use Scene Lights when changing Eevee Preset", default=False)
+    eevee_preset_set_use_scene_world: BoolProperty(name="Set Use Scene World", description="Set Use Scene World when changing Eevee Preset", default=False)
+
     eevee_gtao_factor: FloatProperty(name="Factor", default=1, min=0, step=0.1, update=update_eevee_gtao_factor)
     eevee_bloom_intensity: FloatProperty(name="Intensity", default=0.05, min=0, step=0.1, update=update_eevee_bloom_intensity)
 

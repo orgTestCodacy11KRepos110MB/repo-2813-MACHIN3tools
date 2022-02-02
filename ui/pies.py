@@ -1193,8 +1193,11 @@ class PieShading(Menu):
         column = layout.column(align=True)
 
         row = column.row(align=True)
-        row.label(text='Eevee Settings')
+        row.label(text='Presets')
+        row.prop(context.scene.M3, "eevee_preset_set_use_scene_lights", text='', icon='LIGHT_SUN')
+        row.prop(context.scene.M3, "eevee_preset_set_use_scene_world", text='', icon='WORLD')
         row.prop(context.scene.M3, "eevee_preset", expand=True)
+
 
         # SSR
 
