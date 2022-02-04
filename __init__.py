@@ -77,7 +77,7 @@ from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, register_msgbus, unregister_msgbus
 from . ui.menus import object_context_menu, mesh_context_menu, add_object_buttons, material_pick_button, outliner_group_toggles, extrude_menu, group_origin_adjustment_toggle
-from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD, update_group, update_msgbus, screencast_HUD
+from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD, update_group, update_msgbus, screencast_HUD, increase_lights_on_render_end, decrease_lights_on_render_start
 
 
 def register():
@@ -139,6 +139,10 @@ def register():
     bpy.app.handlers.depsgraph_update_post.append(update_group)
     bpy.app.handlers.depsgraph_update_post.append(screencast_HUD)
 
+    bpy.app.handlers.render_init.append(decrease_lights_on_render_start)
+    bpy.app.handlers.render_cancel.append(increase_lights_on_render_end)
+    bpy.app.handlers.render_complete.append(increase_lights_on_render_end)
+
 
     # REGISTRATION OUTPUT
 
@@ -171,6 +175,10 @@ def unregister():
     bpy.app.handlers.depsgraph_update_post.remove(surface_slide_HUD)
     bpy.app.handlers.depsgraph_update_post.remove(update_group)
     bpy.app.handlers.depsgraph_update_post.remove(screencast_HUD)
+
+    bpy.app.handlers.render_init.remove(decrease_lights_on_render_start)
+    bpy.app.handlers.render_cancel.remove(increase_lights_on_render_end)
+    bpy.app.handlers.render_complete.remove(increase_lights_on_render_end)
 
 
     # MSGBUS

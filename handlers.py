@@ -3,6 +3,7 @@ from bpy.app.handlers import persistent
 from . utils.draw import remove_object_axes_drawing_handler, draw_focus_HUD, draw_surface_slide_HUD, draw_screen_cast_HUD
 from . utils.registration import get_prefs, reload_msgbus, get_addon
 from . utils.group import update_group_name, select_group_children
+from . utils.light import adjust_lights_for_rendering, get_area_light_poll
 
 
 focusHUD = None
@@ -128,3 +129,48 @@ def screencast_HUD(scene):
     elif screencastHUD:
         bpy.types.SpaceView3D.draw_handler_remove(screencastHUD, 'WINDOW')
         screencastHUD = None
+
+
+debug = False
+# debug = True
+
+
+@persistent
+def decrease_lights_on_render_start(scene):
+    m3 = scene.M3
+
+    if get_prefs().activate_shading_pie and get_area_light_poll() and m3.adjust_lights_on_render:
+        if scene.render.engine == 'CYCLES':
+            last = m3.adjust_lights_on_render_last
+            divider = m3.adjust_lights_on_render_divider
+
+            # decrease on start of rendering
+            if last in ['NONE', 'INCREASE'] and divider > 1:
+                if debug:
+                    print()
+                    print("decreasing lights for cycles when starting render")
+
+                m3.adjust_lights_on_render_last = 'DECREASE'
+                m3.is_light_decreased_by_handler = True
+
+                adjust_lights_for_rendering(mode='DECREASE')
+
+
+@persistent
+def increase_lights_on_render_end(scene):
+    m3 = scene.M3
+
+    if get_prefs().activate_shading_pie and get_area_light_poll() and m3.adjust_lights_on_render:
+        if scene.render.engine == 'CYCLES':
+            last = m3.adjust_lights_on_render_last
+
+            # increase again when finished
+            if last == 'DECREASE' and m3.is_light_decreased_by_handler:
+                if debug:
+                    print()
+                    print("increasing lights for cycles when finshing/aborting render")
+
+                m3.adjust_lights_on_render_last = 'INCREASE'
+                m3.is_light_decreased_by_handler = False
+
+                adjust_lights_for_rendering(mode='INCREASE')

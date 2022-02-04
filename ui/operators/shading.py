@@ -3,6 +3,7 @@ from bpy.props import IntProperty, StringProperty
 from math import degrees, radians
 from mathutils import Matrix
 from ... utils.registration import get_prefs
+from ... utils.light import adjust_lights_for_rendering
 
 
 show_overlays = {'SOLID': True,
@@ -36,6 +37,8 @@ class SwitchShading(bpy.types.Operator):
     def execute(self, context):
         global show_overlays
 
+        scene = context.scene
+
         overlay = context.space_data.overlay
         shading = context.space_data.shading
 
@@ -49,8 +52,38 @@ class SwitchShading(bpy.types.Operator):
             shading.type = self.shading_type
             self.toggled_overlays = False
 
+            # adjust the lights when necessssary
+            if get_prefs().activate_shading_pie and scene.M3.adjust_lights_on_render:
+                self.adjust_lights(scene, shading.type, debug=False)
+
         overlay.show_overlays = show_overlays[self.shading_type]
         return {'FINISHED'}
+
+    def adjust_lights(self, scene, new_shading_type, debug=False):
+        m3 = scene.M3
+
+        last = m3.adjust_lights_on_render_last
+
+        # print("last:", last)
+        # print("new shading type:", new_shading_type)
+        # print("render engine:", scene.render.engine)
+
+        # decrease on start of rendering
+        if last in ['NONE', 'INCREASE'] and new_shading_type == 'RENDERED' and scene.render.engine == 'CYCLES':
+            m3.adjust_lights_on_render_last = 'DECREASE'
+
+            if debug:
+                print("decreasing on switch to cycies rendering")
+
+            adjust_lights_for_rendering(mode='DECREASE')
+
+        elif last == 'DECREASE' and new_shading_type == 'MATERIAL':
+            m3.adjust_lights_on_render_last = 'INCREASE'
+
+            if debug:
+                print("increasing on switch to material shading")
+
+            adjust_lights_for_rendering(mode='INCREASE')
 
 
 class ToggleOutline(bpy.types.Operator):

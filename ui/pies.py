@@ -7,6 +7,7 @@ from .. utils.ui import get_icon
 from .. utils.collection import get_scene_collections
 from .. utils.system import abspath
 from .. utils.tools import get_tools_from_context, get_active_tool
+from .. utils.light import get_area_light_poll
 
 
 # TODO: snapping pie
@@ -721,6 +722,8 @@ class PieShading(Menu):
 
         pie = layout.menu_pie()
 
+        m3 = context.scene.M3
+
         # 4 - LEFT
         text, icon = self.get_text_icon(context, "SOLID")
         pie.operator("machin3.switch_shading", text=text, icon=icon, depress=shading.type == 'SOLID' and overlay.show_overlays).shading_type = 'SOLID'
@@ -758,13 +761,19 @@ class PieShading(Menu):
         b = box.box()
         self.draw_shade_box(context, view, b)
 
-        if view.shading.type == "MATERIAL" or (view.shading.type == 'RENDERED' and context.scene.render.engine == 'BLENDER_EEVEE'):
-            b = box.box()
-            self.draw_eevee_box(context, view, b)
 
-        elif view.shading.type == 'RENDERED' and context.scene.render.engine == 'CYCLES':
+        if view.shading.type in ["MATERIAL", 'RENDERED']:
             b = box.box()
-            self.draw_cycles_box(context, view, b)
+
+            if view.shading.type == 'MATERIAL' or view.shading.type == 'RENDERED' and context.scene.render.engine == 'BLENDER_EEVEE':
+                self.draw_eevee_box(context, view, b)
+
+            elif view.shading.type == 'RENDERED' and context.scene.render.engine == 'CYCLES':
+                self.draw_cycles_box(context, view, b)
+
+            if get_area_light_poll():
+                self.draw_light_adjust_box(context, m3, b)
+
 
         # 7 - TOP - LEFT
         pie.separator()
@@ -1279,6 +1288,15 @@ class PieShading(Menu):
         row = column.split(factor=0.5, align=True)
         row.prop(context.scene.cycles, 'preview_samples', text='Viewport')
         row.prop(context.scene.cycles, 'samples', text='Render')
+
+    def draw_light_adjust_box(self, context, m3, layout):
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.prop(m3, 'adjust_lights_on_render', text='Adjust Lights when Rendering')
+        r = row.row(align=True)
+        r.active = m3.adjust_lights_on_render
+        r.prop(m3, 'adjust_lights_on_render_divider', text='')
 
     def get_text_icon(self, context, shading):
         if context.space_data.shading.type == shading:

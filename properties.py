@@ -8,6 +8,7 @@ from . utils.system import abspath
 from . utils.registration import get_prefs, get_addon_prefs
 from . utils.draw import remove_object_axes_drawing_handler, add_object_axes_drawing_handler
 from . utils.tools import get_active_tool
+from . utils.light import adjust_lights_for_rendering, get_area_light_poll
 from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, bc_orientation_items, shading_light_items
 
 
@@ -254,6 +255,28 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
         context.scene.render.engine = self.render_engine
 
+        if get_prefs().activate_shading_pie and get_area_light_poll() and self.adjust_lights_on_render:
+            last = self.adjust_lights_on_render_last
+
+            debug = False
+            # debug = True
+
+            if last in ['NONE', 'INCREASE'] and self.render_engine == 'CYCLES':
+                self.adjust_lights_on_render_last = 'DECREASE'
+
+                if debug:
+                    print("decreasing on switch to cycies engine")
+
+                adjust_lights_for_rendering(mode='DECREASE')
+
+            elif last == 'DECREASE' and self.render_engine == 'BLENDER_EEVEE':
+                self.adjust_lights_on_render_last = 'INCREASE'
+
+                if debug:
+                    print("increasing on switch to eevee engine")
+
+                adjust_lights_for_rendering(mode='INCREASE')
+
     def update_cycles_device(self, context):
         if self.avoid_update:
             self.avoid_update = False
@@ -372,6 +395,11 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
     object_axes_size: FloatProperty(name="Object Axes Size", default=0.3, min=0)
     object_axes_alpha: FloatProperty(name="Object Axes Alpha", default=0.75, min=0, max=1)
+
+    adjust_lights_on_render: BoolProperty(name="Adjust Lights when Rendering", description="Adjust Lights Area Lights when Rendering, to better match Eevee and Cycles", default=False)
+    adjust_lights_on_render_divider: FloatProperty(name="Divider used to calculate Cycles Light Strength from Eeeve Light Strength", default=4, min=1)
+    adjust_lights_on_render_last: StringProperty(name="Last Light Adjustment", default='NONE')
+    is_light_decreased_by_handler: BoolProperty(name="Have Lights been decreased by the init render handler?", default=False)
 
 
     # VIEW
