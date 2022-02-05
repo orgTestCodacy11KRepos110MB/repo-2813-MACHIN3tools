@@ -418,6 +418,10 @@ def get_tools():
     # SMOOTH
     classlists, keylists, count = get_smooth(classlists, keylists, count)
 
+    # RENDER
+    classlists, keylists, count = get_render(classlists, keylists, count)
+
+
 
     # CUSTOMIZE
     classlists, keylists, count = get_customize(classlists, keylists, count)
@@ -662,6 +666,15 @@ def get_smooth(classlists=[], keylists=[], count=0):
     if get_prefs().activate_smooth:
         classlists.append(classesdict["SMOOTH"])
         keylists.append(keysdict["SMOOTH"])
+        count +=1
+
+    return classlists, keylists, count
+
+
+def get_render(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_render:
+        classlists.append(classesdict["RENDER"])
+        # keylists.append(keysdict["SMOOTH"])
         count +=1
 
     return classlists, keylists, count

@@ -346,3 +346,11 @@ def group_origin_adjustment_toggle(self, context):
 
         if (context.active_object and context.active_object.M3.is_group_empty) or m3.affect_only_group_origin:
             column.prop(m3, "affect_only_group_origin", text="Group Origin")
+
+
+# RENDER
+
+def render_menu(self, context):
+    if getattr(bpy.types, 'MACHIN3_OT_seed_render', False):
+        self.layout.separator()
+        self.layout.operator("machin3.seed_render", text=f"Seed Render ({get_prefs().seed_render_count})")

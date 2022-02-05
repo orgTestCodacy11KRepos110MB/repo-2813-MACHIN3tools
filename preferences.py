@@ -154,6 +154,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_smooth(self, context):
         activate(self, register=self.activate_smooth, tool="smooth")
 
+    def update_activate_render(self, context):
+        activate(self, register=self.activate_render, tool="render")
+
+
     def update_activate_customize(self, context):
         activate(self, register=self.activate_customize, tool="customize")
 
@@ -269,6 +273,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     group_fade_sizes: BoolProperty(name="Fade Group Empty Sizes", description="Make Sub Group's Emtpies smaller than their Parents", default=True)
     group_fade_factor: FloatProperty(name="Fade Group Size Factor", description="Factor by which to decrease each Group Empty's Size", default=0.8, min=0.1, max=0.9)
 
+    seed_render_count: IntProperty(name="Seed Render Count", default=3, min=2, max=9)
+
 
     # MACHIN3tools
 
@@ -292,6 +298,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     activate_thread: BoolProperty(name="Thread", default=False, update=update_activate_thread)
     activate_extrude: BoolProperty(name="Extrude", default=False, update=update_activate_extrude)
     activate_smooth: BoolProperty(name="Smooth", default=False, update=update_activate_smooth)
+    activate_render: BoolProperty(name="Render", default=False, update=update_activate_render)
     activate_customize: BoolProperty(name="Customize", default=False, update=update_activate_customize)
 
 
@@ -454,6 +461,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_smooth", toggle=True)
         row.label(text="Toggle Smoothing in Korean Bevel and SubD workflows.")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_render", toggle=True)
+        row.label(text="Seed Rendering")
 
         row = column.split(factor=0.25)
         row.prop(self, "activate_customize", toggle=True)
@@ -638,6 +649,20 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             rr = r.row()
             rr.active = self.group_fade_sizes
             rr.prop(self, "group_fade_factor", text='Factor')
+
+
+        # RENDER
+
+        if getattr(bpy.types, "MACHIN3_OT_seed_render", False):
+            bb = b.box()
+            bb.label(text="Seed Render")
+
+            column = bb.column(align=True)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "seed_render_count", text="")
+            r.label(text="Seed Render Count")
+
 
 
         # CUSTOMIZE

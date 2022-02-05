@@ -76,7 +76,7 @@ from bpy.props import PointerProperty, BoolProperty
 from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, register_msgbus, unregister_msgbus
-from . ui.menus import object_context_menu, mesh_context_menu, add_object_buttons, material_pick_button, outliner_group_toggles, extrude_menu, group_origin_adjustment_toggle
+from . ui.menus import object_context_menu, mesh_context_menu, add_object_buttons, material_pick_button, outliner_group_toggles, extrude_menu, group_origin_adjustment_toggle, render_menu
 from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD, update_group, update_msgbus, screencast_HUD, increase_lights_on_render_end, decrease_lights_on_render_start
 
 
@@ -113,6 +113,8 @@ def register():
     bpy.types.OUTLINER_HT_header.prepend(outliner_group_toggles)
 
     bpy.types.VIEW3D_PT_tools_object_options_transform.append(group_origin_adjustment_toggle)
+
+    bpy.types.TOPBAR_MT_render.append(render_menu)
 
 
     # ICONS
@@ -197,6 +199,8 @@ def unregister():
     bpy.types.OUTLINER_HT_header.remove(outliner_group_toggles)
 
     bpy.types.VIEW3D_PT_tools_object_options_transform.remove(group_origin_adjustment_toggle)
+
+    bpy.types.TOPBAR_MT_render.remove(render_menu)
 
 
     unregister_keymaps(keymaps)
