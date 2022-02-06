@@ -354,3 +354,4 @@ def render_menu(self, context):
     if getattr(bpy.types, 'MACHIN3_OT_seed_render', False):
         self.layout.separator()
         self.layout.operator("machin3.seed_render", text=f"Seed Render ({get_prefs().seed_render_count})")
+        self.layout.operator("machin3.quick_render", text=f"Quick Render")

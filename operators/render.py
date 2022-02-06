@@ -2,8 +2,11 @@ import bpy
 from bpy.props import BoolProperty
 from .. utils.registration import get_prefs
 from .. utils.system import makedir
+from .. utils.math import dynamic_format
 from random import randint
 import os
+import datetime
+import time
 
 
 class SeedRender(bpy.types.Operator):
@@ -57,7 +60,7 @@ class SeedRender(bpy.types.Operator):
 
         # """
         print()
-        print(f"Seed Rendering {count}x{' (random)' if self.random else ''}, Resolution: {resolution}, Format: {fileformat}")
+        print(f"Seed Rendering x{count}{' (random)' if self.random else ''}, Resolution: {resolution}, Format: {fileformat}")
 
         # openthe render view
         bpy.ops.render.view_show('INVOKE_DEFAULT')
@@ -162,3 +165,169 @@ class SeedRender(bpy.types.Operator):
         # reset the seed to it's initial value
         cycles.seed = init_seed
         return {'FINISHED'}
+
+
+class QuickRender(bpy.types.Operator):
+    bl_idname = "machin3.quick_render"
+    bl_label = "MACHIN3: Quick Render"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    quarter_qual: BoolProperty(name="Quarter Quality", default=False)
+    half_qual: BoolProperty(name="Half Quality", default=False)
+    double_qual: BoolProperty(name="Double Quality", default=False)
+    quad_qual: BoolProperty(name="Quadruple Quality", default=False)
+
+    def draw(self, context):
+        layout = self.layout
+        column = layout.column()
+
+    @classmethod
+    def description(cls, context, properties):
+        currentblend = bpy.data.filepath
+        currentfolder = os.path.dirname(currentblend)
+        outpath = makedir(os.path.join(currentfolder, get_prefs().render_folder_name))
+        return f"Quickly Render and Save to {outpath + os.sep}\n\nALT: Half Quality\nSHIFT: Double Quality\nALT + CTRL: Quarter Quality\nSHIFT + CTRL: Quadruple Quality"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.camera
+
+    def invoke(self, context, event):
+        self.half_qual = event.alt
+        self.double_qual = event.shift
+        self.quarter_qual = event.alt and event.ctrl
+        self.quad_qual = event.shift and event.ctrl
+        return self.execute(context)
+
+    def execute(self, context):
+        scene = context.scene
+        render = scene.render
+        cycles = scene.cycles
+
+        # fetch initial time
+        starttime = time.time()
+
+        # adjust render quality when modifier keys have been pressed
+        orig_res, orig_samples, orig_threshold = self.set_render_settings(render, cycles)
+
+        # get output path and blend file name while at it
+        outpath, blendname = self.get_output_path()
+
+        # open the render view
+        bpy.ops.render.view_show('INVOKE_DEFAULT')
+
+        # render prep
+        qualityhint = ' (Quarter Quality)' if self.quarter_qual else ' (Half Quality)' if self.half_qual else ' (Double Quality)' if self.double_qual else ' (Quadruple Quality)' if self.quad_qual else ''
+        resolution, samples, thresholdhint = self.get_render_setting_strings(render, cycles, orig_res, orig_samples, orig_threshold)
+
+        # render
+        print(f"\nQuick Rendering{qualityhint} at {resolution} with {samples} samples{thresholdhint}")
+        bpy.ops.render.render(animation=False, write_still=False, use_viewport=False, layer='', scene='')
+
+        # save render
+        save_path = self.get_save_path(render, cycles, outpath, blendname)
+
+        img = bpy.data.images.get('Render Result')
+        img.save_render(filepath=save_path)
+
+        # final terminal output
+        rendertime = round(time.time() - starttime, 1)
+        print(f"\nRender finished after {rendertime} seconds")
+        print(f"       saved to {save_path}")
+
+        # reset to initial quality
+        self.reset_render_settings(render, cycles, orig_res, orig_samples, orig_threshold)
+
+        return {'FINISHED'}
+
+    def get_output_path(self):
+        '''
+        from the import location of the current blend file get the output path, as well as the blend file's name
+        '''
+
+        currentblend = bpy.data.filepath
+        currentfolder = os.path.dirname(currentblend)
+
+        outpath = makedir(os.path.join(currentfolder, get_prefs().render_folder_name))
+        blendname = os.path.basename(currentblend).split('.')[0]
+
+        return outpath, blendname
+
+    def get_save_path(self, render, cycles, outpath, blendname):
+        fileformat = render.image_settings.file_format
+        now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
+        if cycles.use_adaptive_sampling:
+            return os.path.join(outpath, f"{blendname}_{now}_{render.resolution_x}x{render.resolution_y}_{cycles.samples}_{dynamic_format(cycles.adaptive_threshold)}.{fileformat.lower()}")
+        else:
+            return os.path.join(outpath, f"{blendname}_{now}_{render.resolution_x}x{render.resolution_y}_{cycles.samples}.{fileformat.lower()}")
+
+    def set_render_settings(self, render, cycles):
+        '''
+        adjust render quality when mod keys are pressed
+        '''
+
+        orig_res = (render.resolution_x, render.resolution_y)
+        orig_samples = cycles.samples
+        orig_threshold = cycles.adaptive_threshold
+
+        if self.quarter_qual:
+            render.resolution_x /= 4
+            render.resolution_y /= 4
+
+            if render.engine == 'CYCLES':
+                cycles.samples = int(cycles.samples / 4)
+
+                if cycles.use_adaptive_sampling:
+                    cycles.adaptive_threshold = cycles.adaptive_threshold * 4
+
+        elif self.half_qual:
+            render.resolution_x /= 2
+            render.resolution_y /= 2
+
+            if render.engine == 'CYCLES':
+                cycles.samples = int(cycles.samples / 2)
+
+                if cycles.use_adaptive_sampling:
+                    cycles.adaptive_threshold = cycles.adaptive_threshold * 2
+
+        elif self.double_qual:
+            render.resolution_x *= 2
+            render.resolution_y *= 2
+
+        elif self.quad_qual:
+            render.resolution_x *= 4
+            render.resolution_y *= 4
+
+        return orig_res, orig_samples, orig_threshold
+
+    def reset_render_settings(self, render, cycles, res, samples, threshold):
+        '''
+        reset to the initially used render settings
+        '''
+
+        if any([self.quarter_qual, self.half_qual, self.double_qual, self.quad_qual]):
+            render.resolution_x = res[0]
+            render.resolution_y = res[1]
+
+            cycles.samples = samples
+
+            if cycles.use_adaptive_sampling:
+                cycles.adaptive_threshold = threshold
+
+    def get_render_setting_strings(self, render, cycles, orig_res, orig_samples, orig_threshold):
+        '''
+        create strings for terminal output of render settings
+        '''
+
+        if any([self.quarter_qual, self.half_qual, self.double_qual, self.quad_qual]):
+            resolution = f"{render.resolution_x}x{render.resolution_y}/{orig_res[0]}x{orig_res[1]}"
+            samples = f"{cycles.samples}/{orig_samples}"
+            thresholdhint = f" and a noise threshold of {dynamic_format(cycles.adaptive_threshold)}/{dynamic_format(orig_threshold)}" if cycles.use_adaptive_sampling else ''
+        else:
+            resolution = f"{render.resolution_x}x{render.resolution_y}"
+            samples = cycles.samples
+            thresholdhint = f" and a noise threshold of {dynamic_format(cycles.adaptive_threshold)}" if cycles.use_adaptive_sampling else ''
+
+        return resolution, samples, thresholdhint
