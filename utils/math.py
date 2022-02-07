@@ -1,4 +1,30 @@
 from mathutils import Matrix, Vector
+from math import log10, floor
+
+
+# VALUE
+
+def dynamic_format(value, decimal_offset=0):
+    '''
+    see https://stackoverflow.com/questions/8011017/python-find-first-non-zero-digit-after-decimal-point
+    and https://stackoverflow.com/questions/658763/how-to-suppress-scientific-notation-when-printing-float-values
+
+    decimal offset adds additional decimal places
+
+    return formated string
+    '''
+    if round(value, 6) == 0:
+        return '0'
+
+    l10 = log10(abs(value))
+    f = floor(abs(l10))
+
+    if l10 < 0:
+        precision = f + 1 + decimal_offset
+
+    else:
+        precision = decimal_offset
+    return f"{'-' if value < 0 else ''}{abs(value):.{precision}f}"
 
 
 def get_center_between_points(point1, point2, center=0.5):
