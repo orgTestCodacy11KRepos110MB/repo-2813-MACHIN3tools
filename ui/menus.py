@@ -351,7 +351,7 @@ def group_origin_adjustment_toggle(self, context):
 # RENDER
 
 def render_menu(self, context):
-    if getattr(bpy.types, 'MACHIN3_OT_seed_render', False):
+    if getattr(bpy.types, 'MACHIN3_OT_render', False):
         self.layout.separator()
-        self.layout.operator("machin3.seed_render", text=f"Seed Render ({get_prefs().seed_render_count})")
-        self.layout.operator("machin3.quick_render", text=f"Quick Render")
+        self.layout.operator("machin3.render", text=f"Quick Render").seed = False
+        self.layout.operator("machin3.render", text=f"Seed Render ({get_prefs().seed_render_count})").seed = True
