@@ -355,3 +355,15 @@ def render_menu(self, context):
         self.layout.separator()
         self.layout.operator("machin3.render", text=f"Quick Render").seed = False
         self.layout.operator("machin3.render", text=f"Seed Render ({get_prefs().seed_render_count})").seed = True
+
+        row = self.layout.row()
+        row.scale_y = 0.3
+        row.label(text='')
+
+        op = self.layout.operator("machin3.render", text=f"Final Render")
+        op.seed = False
+        op.final = True
+
+        op = self.layout.operator("machin3.render", text=f"Final Seed Render ({get_prefs().seed_render_count})")
+        op.seed = True
+        op.final = True
