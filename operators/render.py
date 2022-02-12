@@ -669,3 +669,26 @@ class Render(bpy.types.Operator):
         viewernode.location.x = 600
 
         tree.links.new(imgnode.outputs[0], viewernode.inputs[0])
+
+
+class DuplicateNodes(bpy.types.Operator):
+    bl_idname = "machin3.duplicate_nodes"
+    bl_label = "MACHIN3: Duplicate Nodes"
+    bl_description = "Duplicate Nodes normaly, except for Cryptomatte V2 nodes, in that case keep the inputs and clear out the matte ids"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.space_data.type == 'NODE_EDITOR'
+
+    def execute(self, context):
+        active = context.scene.node_tree.nodes.active
+
+        if active and active.type == 'CRYPTOMATTE_V2':
+            bpy.ops.node.duplicate_move_keep_inputs('INVOKE_DEFAULT')
+            context.scene.node_tree.nodes.active.matte_id = ''
+
+        else:
+            bpy.ops.node.duplicate_move('INVOKE_DEFAULT')
+
+        return {'FINISHED'}

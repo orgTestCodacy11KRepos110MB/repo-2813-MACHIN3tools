@@ -674,7 +674,7 @@ def get_smooth(classlists=[], keylists=[], count=0):
 def get_render(classlists=[], keylists=[], count=0):
     if get_prefs().activate_render:
         classlists.append(classesdict["RENDER"])
-        # keylists.append(keysdict["SMOOTH"])
+        keylists.append(keysdict["RENDER"])
         count +=1
 
     return classlists, keylists, count

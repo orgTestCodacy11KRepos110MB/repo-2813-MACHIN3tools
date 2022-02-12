@@ -56,7 +56,8 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
            'EXTRUDE': [('operators.extrude', [('CursorSpin', 'cursor_spin'),
                                               ('PunchItALittle', 'punch_it_a_little')])],
            'SMOOTH': [('operators.smooth', [('ToggleSmooth', 'toggle_smooth')])],
-           'RENDER': [('operators.render', [('Render', 'render')])],
+           'RENDER': [('operators.render', [('Render', 'render'),
+                                            ('DuplicateNodes', 'duplicate_nodes')])],
            'CUSTOMIZE': [('operators.customize', [('Customize', 'customize'),
                                                   ('RestoreKeymaps', 'restore_keymaps')])],
 
@@ -183,7 +184,7 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
                   {'label': 'Collapse Outliner', 'keymap': 'Outliner', 'space_type': 'OUTLINER', 'idname': 'machin3.collapse_outliner', 'type': 'THREE', 'value': 'PRESS'},
                   {'label': 'Toggle Children', 'keymap': 'Outliner', 'space_type': 'OUTLINER', 'idname': 'machin3.toggle_outliner_children', 'type': 'FOUR', 'value': 'PRESS'}],
         'SMOOTH': [{'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'machin3.toggle_smooth', 'type': 'TAB', 'value': 'PRESS', 'alt': True, 'info': ['Remap this is if Alt + Tab switches Windows for you']}],
-
+        'RENDER': [{'keymap': 'Node Editor', 'space_type': 'NODE_EDITOR', 'idname': 'machin3.duplicate_nodes', 'type': 'D', 'value': 'PRESS', 'shift': True}],
         'MODES_PIE': [{'label': '3D View', 'keymap': 'Object Non-modal', 'idname': 'wm.call_menu_pie', 'type': 'TAB', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_modes_pie')]},
                       {'label': 'Image Editor', 'keymap': 'Image', 'space_type': 'IMAGE_EDITOR', 'idname': 'wm.call_menu_pie', 'type': 'TAB', 'value': 'PRESS', 'properties': [('name', 'MACHIN3_MT_modes_pie')]}],
         'SAVE_PIE': [{'keymap': 'Window', 'idname': 'wm.call_menu_pie', 'type': 'S', 'value': 'PRESS', 'ctrl': True, 'properties': [('name', 'MACHIN3_MT_save_pie')]}],
