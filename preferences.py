@@ -273,8 +273,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     group_fade_sizes: BoolProperty(name="Fade Group Empty Sizes", description="Make Sub Group's Emtpies smaller than their Parents", default=True)
     group_fade_factor: FloatProperty(name="Fade Group Size Factor", description="Factor by which to decrease each Group Empty's Size", default=0.8, min=0.1, max=0.9)
 
-    seed_render_count: IntProperty(name="Seed Render Count", default=3, min=2, max=9)
-    render_folder_name: StringProperty(name="Render Folder Name", description="Folder used by Seed Render and Quick Render, to store images relative to the Location of the .blend file", default='out')
+    seed_render_count: IntProperty(name="Seed Render Count", description="Set the Amount of Seed Renderings used to remove Fireflies", default=3, min=2, max=9)
+    render_folder_name: StringProperty(name="Render Folder Name", description="Folder used to stored rended images relative to the Location of the .blend file", default='out')
+    use_clownmatte_naming: BoolProperty(name="Use Clownmatte Name", description="""It's a better name than "Cryptomatte", believe me, let's make it happen""", default=True)
+
 
 
     # MACHIN3tools
@@ -654,22 +656,26 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         # RENDER
 
-        if getattr(bpy.types, "MACHIN3_OT_seed_render", False):
+        if getattr(bpy.types, "MACHIN3_OT_render", False):
             bb = b.box()
             bb.label(text="Render")
 
-            split = bb.split(factor=0.5)
+            column = bb.column(align=True)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "render_folder_name", text="")
+            r.label(text="Folder Name")
 
-            col = split.column(align=True)
-            row = col.row(align=True)
-            r = row.split(factor=0.4, align=True)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
             r.prop(self, "seed_render_count", text="")
             r.label(text="Seed Render Count")
 
-            col = split.column(align=True)
-            row = col.row(align=True)
-            row.prop(self, "render_folder_name", text="")
-            row.label(text="  Folder Name")
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "use_clownmatte_naming", text="True" if self.use_clownmatte_naming else "False", toggle=True)
+            r.label(text="Use Clownmatte Naming")
+
 
         # CUSTOMIZE
 
