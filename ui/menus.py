@@ -360,9 +360,14 @@ def render_menu(self, context):
         row.scale_y = 0.3
         row.label(text='')
 
-        op = self.layout.operator("machin3.render", text=f"Final Render")
-        op.seed = False
-        op.final = True
+        row = layout.row()
+        row.active = True if context.scene.camera else False
+        row.prop(get_prefs(), 'render_seed_count', text="Seed Count", slider=True)
+
+        op = layout.operator("machin3.render", text=f"Seed Render")
+        op.seed = True
+        op.final = False
+
 
         op = self.layout.operator("machin3.render", text=f"Final Seed Render ({get_prefs().seed_render_count})")
         op.seed = True

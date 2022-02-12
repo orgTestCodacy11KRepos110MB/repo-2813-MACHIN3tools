@@ -8,12 +8,6 @@ import datetime
 import time
 
 
-# TODO: final render
-# ####: produces renderings for the usualy passes
-
-# TODO: redo fetching initial settings, do it via a single dict
-# ####:  and then restore it again properly, currently scene.use_nodes, use compositing, and cryptomatte aren't really taking into account
-
 class Render(bpy.types.Operator):
     bl_idname = "machin3.render"
     bl_label = "MACHIN3: Render"
@@ -38,7 +32,7 @@ class Render(bpy.types.Operator):
         outpath = makedir(os.path.join(currentfolder, get_prefs().render_folder_name))
 
         if properties.seed:
-            desc = f"Render {get_prefs().seed_render_count} seeds, combine all, and save to {outpath + os.sep}"
+            desc = f"Render {get_prefs().render_seed_count} seeds, combine all, and save to {outpath + os.sep}"
         else:
             desc = f"Render and save to {outpath + os.sep}"
 
@@ -70,7 +64,7 @@ class Render(bpy.types.Operator):
                          'format': context.scene.render.image_settings.file_format,
                          'depth': context.scene.render.image_settings.color_depth,
                          'seed': context.scene.cycles.seed,
-                         'seed_count': get_prefs().seed_render_count,
+                         'seed_count': get_prefs().render_seed_count,
 
                          'tree': None,
                          'use_nodes': context.scene.use_nodes,
@@ -120,12 +114,11 @@ class Render(bpy.types.Operator):
             # do count renderings, each with a different seed
             seedpaths, matte_path = self.seed_render()
 
-
             # load previously saved seed renderings
             images = self.load_seed_renderings(seedpaths)
 
             # setup the compositor for firefly removal by mixing the seed renderings
-            basename = self.get_save_path(suffix='composed')
+            basename = self.get_save_path(suffix='seed')
             self.setup_compositor_for_firefly_removal(images, basename)
 
             # render compositor
@@ -134,6 +127,15 @@ class Render(bpy.types.Operator):
             # remove the frame number from the composed image, and properly set the datetime
             save_path = self.rename_file_output(basename)
 
+            # remove individual seed renderings
+            if not get_prefs().render_keep_seed_renderings:
+                print("Removing Individual Seed Renderings")
+                for _, path in seedpaths:
+                    os.remove(path)
+
+                # clear out the compositor too, but note that when final is enabled this happens anyway
+                if not self.final:
+                    self.clear_out_compositor()
 
         # quick render
         else:
@@ -141,7 +143,7 @@ class Render(bpy.types.Operator):
             if self.final:
 
                 # setup the compositor for cryptomatte export
-                basename = self.get_save_path(suffix='clownmatte' if get_prefs().use_clownmatte_naming else 'cryptomatte')
+                basename = self.get_save_path(suffix='clownmatte' if get_prefs().render_use_clownmatte_naming else 'cryptomatte')
                 self.setup_compositor_for_cryptomatte_export(basename)
 
             # render
@@ -151,12 +153,8 @@ class Render(bpy.types.Operator):
             save_path = self.get_save_path()
 
             # remove the frame number from the composed cryptomatte and properly set the datetime, important to do it after the saving out the render, to ensure a later time code
-
             if self.final:
                 matte_path = self.rename_file_output(basename)
-
-            # save render result
-            save_path = self.get_save_path(render, cycles, outpath, blendname, ext)
 
             img = bpy.data.images.get('Render Result')
             img.save_render(filepath=save_path)
@@ -164,7 +162,7 @@ class Render(bpy.types.Operator):
         # final terminal output
         rendertime = datetime.timedelta(seconds=int(time.time() - starttime))
         print(f"\nRendering finished after {rendertime}")
-        print(f"       saved to {save_path}")
+        print(f"          saved to {save_path}")
 
         # reset to initial quality
         self.reset_render_settings()
@@ -179,7 +177,6 @@ class Render(bpy.types.Operator):
     # GENERAL
 
     def set_render_settings(self):
-
         '''
         adjust render quality when mod keys are pressed
         force  OPEN_EXR if it's a final render
@@ -404,6 +401,10 @@ class Render(bpy.types.Operator):
         scene.use_nodes = self.settings['use_nodes']
         render.use_compositing = self.settings['use_compositing']
 
+        # for seed rendings, but non-final ones, where the seed renderings are ketp, and where use_nodes was disabled initially, enable it, otherwise the previews in the compositor won't work
+        if get_prefs().render_keep_seed_renderings and self.seed and not self.final and not scene.use_nodes:
+            scene.use_nodes = True
+
     def rename_file_output(self, basename):
         '''
         we are using the file ouput node in the compositor to save the result, because it allows us to disable "save_as_render"
@@ -432,13 +433,14 @@ class Render(bpy.types.Operator):
     # SEED
 
     def seed_render(self):
-
         '''
         render out count images, each with a new seed
         '''
 
         count = self.settings['seed_count']
         cycles = self.settings['cycles']
+
+        matte_path = None
 
         # collect seeeds and file paths
         seedpaths = []
@@ -448,7 +450,7 @@ class Render(bpy.types.Operator):
 
             # for the final seed rendering, setup the compositor for cryptomatte export
             if i == count - 1 and self.final:
-                basename = self.get_save_path(suffix='clownmatte' if get_prefs().use_clownmatte_naming else 'cryptomatte')
+                basename = self.get_save_path(suffix='clownmatte' if get_prefs().render_use_clownmatte_naming else 'cryptomatte')
                 self.setup_compositor_for_cryptomatte_export(basename)
 
             print(" Seed:", cycles.seed)
@@ -564,19 +566,6 @@ class Render(bpy.types.Operator):
         output.path = basename
         output.save_as_render = False
 
-    def rename_file_output(self, scene, ext, outpath, basename):
-        '''
-        we are using the file ouput node in the compositor to save the result, because it allows us to disable "save_as_render"
-        not doing this, or using img.save_render() again would result in a slight color change, likely because some color shit is applied a second time
-        unfortunately, the file output node, also always adds the frame number at the end, so we'll have to remove that
-        '''
-
-        comp_path = os.path.join(outpath, f"{basename}{str(scene.frame_current).zfill(4)}.{ext}")
-        save_path = os.path.join(outpath, f"{basename}.{ext}")
-        os.rename(comp_path, save_path)
-
-        return save_path
-
 
     # FINAL
 
@@ -598,7 +587,6 @@ class Render(bpy.types.Operator):
 
         # enable compositing, to save out the cryptomatte pass using the file output node
         scene.render.use_compositing = True
-
 
         # enable cryptomatte rendering
         view_layer.use_pass_cryptomatte_object = True
@@ -622,7 +610,7 @@ class Render(bpy.types.Operator):
         outputnode.layer_slots.remove(Imageslot)
 
         for name in ['CryptoObject00', 'CryptoObject01', 'CryptoObject02', 'CryptoMaterial00', 'CryptoMaterial01', 'CryptoMaterial02', 'CryptoAsset00', 'CryptoAsset01', 'CryptoAsset02']:
-            inputname = name.replace('Crypto', 'Clown') if get_prefs().use_clownmatte_naming else name
+            inputname = name.replace('Crypto', 'Clown') if get_prefs().render_use_clownmatte_naming else name
 
             outputnode.layer_slots.new(inputname)
             tree.links.new(rndrnode.outputs[name], outputnode.inputs[inputname])
@@ -645,22 +633,30 @@ class Render(bpy.types.Operator):
 
         render.use_compositing = True
 
+        imgname = 'Seed Render' if self.seed else 'Render'
+        mattename = 'Clownmatte' if get_prefs().render_use_clownmatte_naming else 'Cryptomatte'
+
         # load images
         img = bpy.data.images.load(img_path)
+        img.name = imgname
+
         matte = bpy.data.images.load(matte_path)
+        matte.name = mattename
 
         # create nodes
         imgnode = tree.nodes.new('CompositorNodeImage')
         imgnode.image = img
 
+        imgnode.name = imgname
+        imgnode.label = imgname
+
         mattenode = tree.nodes.new('CompositorNodeCryptomatteV2')
         mattenode.source = 'IMAGE'
         mattenode.image = matte
-        mattenode.layer_name = 'ClownObject' if get_prefs().use_clownmatte_naming else 'CryptoObject'
+        mattenode.layer_name = 'ClownObject' if get_prefs().render_use_clownmatte_naming else 'CryptoObject'
 
-        if get_prefs().use_clownmatte_naming:
-            mattenode.name = 'Clowmatte'
-            mattenode.label = 'Clowmatte'
+        mattenode.name = mattename
+        mattenode.label = mattename
 
         mattenode.location.x = 300
         mattenode.location.y = -150

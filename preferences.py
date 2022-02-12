@@ -273,9 +273,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     group_fade_sizes: BoolProperty(name="Fade Group Empty Sizes", description="Make Sub Group's Emtpies smaller than their Parents", default=True)
     group_fade_factor: FloatProperty(name="Fade Group Size Factor", description="Factor by which to decrease each Group Empty's Size", default=0.8, min=0.1, max=0.9)
 
-    seed_render_count: IntProperty(name="Seed Render Count", description="Set the Amount of Seed Renderings used to remove Fireflies", default=3, min=2, max=9)
     render_folder_name: StringProperty(name="Render Folder Name", description="Folder used to stored rended images relative to the Location of the .blend file", default='out')
-    use_clownmatte_naming: BoolProperty(name="Use Clownmatte Name", description="""It's a better name than "Cryptomatte", believe me, let's make it happen""", default=True)
+    render_seed_count: IntProperty(name="Seed Render Count", description="Set the Amount of Seed Renderings used to remove Fireflies", default=3, min=2, max=9)
+    render_keep_seed_renderings: BoolProperty(name="Keep Individual Renderings", description="Keep the individual Seed Renderings, after they've been combined into a single Image", default=False)
+    render_use_clownmatte_naming: BoolProperty(name="Use Clownmatte Name", description="""It's a better name than "Cryptomatte", believe me""", default=True)
 
 
 
@@ -668,12 +669,17 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             row = column.row(align=True)
             r = row.split(factor=0.2, align=True)
-            r.prop(self, "seed_render_count", text="")
+            r.prop(self, "render_seed_count", text="")
             r.label(text="Seed Render Count")
 
             row = column.row(align=True)
             r = row.split(factor=0.2, align=True)
-            r.prop(self, "use_clownmatte_naming", text="True" if self.use_clownmatte_naming else "False", toggle=True)
+            r.prop(self, "render_keep_seed_renderings", text="True" if self.render_keep_seed_renderings else "False", toggle=True)
+            r.label(text="Keep Individual Seed Renderings")
+
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "render_use_clownmatte_naming", text="True" if self.render_use_clownmatte_naming else "False", toggle=True)
             r.label(text="Use Clownmatte Naming")
 
 
