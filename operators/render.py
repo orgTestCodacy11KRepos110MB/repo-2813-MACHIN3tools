@@ -129,7 +129,6 @@ class Render(bpy.types.Operator):
 
             # remove individual seed renderings
             if not get_prefs().render_keep_seed_renderings:
-                print("Removing Individual Seed Renderings")
                 for _, path in seedpaths:
                     os.remove(path)
 
@@ -327,9 +326,14 @@ class Render(bpy.types.Operator):
         # clear all existing nodes
         for node in tree.nodes:
 
-            # remove any previous seed renderings
+            # remove any previous seed renderings, as well as final (Seed) Renders
             if node.type == 'IMAGE' and node.image:
-                if "Render Seed " in node.image.name:
+                if "Render Seed " in node.image.name or node.image.name in ['Render', 'Seed Render']:
+                    bpy.data.images.remove(node.image)
+
+            # remove previous cryptomattes as well
+            elif node.type == 'CRYPTOMATTE_V2':
+                if node.image.name in ['Clownmatte', 'Cryptomatte']:
                     bpy.data.images.remove(node.image)
 
             tree.nodes.remove(node)
@@ -401,7 +405,7 @@ class Render(bpy.types.Operator):
         scene.use_nodes = self.settings['use_nodes']
         render.use_compositing = self.settings['use_compositing']
 
-        # for seed rendings, but non-final ones, where the seed renderings are ketp, and where use_nodes was disabled initially, enable it, otherwise the previews in the compositor won't work
+        # for seed rendings, but non-final ones, where the seed renderings are kept, and where use_nodes was disabled initially, enable it, otherwise the previews in the compositor won't work
         if get_prefs().render_keep_seed_renderings and self.seed and not self.final and not scene.use_nodes:
             scene.use_nodes = True
 
