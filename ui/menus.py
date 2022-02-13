@@ -352,11 +352,19 @@ def group_origin_adjustment_toggle(self, context):
 
 def render_menu(self, context):
     if getattr(bpy.types, 'MACHIN3_OT_render', False):
-        self.layout.separator()
-        self.layout.operator("machin3.render", text=f"Quick Render").seed = False
-        self.layout.operator("machin3.render", text=f"Seed Render ({get_prefs().seed_render_count})").seed = True
+        layout = self.layout
 
-        row = self.layout.row()
+        layout.separator()
+
+        op = layout.operator("machin3.render", text=f"Quick Render")
+        op.seed = False
+        op.final = False
+
+        op = layout.operator("machin3.render", text=f"Final Render")
+        op.seed = False
+        op.final = True
+
+        row = layout.row()
         row.scale_y = 0.3
         row.label(text='')
 
@@ -368,7 +376,6 @@ def render_menu(self, context):
         op.seed = True
         op.final = False
 
-
-        op = self.layout.operator("machin3.render", text=f"Final Seed Render ({get_prefs().seed_render_count})")
+        op = layout.operator("machin3.render", text=f"Final Seed Render")
         op.seed = True
         op.final = True
