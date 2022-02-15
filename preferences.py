@@ -276,7 +276,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     render_seed_count: IntProperty(name="Seed Render Count", description="Set the Amount of Seed Renderings used to remove Fireflies", default=3, min=2, max=9)
     render_keep_seed_renderings: BoolProperty(name="Keep Individual Renderings", description="Keep the individual Seed Renderings, after they've been combined into a single Image", default=False)
     render_use_clownmatte_naming: BoolProperty(name="Use Clownmatte Name", description="""It's a better name than "Cryptomatte", believe me""", default=True)
-    render_show_buttons_in_light_properties: BoolProperty(name="Show Render Buttons in Light Properties Panel", description="SHow Render Buttons in Light Properties Panel", default=True)
+    render_show_buttons_in_light_properties: BoolProperty(name="Show Render Buttons in Light Properties Panel", description="Show Render Buttons in Light Properties Panel", default=True)
+    render_sync_light_visibility: BoolProperty(name="Sync Light visibility/renderability", description="Sync Light hide_render props based on hide_viewport props", default=True)
 
 
     # MACHIN3tools
@@ -685,6 +686,11 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             r = row.split(factor=0.2, align=True)
             r.prop(self, "render_show_buttons_in_light_properties", text="True" if self.render_show_buttons_in_light_properties else "False", toggle=True)
             r.label(text="Show Render Butttons in Light Properties Panel")
+
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "render_sync_light_visibility", text="True" if self.render_sync_light_visibility else "False", toggle=True)
+            r.label(text="Sync Light visibility/renderability")
 
 
         # CUSTOMIZE

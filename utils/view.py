@@ -47,3 +47,17 @@ def reset_viewport(context, disable_toolbar=False):
 
                         if disable_toolbar:
                             space.show_region_toolbar = False
+
+
+def sync_light_visibility(scene):
+    '''
+    set light's hide_render prop based on light's hide_get()
+    '''
+
+    # print("syncing light visibility/renderability")
+
+    for view_layer in scene.view_layers:
+        lights = [obj for obj in view_layer.objects if obj.type == 'LIGHT']
+
+        for light in lights:
+            light.hide_render = light.hide_get(view_layer=view_layer)

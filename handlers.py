@@ -4,6 +4,7 @@ from . utils.draw import remove_object_axes_drawing_handler, draw_focus_HUD, dra
 from . utils.registration import get_prefs, reload_msgbus, get_addon
 from . utils.group import update_group_name, select_group_children
 from . utils.light import adjust_lights_for_rendering, get_area_light_poll
+from . utils.view import sync_light_visibility
 
 
 focusHUD = None
@@ -154,6 +155,9 @@ def decrease_lights_on_render_start(scene):
                 m3.is_light_decreased_by_handler = True
 
                 adjust_lights_for_rendering(mode='DECREASE')
+
+    if get_prefs().render_sync_light_visibility:
+        sync_light_visibility(scene)
 
 
 @persistent

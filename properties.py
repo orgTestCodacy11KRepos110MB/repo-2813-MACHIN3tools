@@ -9,6 +9,7 @@ from . utils.registration import get_prefs, get_addon_prefs
 from . utils.draw import remove_object_axes_drawing_handler, add_object_axes_drawing_handler
 from . utils.tools import get_active_tool
 from . utils.light import adjust_lights_for_rendering, get_area_light_poll
+from . utils.view import sync_light_visibility
 from . items import eevee_preset_items, align_mode_items, render_engine_items, cycles_device_items, driver_limit_items, axis_items, driver_transform_items, driver_space_items, bc_orientation_items, shading_light_items
 
 
@@ -276,6 +277,10 @@ class M3SceneProperties(bpy.types.PropertyGroup):
                     print("increasing on switch to eevee engine")
 
                 adjust_lights_for_rendering(mode='INCREASE')
+
+        if get_prefs().render_sync_light_visibility:
+            sync_light_visibility(context.scene)
+
 
     def update_cycles_device(self, context):
         if self.avoid_update:
