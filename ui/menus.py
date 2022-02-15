@@ -370,12 +370,45 @@ def render_menu(self, context):
 
         row = layout.row()
         row.active = True if context.scene.camera else False
-        row.prop(get_prefs(), 'render_seed_count', text="Seed Count", slider=True)
+        row.prop(get_prefs(), 'render_seed_count', text="Seed Count")
 
         op = layout.operator("machin3.render", text=f"Seed Render")
         op.seed = True
         op.final = False
 
         op = layout.operator("machin3.render", text=f"Final Seed Render")
+        op.seed = True
+        op.final = True
+
+
+def render_buttons(self, context):
+    if getattr(bpy.types, 'MACHIN3_OT_render', False) and get_prefs().render_show_buttons_in_light_properties and context.scene.camera:
+        layout = self.layout
+
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
+        row.scale_y = 1.2
+        op = row.operator("machin3.render", text=f"Quick Render")
+        op.seed = False
+        op.final = False
+
+        op = row.operator("machin3.render", text=f"Final Render")
+        op.seed = False
+        op.final = True
+
+        column.separator()
+
+        row = column.row(align=True)
+        row.active = True if context.scene.camera else False
+        row.prop(get_prefs(), 'render_seed_count', text="Seed Render Count")
+
+        row = column.row(align=True)
+        row.scale_y = 1.2
+        op = row.operator("machin3.render", text=f"Seed Render")
+        op.seed = True
+        op.final = False
+
+        op = row.operator("machin3.render", text=f"Final Seed Render")
         op.seed = True
         op.final = True
