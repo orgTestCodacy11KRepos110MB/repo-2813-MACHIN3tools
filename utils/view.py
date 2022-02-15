@@ -60,4 +60,7 @@ def sync_light_visibility(scene):
         lights = [obj for obj in view_layer.objects if obj.type == 'LIGHT']
 
         for light in lights:
-            light.hide_render = light.hide_get(view_layer=view_layer)
+            hidden = light.hide_get(view_layer=view_layer)
+
+            if light.hide_render != hidden:
+                light.hide_render = hidden
