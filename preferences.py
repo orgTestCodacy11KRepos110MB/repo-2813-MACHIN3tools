@@ -199,6 +199,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     # PROPERTIES
 
+    fbx_export_apply_scale_all: BoolProperty(name="Use 'Fbx All' for Applying Scale", description="This is useful for Unity, but bad for Unreal Engine", default=True)
+
     appendworldpath: StringProperty(name="World Source .blend", subtype='FILE_PATH')
     appendworldname: StringProperty(name="Name of World")
 
@@ -758,6 +760,17 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         # SAVE PIE
 
         if getattr(bpy.types, "MACHIN3_MT_save_pie", False):
+
+            bb = b.box()
+            bb.label(text="Save Pie: Export")
+
+            column = bb.column(align=True)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "fbx_export_apply_scale_all", text="True" if self.fbx_export_apply_scale_all else "False", toggle=True)
+            r.label(text="Use 'Fbx All' for Applying Scale")
+
+
             bb = b.box()
             bb.label(text="Save Pie: Append World and Materials")
 
@@ -814,6 +827,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             col.prop(self, "screencast_highlight_machin3")
             col.prop(self, "screencast_show_addon")
             col.prop(self, "screencast_show_idname")
+
+
 
 
         # SHADING PIE

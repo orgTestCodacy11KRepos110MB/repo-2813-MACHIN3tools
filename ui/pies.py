@@ -651,7 +651,9 @@ class PieSave(Menu):
         r.operator("import_scene.fbx", text="Import", icon_value=get_icon('import'))
         op = r.operator("export_scene.fbx", text="Export", icon_value=get_icon('export'))
         op.use_selection = True if context.selected_objects else False
-        op.apply_scale_options='FBX_SCALE_ALL'
+
+        if get_prefs().fbx_export_apply_scale_all:
+            op.apply_scale_options='FBX_SCALE_ALL'
 
     def draw_center_column_bottom(self, layout):
         column = layout.column(align=True)
