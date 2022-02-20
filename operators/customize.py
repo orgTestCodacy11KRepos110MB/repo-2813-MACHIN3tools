@@ -70,7 +70,6 @@ class Customize(bpy.types.Operator):
         return {'FINISHED'}
 
     def customize_keymap(self, context):
-
         docs_mode = True
         docs_mode = False
 
@@ -86,12 +85,12 @@ class Customize(bpy.types.Operator):
             to_str = "       to"
             added_str = "  Added"
 
-        def print_keymap_title(km_name):
+        def print_keymap_title(km):
             if docs_mode:
-                print(f"\n\n#### {km_name} Keymap\n")
+                print(f"\n\n#### {km.name} Keymap\n")
 
             else:
-                print(f"\n {km_name} Keymap")
+                print(f"\n {km.name} Keymap")
 
         def modify_keymaps(kc):
             '''
@@ -101,7 +100,7 @@ class Customize(bpy.types.Operator):
             # WINDOW
 
             km = kc.keymaps.get("Window")
-            print_keymap_title("Window")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "wm.open_mainfile":
@@ -121,7 +120,7 @@ class Customize(bpy.types.Operator):
             # SCREEN
 
             km = kc.keymaps.get("Screen")
-            print_keymap_title("Screen")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "ed.undo":
@@ -163,7 +162,7 @@ class Customize(bpy.types.Operator):
             # SCREEN EDITING
 
             km = kc.keymaps.get("Screen Editing")
-            print_keymap_title("Screen Editing")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "screen.screen_full_area":
@@ -181,10 +180,23 @@ class Customize(bpy.types.Operator):
                         print(deactivated_str, kmi_to_string(kmi, docs_mode=docs_mode))
                         kmi.active = False
 
+            # USER INTERFACE
+
+            km = kc.keymaps.get("User Interface")
+            print_keymap_title(km)
+
+            for kmi in km.keymap_items:
+                if kmi.idname == "ui.reset_default_button":
+                    if kmi.type == 'BACK_SPACE':
+                        print(changed_str, kmi_to_string(kmi, docs_mode=docs_mode))
+                        kmi.map_type = 'MOUSE'
+                        kmi.type = 'MIDDLEMOUSE'
+                        print(to_str, kmi_to_string(kmi, docs_mode=docs_mode))
+
             # FRAMES
 
             km = kc.keymaps.get("Frames")
-            print_keymap_title("Frames")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "screen.animation_play":
@@ -195,7 +207,7 @@ class Customize(bpy.types.Operator):
             # OUTLINER
 
             km = kc.keymaps.get("Outliner")
-            print_keymap_title("Outliner")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "outliner.show_active":
@@ -208,7 +220,7 @@ class Customize(bpy.types.Operator):
             # 3D VIEW
 
             km = kc.keymaps.get("3D View")
-            print_keymap_title("3D View")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 # """
@@ -278,7 +290,7 @@ class Customize(bpy.types.Operator):
             # 3D VIEW TOOLS
 
             km = kc.keymaps.get("3D View Tool: Cursor")
-            print_keymap_title("3D View Tool: Cursor")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "view3d.cursor3d":
@@ -293,7 +305,7 @@ class Customize(bpy.types.Operator):
             # OBJECT MODE
 
             km = kc.keymaps.get("Object Mode")
-            print_keymap_title("Object Mode")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "object.select_all":
@@ -330,7 +342,7 @@ class Customize(bpy.types.Operator):
             # OBJECT NON-MODAL
 
             km = kc.keymaps.get("Object Non-modal")
-            print_keymap_title("Object Non-modal")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "object.mode_set":
@@ -345,7 +357,7 @@ class Customize(bpy.types.Operator):
             # IMAGE
 
             km = kc.keymaps.get("Image")
-            print_keymap_title("Image")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "object.mode_set":
@@ -363,7 +375,7 @@ class Customize(bpy.types.Operator):
             # MESH
 
             km = kc.keymaps.get("Mesh")
-            print_keymap_title("Mesh")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
 
@@ -552,7 +564,7 @@ class Customize(bpy.types.Operator):
             # UV EDITOR
 
             km = kc.keymaps.get("UV Editor")
-            print_keymap_title("UV Editor")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
 
@@ -636,7 +648,7 @@ class Customize(bpy.types.Operator):
             # IMAGE EDITOR TOOL: UV, CURSOR
 
             km = kc.keymaps.get("Image Editor Tool: Uv, Cursor")
-            print_keymap_title("Image Editor Tool: Uv, Cursor")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "transform.translate":
@@ -652,7 +664,7 @@ class Customize(bpy.types.Operator):
             # NODE EDITOR
 
             km = kc.keymaps.get("Node Editor")
-            print_keymap_title("Node Editor")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "node.links_cut" and kmi.type == 'EVT_TWEAK_L':
@@ -687,7 +699,7 @@ class Customize(bpy.types.Operator):
             # FILE BROWSER
 
             km = kc.keymaps.get("File Browser")
-            print_keymap_title("File Browser")
+            print_keymap_title(km)
 
             for kmi in km.keymap_items:
                 if kmi.idname == "file.start_filter":
@@ -703,7 +715,7 @@ class Customize(bpy.types.Operator):
 
             # MESH
             km = kc.keymaps.get("Mesh")
-            print_keymap_title("Mesh")
+            print_keymap_title(km)
 
             # NOTE: this one is no longer required with MESHmachine's Select Wrapper, but I'll leave it in anyway for now
             kmi = km.keymap_items.new("mesh.loop_multi_select", "LEFTMOUSE", "SOUTH", alt=True)
