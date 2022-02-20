@@ -3,7 +3,7 @@ from bpy.props import IntProperty, StringProperty
 from math import degrees, radians
 from mathutils import Matrix
 from ... utils.registration import get_prefs
-from ... utils.light import adjust_lights_for_rendering
+from ... utils.light import adjust_lights_for_rendering, get_area_light_poll
 from ... utils.view import sync_light_visibility
 
 
@@ -54,7 +54,7 @@ class SwitchShading(bpy.types.Operator):
             self.toggled_overlays = False
 
             # adjust the lights when necessssary
-            if get_prefs().activate_shading_pie and scene.M3.adjust_lights_on_render:
+            if get_prefs().activate_render and get_prefs().activate_shading_pie and get_prefs().render_adjust_lights_on_render and get_area_light_poll() and scene.M3.adjust_lights_on_render:
                 self.adjust_lights(scene, shading.type, debug=False)
 
             # sync light visibility

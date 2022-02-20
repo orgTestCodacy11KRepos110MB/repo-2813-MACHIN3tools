@@ -256,7 +256,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
         context.scene.render.engine = self.render_engine
 
-        if get_prefs().activate_shading_pie and get_area_light_poll() and self.adjust_lights_on_render:
+        if get_prefs().activate_render and get_prefs().activate_shading_pie and get_prefs().render_adjust_lights_on_render and get_area_light_poll() and self.adjust_lights_on_render:
             last = self.adjust_lights_on_render_last
 
             debug = False
@@ -280,7 +280,6 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
         if get_prefs().render_sync_light_visibility:
             sync_light_visibility(context.scene)
-
 
     def update_cycles_device(self, context):
         if self.avoid_update:

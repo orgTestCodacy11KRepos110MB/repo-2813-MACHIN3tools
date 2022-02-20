@@ -773,7 +773,7 @@ class PieShading(Menu):
             elif view.shading.type == 'RENDERED' and context.scene.render.engine == 'CYCLES':
                 self.draw_cycles_box(context, view, b)
 
-            if get_area_light_poll():
+            if get_prefs().activate_render and get_prefs().render_adjust_lights_on_render and get_area_light_poll():
                 self.draw_light_adjust_box(context, m3, b)
 
 

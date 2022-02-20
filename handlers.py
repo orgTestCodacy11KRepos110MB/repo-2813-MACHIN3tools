@@ -140,7 +140,7 @@ debug = False
 def decrease_lights_on_render_start(scene):
     m3 = scene.M3
 
-    if get_prefs().activate_shading_pie and get_area_light_poll() and m3.adjust_lights_on_render:
+    if get_prefs().activate_render and get_prefs().activate_shading_pie and get_prefs().render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
         if scene.render.engine == 'CYCLES':
             last = m3.adjust_lights_on_render_last
             divider = m3.adjust_lights_on_render_divider
@@ -164,7 +164,7 @@ def decrease_lights_on_render_start(scene):
 def increase_lights_on_render_end(scene):
     m3 = scene.M3
 
-    if get_prefs().activate_shading_pie and get_area_light_poll() and m3.adjust_lights_on_render:
+    if get_prefs().activate_render and get_prefs().activate_shading_pie and get_prefs().render_adjust_lights_on_render and get_area_light_poll() and m3.adjust_lights_on_render:
         if scene.render.engine == 'CYCLES':
             last = m3.adjust_lights_on_render_last
 

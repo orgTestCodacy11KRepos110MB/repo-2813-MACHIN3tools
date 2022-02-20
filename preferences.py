@@ -280,6 +280,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     render_use_clownmatte_naming: BoolProperty(name="Use Clownmatte Name", description="""It's a better name than "Cryptomatte", believe me""", default=True)
     render_show_buttons_in_light_properties: BoolProperty(name="Show Render Buttons in Light Properties Panel", description="Show Render Buttons in Light Properties Panel", default=True)
     render_sync_light_visibility: BoolProperty(name="Sync Light visibility/renderability", description="Sync Light hide_render props based on hide_viewport props", default=True)
+    render_adjust_lights_on_render: BoolProperty(name="Ajust Area Lights when Rendering in Cycles", description="Adjust Area Lights when Rendering, to better match Eevee and Cycles", default=True)
 
 
     # MACHIN3tools
@@ -693,6 +694,17 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             r = row.split(factor=0.2, align=True)
             r.prop(self, "render_sync_light_visibility", text="True" if self.render_sync_light_visibility else "False", toggle=True)
             r.label(text="Sync Light visibility/renderability")
+
+            if self.activate_shading_pie:
+                row = column.row(align=True)
+                r = row.split(factor=0.2, align=True)
+                r.prop(self, "render_adjust_lights_on_render", text="True" if self.render_adjust_lights_on_render else "False", toggle=True)
+                r.label(text="Adjust Area Lights when Rendering in Cycles, controlled from the Shading Pie")
+
+            else:
+                row = column.row(align=True)
+                row.separator()
+                row.label(text="Enable the Shading Pie for additional options", icon='INFO')
 
 
         # CUSTOMIZE

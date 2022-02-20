@@ -6,7 +6,7 @@ def adjust_lights_for_rendering(mode='DECREASE'):
 
     for light in bpy.data.lights:
         if light.type == 'AREA':
-            # print("", light.name, light.energy, ' > ', light.energy / divider)
+            print("", light.name, light.energy, ' > ', light.energy / divider)
 
             if mode == 'DECREASE':
                 light.energy /= divider
