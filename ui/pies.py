@@ -455,6 +455,38 @@ class PieModes(Menu):
                     # 3 - BOTTOM - RIGHT
                     pie.separator()
 
+            elif context.mode == "PARTICLE":
+                    # 4 - LEFT
+                    pie.separator()
+
+                    # 6 - RIGHT
+                    pie.separator()
+
+                    # 2 - BOTTOM
+                    pie.separator()
+
+                    # 8 - TOP
+                    pie.separator()
+
+                    # 7 - TOP - LEFT
+                    self.draw_mesh_modes(context, pie)
+
+                    # 9 - TOP - RIGHT
+                    box = pie.split()
+                    column = box.column()
+                    column.scale_y = 1.5
+                    column.scale_x = 1.5
+
+                    row = column.row(align=True)
+                    row.prop(toolsettings.particle_edit, "select_mode", text="", expand=True)
+
+                    # 1 - BOTTOM - LEFT
+                    pie.separator()
+
+                    # 3 - BOTTOM - RIGHT
+                    pie.separator()
+
+
         # no active object
         else:
             # 4 - LEFT
@@ -537,6 +569,11 @@ class PieModes(Menu):
         r = row.row(align=True)
         r.active = False if context.mode == 'PAINT_GPENCIL' else True
         r.operator("machin3.surface_draw_mode", text="", icon="GREASEPENCIL")
+
+        if context.active_object.particle_systems:
+            r = row.row(align=True)
+            r.active = False if context.mode == 'TEXTURE_PAINT' else True
+            r.operator("object.mode_set", text="", icon="PARTICLEMODE").mode = 'PARTICLE_EDIT'
 
         r = row.row(align=True)
         r.active = False if context.mode == 'TEXTURE_PAINT' else True
