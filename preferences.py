@@ -201,14 +201,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     fbx_export_apply_scale_all: BoolProperty(name="Use 'Fbx All' for Applying Scale", description="This is useful for Unity, but bad for Unreal Engine", default=True)
 
-    appendworldpath: StringProperty(name="World Source .blend", subtype='FILE_PATH')
-    appendworldname: StringProperty(name="Name of World")
-
-    appendmatspath: StringProperty(name="Materials Source .blend", subtype='FILE_PATH')
-    appendmats: CollectionProperty(type=AppendMatsCollection)
-    appendmatsIDX: IntProperty()
-    appendmatsname: StringProperty(name="Name of Material to append", update=update_appendmatsname)
-
     switchmatcap1: StringProperty(name="Matcap 1", update=update_switchmatcap1)
     switchmatcap2: StringProperty(name="Matcap 2", update=update_switchmatcap2)
     matcap2_force_single: BoolProperty(name="Force Single Color Shading for Matcap 2", default=True)
@@ -782,42 +774,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             r.prop(self, "fbx_export_apply_scale_all", text="True" if self.fbx_export_apply_scale_all else "False", toggle=True)
             r.label(text="Use 'Fbx All' for Applying Scale")
 
-
-            bb = b.box()
-            bb.label(text="Save Pie: Append World and Materials")
-
-            column = bb.column()
-
-            column.prop(self, "appendworldpath")
-            column.prop(self, "appendworldname")
-            column.separator()
-
-            column.prop(self, "appendmatspath")
-
-
-            column = bb.column()
-
-            row = column.row()
-            rows = len(self.appendmats) if len(self.appendmats) > 6 else 6
-            row.template_list("MACHIN3_UL_append_mats", "", self, "appendmats", self, "appendmatsIDX", rows=rows)
-
-            c = row.column(align=True)
-            c.operator("machin3.move_appendmat", text="", icon='TRIA_UP').direction = "UP"
-            c.operator("machin3.move_appendmat", text="", icon='TRIA_DOWN').direction = "DOWN"
-
-            c.separator()
-            c.operator("machin3.clear_appendmats", text="", icon='LOOP_BACK')
-            c.operator("machin3.remove_appendmat", text="", icon_value=get_icon('cancel'))
-            c.separator()
-            c.operator("machin3.populate_appendmats", text="", icon='MATERIAL')
-            c.operator("machin3.rename_appendmat", text="", icon='OUTLINER_DATA_FONT')
-
-
-            row = column.row()
-            row.prop(self, "appendmatsname")
-            row.operator("machin3.add_separator", text="", icon_value=get_icon('separator'))
-
-
             bb = b.box()
             bb.label(text="Save Pie: Screen Cast")
 
@@ -839,8 +795,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             col.prop(self, "screencast_highlight_machin3")
             col.prop(self, "screencast_show_addon")
             col.prop(self, "screencast_show_idname")
-
-
 
 
         # SHADING PIE

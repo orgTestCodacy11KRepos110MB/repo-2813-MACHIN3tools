@@ -714,34 +714,6 @@ class PieSave(Menu):
         r.operator("wm.call_menu", text='', icon_value=get_icon('external_data')).name = "TOPBAR_MT_file_external_data"
         r.operator("machin3.purge_orphans", text="Purge")
 
-        # linked libraries
-        libs = bpy.data.libraries
-
-        if libs:
-            r = column.row(align=True)
-            r.scale_y = 1.2
-            r.operator("machin3.reload_linked_libraries", text=f"Reload {'Linked Library' if len(libs) == 1 else f'{len(libs)} Linked Libraries'}", icon_value=get_icon('revert'))
-
-        # append world and materials
-
-        appendworldpath = get_prefs().appendworldpath
-        appendmatspath = get_prefs().appendmatspath
-
-        if any([appendworldpath, appendmatspath]):
-            column.separator()
-
-            if appendworldpath:
-                row = column.split(factor=0.8, align=True)
-                row.scale_y = 1.2
-                row.operator("machin3.append_world", text="World", icon_value=get_icon('world'))
-                row.operator("machin3.load_world_source", text="", icon_value=get_icon('open_world'))
-
-            if appendmatspath:
-                row = column.split(factor=0.8, align=True)
-                row.scale_y = 1.2
-                row.operator("wm.call_menu", text="Material", icon_value=get_icon('material')).name = "MACHIN3_MT_append_materials"
-                row.operator("machin3.load_materials_source", text="", icon_value=get_icon('open_material'))
-
         column.separator()
         column.operator("machin3.clean_out_blend_file", text="Clean out .blend", icon_value=get_icon('error'))
 
