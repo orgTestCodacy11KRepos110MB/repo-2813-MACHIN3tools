@@ -49,6 +49,14 @@ class SwitchWorkspace(bpy.types.Operator):
         if ws and view:
             self.set_view(ws, view)
 
+        # when 3d view and asset browser present, ensure you are not in SOLID or WIREFRAME shading!
+        if ws:
+            space_data = self.has_asset_browser(ws)
+
+            if space_data:
+                if space_data.shading.type in ['SOLID', 'WIREFRAME']:
+                    space_data.shading.type = 'MATERIAL'
+
         return {'FINISHED'}
 
     def set_shading_and_overlay(self, workspace, shading, overlay):
@@ -208,3 +216,34 @@ class SwitchWorkspace(bpy.types.Operator):
 
             # don't get camera views
             return view if r3d.view_perspective != 'CAMERA' else None
+
+    def has_asset_browser(self, workspace):
+        '''
+        find out of the workspace has a 3d view and an asset browser
+        return the 3d view's space data if so
+        '''
+
+        space_data = None
+        has_asset_browser = False
+
+        for screen in workspace.screens:
+            for area in screen.areas:
+                # print(" AREA", area, area.type)
+
+                if area.type == 'VIEW_3D' and not space_data:
+                    space_data = area.spaces[0]
+
+                if area.type == 'FILE_BROWSER':
+                    # print("  ui_type", area.ui_type)
+
+                    if area.ui_type == 'ASSETS':
+                        has_asset_browser = True
+
+                    # for space in area.spaces:
+                        # print("  SPACE", space, space.type)
+
+                        # if space.type == 'FILE_BROWSER':
+                            # print("   browse_mode", space.browse_mode)
+
+        if has_asset_browser:
+            return space_data
