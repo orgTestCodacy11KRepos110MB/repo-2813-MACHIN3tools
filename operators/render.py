@@ -683,7 +683,7 @@ class DuplicateNodes(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.space_data.type == 'NODE_EDITOR'
+        return context.space_data.type == 'NODE_EDITOR' and context.scene.use_nodes
 
     def execute(self, context):
         active = context.scene.node_tree.nodes.active
@@ -691,8 +691,5 @@ class DuplicateNodes(bpy.types.Operator):
         if active and active.type == 'CRYPTOMATTE_V2':
             bpy.ops.node.duplicate_move_keep_inputs('INVOKE_DEFAULT')
             context.scene.node_tree.nodes.active.matte_id = ''
-
-        else:
-            bpy.ops.node.duplicate_move('INVOKE_DEFAULT')
-
-        return {'FINISHED'}
+            return {'FINISHED'}
+        return {'PASS_THROUGH'}
