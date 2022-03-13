@@ -1066,6 +1066,8 @@ class Customize(bpy.types.Operator):
         lines = ['[Bookmarks]',
                  '!Archive',
                  '/home/x/Archive/blender',
+                 '!Library',
+                 '/home/x/Archive/blender/Library',
                  '!TEMP',
                  '/home/x/TEMP/blender',
                  '!Addons',
