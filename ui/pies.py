@@ -302,20 +302,25 @@ class PieModes(Menu):
                         r.popover(panel="VIEW3D_PT_gpencil_multi_frame", text="Multiframe")
 
                 elif active.type == 'EMPTY':
-                    # 4 - LEFT
-                    if active.instance_collection and active.instance_collection.library:
-                        blendpath = abspath(active.instance_collection.library.filepath)
-                        library = active.instance_collection.library.name
 
-                        op = pie.operator("machin3.open_library_blend", text="Open %s" % (os.path.basename(blendpath)))
-                        op.blendpath = blendpath
-                        op.library = library
+                    # 4 - LEFT
+                    if active.instance_collection:
+                        pie.operator("machin3.assemble_collection", text="Assemble Collection")
 
                     else:
                         pie.separator()
 
                     # 6 - RIGHT
-                    pie.separator()
+                    if active.instance_collection and active.instance_collection.library:
+                        blendpath = abspath(active.instance_collection.library.filepath)
+                        library = active.instance_collection.library.name
+
+                        op = pie.operator("machin3.open_library_blend", text=f"Open {os.path.basename(blendpath)} Library")
+                        op.blendpath = blendpath
+                        op.library = library
+
+                    else:
+                        pie.separator()
 
                     # 2 - BOTTOM
                     pie.separator()
@@ -556,7 +561,6 @@ class PieModes(Menu):
         if thickness:
             row = column.row(align=True)
             row.prop(thickness[0], 'thickness_factor', text='Thickness')
-
 
     def draw_mesh_modes(self, context, pie):
         box = pie.split()

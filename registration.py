@@ -14,6 +14,7 @@ classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
                     ('ui.menus', [('MenuMACHIN3toolsObjectContextMenu', 'machin3tools_object_context_menu'),
                                   ('MenuMACHIN3toolsMeshContextMenu', 'machin3tools_mesh_context_menu'),
                                   ('MenuGroupObjectContextMenu', 'group_object_context_menu')]),
+                    ('operators.assetbrowser', [('AssembleCollection', 'assemble_collection')]),
                     ('operators.quadsphere', [('QuadSphere', 'quadsphere')])],
 
            'SMART_VERT': [('operators.smart_vert', [('SmartVert', 'smart_vert')])],
