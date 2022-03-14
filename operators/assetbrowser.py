@@ -28,120 +28,127 @@ class AssembleCollection(bpy.types.Operator):
             meshmachine = get_addon('MESHmachine')[0]
 
         active = context.active_object
-        icol = active.instance_collection
 
-        # linked collection instance
-        if icol.library:
-            # print(" linked collection instance")
+        instances = {active} | {obj for obj in context.selected_objects if obj.type == 'EMPTY' and obj.instance_collection}
+        all_decals = []
 
-            cols = [col for col in active.users_collection]
-            offset = active.matrix_world.to_translation()
+        for instance in instances:
+            collection = instance.instance_collection
 
-            filepath = icol.library.filepath
-            colname = active.name
+            # linked collection instance
+            if collection.library:
+                # print(" linked collection instance")
 
-            # remove the icol, there's no need for it anymore
-            bpy.data.collections.remove(icol)
-
-            # and the instance ollection object as well
-            bpy.data.objects.remove(active)
-
-            # append the new collection
-            acol = append_collection(filepath, colname)
-
-            # get the collections's children and root children
-            children = [obj for obj in acol.objects]
-            root_children = [obj for obj in children if not obj.parent]
-
-            # remove the appended collection, we don't need it
-            bpy.data.collections.remove(acol)
-
-            # link the children to all collections the instance collection was in
-            for obj in children:
-                for col in cols:
-                    col.objects.link(obj)
-
-            for obj in root_children:
-                obj.select_set(True)
-                context.view_layer.objects.active = obj
-
-            # sort decals into collection
-            if decalmachine:
-                decals = [obj for obj in children if obj.DM.isdecal]
+                decals = self.assemble_linked_collection_instance(context, instance, collection, decalmachine)
 
                 if decals:
-                    from DECALmachine.utils.collection import sort_into_collections
+                    all_decals.extend(decals)
 
-                    for obj in decals:
-                        sort_into_collections(context, obj, purge=False)
+            # assembled collection instance
+            else:
+                # print(" assembling appended collection instance")
 
-            # run a purge, because somehow the library still referenecs linked datablocks here, this gets rid of them
-            bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
+                self.assemble_appended_collection_instance(context, instance, collection)
 
+        # sweep decal backups
+        if decalmachine:
 
-        # assembled collection instance
-        else:
-            # print(" assembling appended collection instance")
+            # this avoids checking if backups exist, which is already done in the poll and the op
+            # so I feel like its stupid to do it again, just to ensure the poll doesnt error out
+            try:
+                bpy.ops.machin3.sweep_decal_backups()
+            except:
+                pass
 
-            cols = [col for col in active.users_collection]
-            offset = active.matrix_world.to_translation()
+            if all_decals:
+                from DECALmachine.utils.collection import sort_into_collections
 
-            # link collection referenced by the instance collection
-            for col in cols:
-                if icol.name not in col.children:
-                    col.children.link(icol)
+                for obj in all_decals:
+                    sort_into_collections(context, obj, purge=False)
 
-            # get the collections's children and root children
-            children = [obj for obj in icol.objects]
-            root_children = [obj for obj in children if not obj.parent]
+        # sweep stashes
+        if meshmachine:
+            try:
+                bpy.ops.machin3.sweep_stashes()
+            except:
+                pass
 
-            # remove instance collection object
-            bpy.data.objects.remove(active)
-
-            # remove the collection itself too
-            bpy.data.collections.remove(icol)
-
-            # link the children to all collections the instance collection was in
-            for obj in children:
-                for col in cols:
-                    col.objects.link(obj)
-
-            # offset the collection's root children and select them
-            for obj in root_children:
-
-                obj.matrix_basis.translation += offset
-
-                obj.select_set(True)
-                context.view_layer.objects.active = obj
-
-            # sweep decal backups
-            if decalmachine:
-                decalbackup = [obj for obj in context.selected_objects if obj.DM.isbackup]
-
-                for obj in decalbackup:
-                    obj.use_fake_user = True
-
-                    for col in obj.users_collection:
-                        col.objects.unlink(obj)
-
-                # sort decals into collection
-                decals = [obj for obj in children if obj.DM.isdecal]
-
-                if decals:
-                    from DECALmachine.utils.collection import sort_into_collections
-
-                    for obj in decals:
-                        sort_into_collections(context, obj, purge=False)
-
-            # sweep stashes
-            if meshmachine:
-                stashobjs = [obj for obj in context.selected_objects if obj.MM.isstashobj]
-
-                for obj in stashobjs:
-                    obj.use_fake_user = True
-
-                    for col in obj.users_collection:
-                        col.objects.unlink(obj)
-
+        # run a purge, because somehow for linked libraries, there will still be linked datablocks here, this gets rid of them
+        bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
 
         return {'FINISHED'}
+
+    def assemble_linked_collection_instance(self, context, instance, collection, decalmachine):
+        '''
+        assemble linked collection instance
+        '''
+
+        cols = [col for col in instance.users_collection]
+
+        filepath = collection.library.filepath
+        colname = instance.name
+
+        # remove the icol, there's no need for it anymore
+        bpy.data.collections.remove(collection)
+
+        # and the instance ollection object as well
+        bpy.data.objects.remove(instance)
+
+        # append the new collection
+        appended_collection = append_collection(filepath, colname)
+
+        # get the collections's children and root children
+        children = [obj for obj in appended_collection.objects]
+        root_children = [obj for obj in children if not obj.parent]
+
+        # remove the appended collection, we don't need it
+        bpy.data.collections.remove(appended_collection)
+
+        # link the children to all collections the instance collection was in
+        for obj in children:
+            for col in cols:
+                col.objects.link(obj)
+
+        # select them
+        for obj in root_children:
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+
+        # get decals if there are any, and return them
+        if decalmachine:
+            return [obj for obj in children if obj.DM.isdecal]
+
+    def assemble_appended_collection_instance(self, context, instance, collection):
+        '''
+        assemble appended collection instance
+        '''
+
+        cols = [col for col in instance.users_collection]
+        offset = instance.matrix_world.to_translation()
+
+        # link collection referenced by the instance collection
+        for col in cols:
+            if collection.name not in col.children:
+                col.children.link(collection)
+
+        # get the collections's children and root children
+        children = [obj for obj in collection.objects]
+        root_children = [obj for obj in children if not obj.parent]
+
+        # remove instance collection object
+        bpy.data.objects.remove(instance)
+
+        # remove the collection itself too
+        bpy.data.collections.remove(collection)
+
+        # link the children to all collections the instance collection was in
+        for obj in children:
+            for col in cols:
+                col.objects.link(obj)
+
+        # offset the collection's root children and select them
+        for obj in root_children:
+            obj.matrix_basis.translation += offset
+
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
