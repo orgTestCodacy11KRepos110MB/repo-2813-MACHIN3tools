@@ -1,14 +1,153 @@
 import bpy
-from .. utils.registration import get_addon
+from bpy.props import StringProperty, BoolProperty
+from .. utils.registration import get_addon, get_prefs
 from .. utils.append import append_collection
+from .. utils.ui import popup_message
 
 
-meshmachine = None
 decalmachine = None
+meshmachine = None
 
 
-class AssembleCollection(bpy.types.Operator):
-    bl_idname = "machin3.assemble_collection"
+class CreateAssembly(bpy.types.Operator):
+    bl_idname = "machin3.create_assembly"
+    bl_label = "MACHIN3: Creaste Assembly Asset"
+    bl_description = "Create Assembly Asset from the selected Objects"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    name: StringProperty(name="Asset Name")
+    move: BoolProperty(name="Move instead of Copy", description="Move Objects into Asset Collection, instead of copying\nThis will unlink them from any existing collections", default=True)
+
+    remove_decal_backups: BoolProperty(name="Remove Decal Backups", description="Remove DECALmachine's Decal Backups, if present", default=False)
+    remove_stashes: BoolProperty(name="Remove Stashes", description="Remove MESHmachine's Stashes, if present", default=False)
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT' and len(context.selected_objects) > 1
+
+    def draw(self, context):
+        global decalmachine, meshmachine
+
+        layout = self.layout
+
+        column = layout.column(align=True)
+        column.prop(self, 'name')
+
+        column.separator()
+        column.prop(self, 'move', toggle=True)
+
+        if decalmachine or meshmachine:
+            row = column.row(align=True)
+
+            if decalmachine:
+                row.prop(self, 'remove_decal_backups', toggle=True)
+
+            if meshmachine:
+                row.prop(self, 'remove_stashes', toggle=True)
+
+    def invoke(self, context, event):
+        global decalmachine, meshmachine
+
+        if decalmachine is None:
+            decalmachine = get_addon('DECALmachine')[0]
+
+        if meshmachine is None:
+            meshmachine = get_addon('MESHmachine')[0]
+
+        return context.window_manager.invoke_props_dialog(self)
+
+
+    def execute(self, context):
+        global decalmachine, meshmachine
+
+        name = self.name.strip()
+
+        if name:
+            print(f"INFO: Creation Assembly Asset: {name}")
+
+            objects = context.selected_objects
+
+            if decalmachine and self.remove_decal_backups:
+                backups = [(obj, obj.DM.decalbackup) for obj in objects if obj.DM.isdecal and obj.DM.decalbackup]
+
+                for decal, backup in backups:
+                    print(f"WARNING: Removing {decal.name}'s backup {backup.name}")
+                    bpy.data.meshes.remove(backup.data, do_unlink=True)
+
+            if meshmachine and self.remove_stashes:
+                objs_with_stashes = [obj for obj in objects if obj.MM.stashes]
+
+                for obj in objs_with_stashes:
+                    print(f"WARNING: Removing {obj.name}'s {len(obj.MM.stashes)} stashes")
+
+                    for stash in obj.MM.stashes:
+                        stashobj = stash.obj
+
+                        if stashobj:
+                            print(" *", stash.name, stashobj.name)
+                            bpy.data.meshes.remove(stashobj.data, do_unlink=True)
+
+                    obj.MM.stashes.clear()
+
+
+            mcol = context.scene.collection
+            acol = bpy.data.collections.new(name)
+
+            mcol.children.link(acol)
+
+            if self.move:
+                for obj in objects:
+                    for col in obj.users_collection:
+                        col.objects.unlink(obj)
+
+            for obj in objects:
+                acol.objects.link(obj)
+
+            instance = bpy.data.objects.new(name, object_data=None)
+            instance.instance_collection = acol
+            instance.instance_type = 'COLLECTION'
+
+            mcol.objects.link(instance)
+            instance.hide_set(True)
+            instance.asset_mark()
+
+            asset_browser_workspace = get_prefs().preferred_assetbrowser_workspace_name
+
+            # switch to the preferred asset browser workspace,if one is defined in the addon preferences
+            if asset_browser_workspace:
+                ws = bpy.data.workspaces.get(asset_browser_workspace)
+
+                if ws and ws != context.workspace:
+                    print("INFO: Switching to preffered Asset Browser Workspace")
+                    bpy.ops.machin3.switch_workspace('INVOKE_DEFAULT', name=asset_browser_workspace)
+
+                    # then ensure is shows the LOCAL library
+                    # note, this is done separately here, becasue the context.workspace isn't updating to the new workspac
+                    self.switch_asset_browser_to_LOCAL(ws)
+                    return {'FINISHED'}
+
+            # if an asset browser is present on the current workspace, ensure it's set to LOCAL
+            ws = context.workspace
+            self.switch_asset_browser_to_LOCAL(ws)
+
+            return {'FINISHED'}
+        else:
+            popup_message("The chosen asset name can't be empty", title="Illegal Name")
+
+        return {'CANCELLED'}
+
+    def switch_asset_browser_to_LOCAL(self, workspace):
+        for screen in workspace.screens:
+            for area in screen.areas:
+                if area.type == 'FILE_BROWSER' and area.ui_type == 'ASSETS':
+                    for space in area.spaces:
+                        if space.type == 'FILE_BROWSER':
+                            if space.params.asset_library_ref != 'LOCAL':
+                                space.params.asset_library_ref = 'LOCAL'
+
+
+class AssembleCollectionInstance(bpy.types.Operator):
+    bl_idname = "machin3.assemble_collection_instance"
     bl_label = "MACHIN3: Assemle Collection"
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO'}
@@ -16,7 +155,7 @@ class AssembleCollection(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         active = context.active_object
-        return active and active.type == 'EMPTY' and active.instance_collection
+        return active and active.type == 'EMPTY' and active.instance_collection and active.instance_type == 'COLLECTION'
 
     def execute(self, context):
         global decalmachine, meshmachine
@@ -126,7 +265,7 @@ class AssembleCollection(bpy.types.Operator):
         cols = [col for col in instance.users_collection]
         offset = instance.matrix_world.to_translation()
 
-        # link collection referenced by the instance collection
+        # link collection referenced by the instance collection object
         for col in cols:
             if collection.name not in col.children:
                 col.children.link(collection)

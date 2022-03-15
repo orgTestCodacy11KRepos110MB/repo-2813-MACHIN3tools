@@ -304,14 +304,14 @@ class PieModes(Menu):
                 elif active.type == 'EMPTY':
 
                     # 4 - LEFT
-                    if active.instance_collection:
-                        pie.operator("machin3.assemble_collection", text="Assemble Collection")
+                    if active.instance_collection and active.instance_type == 'COLLECTION':
+                        pie.operator("machin3.assemble_collection_instance", text="Assemble Collection Instance")
 
                     else:
                         pie.separator()
 
                     # 6 - RIGHT
-                    if active.instance_collection and active.instance_collection.library:
+                    if active.instance_collection and active.instance_type == 'COLLECTION' and active.instance_collection.library:
                         blendpath = abspath(active.instance_collection.library.filepath)
                         library = active.instance_collection.library.name
 
@@ -717,6 +717,12 @@ class PieSave(Menu):
         r = row.row(align=True)
         r.operator("wm.call_menu", text='', icon_value=get_icon('external_data')).name = "TOPBAR_MT_file_external_data"
         r.operator("machin3.purge_orphans", text="Purge")
+
+        column.separator()
+
+        row = column.row()
+        row.scale_y = 1.2
+        row.operator("machin3.create_assembly", text="Create Assembly Asset", icon='ASSET_MANAGER')
 
         column.separator()
         column.operator("machin3.clean_out_blend_file", text="Clean out .blend", icon_value=get_icon('error'))
