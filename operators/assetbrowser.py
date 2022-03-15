@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import StringProperty, BoolProperty
+from bpy.props import StringProperty, BoolProperty, FloatProperty
 from .. utils.registration import get_addon, get_prefs
 from .. utils.append import append_collection
 from .. utils.ui import popup_message
@@ -20,6 +20,8 @@ class CreateAssembly(bpy.types.Operator):
 
     remove_decal_backups: BoolProperty(name="Remove Decal Backups", description="Remove DECALmachine's Decal Backups, if present", default=False)
     remove_stashes: BoolProperty(name="Remove Stashes", description="Remove MESHmachine's Stashes, if present", default=False)
+
+    thumbnail_lens: FloatProperty(name="Thumbnail Lens", default=100)
 
     @classmethod
     def poll(cls, context):
@@ -45,6 +47,9 @@ class CreateAssembly(bpy.types.Operator):
             if meshmachine:
                 row.prop(self, 'remove_stashes', toggle=True)
 
+        column.prop(self, 'thumbnail_lens')
+
+    # """
     def invoke(self, context, event):
         global decalmachine, meshmachine
 
@@ -55,12 +60,13 @@ class CreateAssembly(bpy.types.Operator):
             meshmachine = get_addon('MESHmachine')[0]
 
         return context.window_manager.invoke_props_dialog(self)
-
+    # """
 
     def execute(self, context):
         global decalmachine, meshmachine
 
         name = self.name.strip()
+        # name = "Test"
 
         if name:
             print(f"INFO: Creation Assembly Asset: {name}")
@@ -124,11 +130,18 @@ class CreateAssembly(bpy.types.Operator):
                     # then ensure is shows the LOCAL library
                     # note, this is done separately here, becasue the context.workspace isn't updating to the new workspac
                     self.switch_asset_browser_to_LOCAL(ws)
+
+                    # render the viewport too
+                    self.render_viewport(context)
+
                     return {'FINISHED'}
 
             # if an asset browser is present on the current workspace, ensure it's set to LOCAL
             ws = context.workspace
             self.switch_asset_browser_to_LOCAL(ws)
+
+            # render the viewport too
+            self.render_viewport(context)
 
             return {'FINISHED'}
         else:
@@ -144,6 +157,43 @@ class CreateAssembly(bpy.types.Operator):
                         if space.type == 'FILE_BROWSER':
                             if space.params.asset_library_ref != 'LOCAL':
                                 space.params.asset_library_ref = 'LOCAL'
+
+                            # ensure the tool props are shown too, so you can set the thumbnail
+                            space.show_region_tool_props = True
+
+    def render_viewport(self, context):
+        '''
+        render asset thumb
+        '''
+
+        # fetch current settings
+        resolution = (context.scene.render.resolution_x, context.scene.render.resolution_y)
+        file_format = context.scene.render.image_settings.file_format
+        lens = context.space_data.lens
+
+
+        # adjsut for thumbnail rendering
+        context.scene.render.resolution_x = 500
+        context.scene.render.resolution_y = 500
+        context.scene.render.image_settings.file_format = 'JPEG'
+
+        context.space_data.lens = self.thumbnail_lens
+
+        # render
+        bpy.ops.render.opengl()
+
+        # fetch the render result and save it
+        thumb = bpy.data.images.get('Render Result')
+
+        if thumb:
+            thumb.save_render(filepath='thumb.jpg')
+
+        # resstore original settings
+        context.scene.render.resolution_x = resolution[0]
+        context.scene.render.resolution_y = resolution[1]
+        context.space_data.lens = lens
+
+        context.scene.render.image_settings.file_format = file_format
 
 
 class AssembleCollectionInstance(bpy.types.Operator):
