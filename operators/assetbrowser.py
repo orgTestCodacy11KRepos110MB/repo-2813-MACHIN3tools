@@ -357,7 +357,7 @@ class AssembleCollectionInstance(bpy.types.Operator):
         '''
 
         cols = [col for col in instance.users_collection]
-        offset = instance.matrix_world.to_translation()
+        imx = instance.matrix_world
 
         # link collection referenced by the instance collection object
         for col in cols:
@@ -381,7 +381,7 @@ class AssembleCollectionInstance(bpy.types.Operator):
 
         # offset the collection's root children and select them
         for obj in root_children:
-            obj.matrix_basis.translation += offset
+            obj.matrix_world = imx @ obj.matrix_world
 
             obj.select_set(True)
             context.view_layer.objects.active = obj
