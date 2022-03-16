@@ -59,6 +59,62 @@ class Save(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SaveAs(bpy.types.Operator):
+    bl_idname = "machin3.save_as"
+    bl_label = "MACHIN3: Save As"
+    bl_description = "Save the current file in the desired location\nALT: Save as Copy\nCTRL: Save as Asset"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    copy: BoolProperty(name="Save as Copy", default=False)
+    asset: BoolProperty(name="Save as Asset", default=False)
+
+    def invoke(self, context, event):
+        self.asset = event.ctrl
+        self.copy = event.alt
+        return self.execute(context)
+
+    def execute(self, context):
+        assets = [obj for obj in bpy.data.objects if obj.asset_data]
+
+        if self.asset and assets:
+            print("\nINFO: Saving as Asset")
+
+            keep = []
+            assets = [obj for obj in bpy.data.objects if obj.asset_data]
+
+            for asset in assets:
+                keep.append(asset)
+
+                if asset.instance_type == 'COLLECTION' and asset.instance_collection and not asset.instance_collection.library:
+                    collection = asset.instance_collection
+
+                    for obj in collection.objects:
+                        keep.append(obj)
+
+
+            remove = [obj for obj in bpy.data.objects if obj not in keep]
+
+            for obj in remove:
+                print(f"WARNING: Removing {obj.name}")
+                if obj.data:
+                    bpy.data.meshes.remove(obj.data, do_unlink=True)
+
+                else:
+                    bpy.data.objects.remove(obj, do_unlink=True)
+
+            bpy.ops.wm.save_as_mainfile('INVOKE_DEFAULT', copy=True)
+
+        elif self.copy:
+            print("\nINFO: Saving as Copy")
+            bpy.ops.wm.save_as_mainfile('INVOKE_DEFAULT', copy=True)
+
+        else:
+            # print("INFO: Saving as Current")
+            bpy.ops.wm.save_as_mainfile('INVOKE_DEFAULT')
+
+        return {'FINISHED'}
+
+
 class SaveIncremental(bpy.types.Operator):
     bl_idname = "machin3.save_incremental"
     bl_label = "Incremental Save"

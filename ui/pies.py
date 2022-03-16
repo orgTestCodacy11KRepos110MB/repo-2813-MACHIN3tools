@@ -622,7 +622,8 @@ class PieSave(Menu):
         pie.operator("machin3.save", text="Save", icon_value=get_icon('save'))
 
         # 2 - BOTTOM
-        pie.operator("wm.save_as_mainfile", text="Save As..", icon_value=get_icon('save_as'))
+        # pie.operator("wm.save_as_mainfile", text="Save As..", icon_value=get_icon('save_as'))
+        pie.operator("machin3.save_as", text="Save As..", icon_value=get_icon('save_as'))
 
         # 8 - TOP
         box = pie.split()
