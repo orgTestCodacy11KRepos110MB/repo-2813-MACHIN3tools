@@ -3,6 +3,8 @@ from bpy.props import StringProperty, BoolProperty, FloatProperty
 from .. utils.registration import get_addon, get_prefs
 from .. utils.append import append_collection
 from .. utils.ui import popup_message
+from .. utils.system import printd
+from .. utils.asset import get_catalogs_from_asset_libraries
 
 
 decalmachine = None
@@ -51,6 +53,8 @@ class CreateAssembly(bpy.types.Operator):
 
         column.prop(self, 'thumbnail_lens')
 
+        column.prop(context.window_manager, 'M3_asset_catalogs')
+
     # """
     def invoke(self, context, event):
         global decalmachine, meshmachine
@@ -61,6 +65,9 @@ class CreateAssembly(bpy.types.Operator):
         if meshmachine is None:
             meshmachine = get_addon('MESHmachine')[0]
 
+        self.update_asset_catalogs(context)
+
+        # return {'FINISHED'}
         return context.window_manager.invoke_props_dialog(self)
     # """
 
@@ -78,86 +85,113 @@ class CreateAssembly(bpy.types.Operator):
 
         if name:
             print(f"INFO: Creation Assembly Asset: {name}")
-
             objects = context.selected_objects
 
             if decalmachine and self.remove_decal_backups:
-                decals_with_backups = [obj for obj in objects if obj.DM.isdecal and obj.DM.decalbackup]
-
-                for decal in decals_with_backups:
-                    print(f"WARNING: Removing {decal.name}'s backup")
-
-                    if decal.DM.decalbackup:
-                        bpy.data.meshes.remove(decal.DM.decalbackup.data, do_unlink=True)
+                self.delete_decal_backups(objects)
 
             if meshmachine and self.remove_stashes:
-                objs_with_stashes = [obj for obj in objects if obj.MM.stashes]
+                self.delete_stashes(objects)
 
-                for obj in objs_with_stashes:
-                    print(f"WARNING: Removing {obj.name}'s {len(obj.MM.stashes)} stashes")
+            # create the asset
+            self.create_asset_instance_collection(context, name, objects)
 
-                    for stash in obj.MM.stashes:
-                        stashobj = stash.obj
+            # switch to an asset browser workspac and set it to LOCAL
+            self.adjust_workspace(context)
 
-                        if stashobj:
-                            print(" *", stash.name, stashobj.name)
-                            bpy.data.meshes.remove(stashobj.data, do_unlink=True)
-
-                    obj.MM.stashes.clear()
-
-
-            mcol = context.scene.collection
-            acol = bpy.data.collections.new(name)
-
-            mcol.children.link(acol)
-
-            if self.move:
-                for obj in objects:
-                    for col in obj.users_collection:
-                        col.objects.unlink(obj)
-
-            for obj in objects:
-                acol.objects.link(obj)
-
-            instance = bpy.data.objects.new(name, object_data=None)
-            instance.instance_collection = acol
-            instance.instance_type = 'COLLECTION'
-
-            mcol.objects.link(instance)
-            instance.hide_set(True)
-            instance.asset_mark()
-
-            asset_browser_workspace = get_prefs().preferred_assetbrowser_workspace_name
-
-            # switch to the preferred asset browser workspace,if one is defined in the addon preferences
-            if asset_browser_workspace:
-                ws = bpy.data.workspaces.get(asset_browser_workspace)
-
-                if ws and ws != context.workspace:
-                    print("INFO: Switching to preffered Asset Browser Workspace")
-                    bpy.ops.machin3.switch_workspace('INVOKE_DEFAULT', name=asset_browser_workspace)
-
-                    # then ensure is shows the LOCAL library
-                    # note, this is done separately here, becasue the context.workspace isn't updating to the new workspac
-                    self.switch_asset_browser_to_LOCAL(ws)
-
-                    # render the viewport too
-                    self.render_viewport(context)
-
-                    return {'FINISHED'}
-
-            # if an asset browser is present on the current workspace, ensure it's set to LOCAL
-            ws = context.workspace
-            self.switch_asset_browser_to_LOCAL(ws)
-
-            # render the viewport too
+            # render the viewport
             self.render_viewport(context)
 
-            return {'FINISHED'}
         else:
             popup_message("The chosen asset name can't be empty", title="Illegal Name")
 
         return {'CANCELLED'}
+
+    def update_asset_catalogs(self, context):
+        self.catalogs = get_catalogs_from_asset_libraries(context, debug=False)
+
+        items = []
+
+        for catalog in self.catalogs:
+            # print(catalog)
+            items.append((catalog, catalog, ""))
+
+        bpy.types.WindowManager.M3_asset_catalogs = bpy.props.EnumProperty(name="Asset Categories", items=items)
+
+    def delete_decal_backups(self, objects):
+        decals_with_backups = [obj for obj in objects if obj.DM.isdecal and obj.DM.decalbackup]
+
+        for decal in decals_with_backups:
+            print(f"WARNING: Removing {decal.name}'s backup")
+
+            if decal.DM.decalbackup:
+                bpy.data.meshes.remove(decal.DM.decalbackup.data, do_unlink=True)
+
+    def delete_stashes(self, objects):
+        objs_with_stashes = [obj for obj in objects if obj.MM.stashes]
+
+        for obj in objs_with_stashes:
+            print(f"WARNING: Removing {obj.name}'s {len(obj.MM.stashes)} stashes")
+
+            for stash in obj.MM.stashes:
+                stashobj = stash.obj
+
+                if stashobj:
+                    print(" *", stash.name, stashobj.name)
+                    bpy.data.meshes.remove(stashobj.data, do_unlink=True)
+
+            obj.MM.stashes.clear()
+
+    def create_asset_instance_collection(self, context, name, objects):
+        mcol = context.scene.collection
+        acol = bpy.data.collections.new(name)
+
+        mcol.children.link(acol)
+
+        if self.move:
+            for obj in objects:
+                for col in obj.users_collection:
+                    col.objects.unlink(obj)
+
+        for obj in objects:
+            acol.objects.link(obj)
+
+        instance = bpy.data.objects.new(name, object_data=None)
+        instance.instance_collection = acol
+        instance.instance_type = 'COLLECTION'
+
+        mcol.objects.link(instance)
+        instance.hide_set(True)
+        instance.asset_mark()
+
+        # printd(self.catalogs)
+
+        catalog = context.window_manager.M3_asset_catalogs
+
+        instance.asset_data.catalog_id = self.catalogs[catalog]['uuid']
+
+        # simple name is read only for some reason
+        # instance.asset_data.catalog_simple_name = self.catalogs[catalog]['simple_name']
+
+    def adjust_workspace(self, context):
+        asset_browser_workspace = get_prefs().preferred_assetbrowser_workspace_name
+
+        # switch to the preferred asset browser workspace, if one is defined in the addon preferences
+        if asset_browser_workspace:
+            ws = bpy.data.workspaces.get(asset_browser_workspace)
+
+            if ws and ws != context.workspace:
+                print("INFO: Switching to preffered Asset Browser Workspace")
+                bpy.ops.machin3.switch_workspace('INVOKE_DEFAULT', name=asset_browser_workspace)
+
+                # then ensure is shows the LOCAL library
+                # note, this is done separately here, because the context.workspace isn't updating to the new workspac after the switch op
+                self.switch_asset_browser_to_LOCAL(ws)
+                return
+
+        # if an asset browser is present on the current workspace, ensure it's set to LOCAL
+        ws = context.workspace
+        self.switch_asset_browser_to_LOCAL(ws)
 
     def switch_asset_browser_to_LOCAL(self, workspace):
         for screen in workspace.screens:

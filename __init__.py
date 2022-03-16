@@ -72,7 +72,7 @@ if 'bpy' in locals():
     reload_modules(bl_info['name'])
 
 import bpy
-from bpy.props import PointerProperty, BoolProperty
+from bpy.props import PointerProperty, BoolProperty, EnumProperty
 from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, register_msgbus, unregister_msgbus
@@ -94,6 +94,7 @@ def register():
     bpy.types.Object.M3 = PointerProperty(type=M3ObjectProperties)
 
     bpy.types.WindowManager.M3_screen_cast = BoolProperty()
+    bpy.types.WindowManager.M3_asset_catalogs = EnumProperty(items=[])
 
 
     # TOOLS, PIE MENUS, KEYMAPS, MENUS
@@ -206,7 +207,6 @@ def unregister():
     bpy.types.TOPBAR_MT_render.remove(render_menu)
     bpy.types.DATA_PT_context_light.remove(render_buttons)
 
-
     unregister_keymaps(keymaps)
     unregister_classes(classes)
 
@@ -215,6 +215,9 @@ def unregister():
 
     del bpy.types.Scene.M3
     del bpy.types.Object.M3
+
+    del bpy.types.WindowManager.M3_screen_cast
+    del bpy.types.WindowManager.M3_asset_catalogs
 
 
     # ICONS
