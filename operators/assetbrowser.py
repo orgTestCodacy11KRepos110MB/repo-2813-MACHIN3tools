@@ -187,6 +187,9 @@ class CreateAssemblyAsset(bpy.types.Operator):
         for obj in objects:
             acol.objects.link(obj)
 
+            if obj.display_type == 'WIRE':
+                obj.hide_set(True)
+
         instance = bpy.data.objects.new(name, object_data=None)
         instance.instance_collection = acol
         instance.instance_type = 'COLLECTION'
@@ -374,6 +377,11 @@ class AssembleCollectionInstance(bpy.types.Operator):
         for obj in children:
             for col in cols:
                 col.objects.link(obj)
+
+            # hide wire objects
+            if obj.display_type == 'WIRE':
+                obj.hide_set(True)
+
 
         # offset the collection's root children and select them
         for obj in root_children:
