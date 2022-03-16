@@ -6,6 +6,7 @@ from .. utils.math import dynamic_format
 import os
 import datetime
 import time
+import platform
 
 
 class Render(bpy.types.Operator):
@@ -185,21 +186,21 @@ class Render(bpy.types.Operator):
         cycles = self.settings['cycles']
 
         if self.quarter_qual:
-            render.resolution_x /= 4
-            render.resolution_y /= 4
+            render.resolution_x = round(render.resolution_x / 4)
+            render.resolution_y = round(render.resolution_y / 4)
 
             if render.engine == 'CYCLES':
-                cycles.samples = int(cycles.samples / 4)
+                cycles.samples = round(cycles.samples / 4)
 
                 if cycles.use_adaptive_sampling:
                     cycles.adaptive_threshold = cycles.adaptive_threshold * 4
 
         elif self.half_qual:
-            render.resolution_x /= 2
-            render.resolution_y /= 2
+            render.resolution_x = round(render.resolution_x / 2)
+            render.resolution_y = round(render.resolution_y / 2)
 
             if render.engine == 'CYCLES':
-                cycles.samples = int(cycles.samples / 2)
+                cycles.samples = round(cycles.samples / 2)
 
                 if cycles.use_adaptive_sampling:
                     cycles.adaptive_threshold = cycles.adaptive_threshold * 2
@@ -362,6 +363,9 @@ class Render(bpy.types.Operator):
         # so instead use a placeholder string and set the correct datetime when renaming the file, which is always done for suffix renders, which are saved from the compositors file output node
         now = 'DATETIME' if suffix else datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
+        if platform.system() == "Windows":
+            now = now.replace(':', '-')
+
         basename = f"{blendname}_{now}_{resolution}_{samples}"
 
         if cycles.use_adaptive_sampling:
@@ -426,6 +430,10 @@ class Render(bpy.types.Operator):
 
         time.sleep(1)
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
+        if platform.system() == "Windows":
+            now = now.replace(':', '-')
+
         basename = basename.replace('DATETIME', now)
 
         save_path = os.path.join(outpath, f"{basename}.{ext}")
