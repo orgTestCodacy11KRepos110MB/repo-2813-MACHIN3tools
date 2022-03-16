@@ -73,6 +73,7 @@ def update_group(none):
 @persistent
 def update_asset(none):
     context = bpy.context
+    # return
 
     if context.mode == 'OBJECT':
 
