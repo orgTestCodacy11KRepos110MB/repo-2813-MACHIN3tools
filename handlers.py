@@ -69,6 +69,39 @@ def update_group(none):
 
 
 @persistent
+def update_asset(none):
+    context = bpy.context
+
+    if context.mode == 'OBJECT':
+
+        # avoid AttributeError: 'Context' object has no attribute 'active_object'
+        active = getattr(context, 'active_object', None)
+
+        operators = context.window_manager.operators
+
+        if operators and active and active.type == 'EMPTY' and active.instance_collection and active.instance_type == 'COLLECTION':
+            lastop = operators[-1]
+
+            if lastop.bl_idname == 'OBJECT_OT_transform_to_mouse':
+                # print("inserted an asset")
+
+                for obj in context.scene.objects:
+                    if obj.MM.isstashobj:
+                        # print(" STASH!")
+
+                        for col in obj.users_collection:
+                            # print(f"  unlinking from {col.name}")
+                            col.objects.unlink(obj)
+
+                    if obj.DM.isbackup:
+                        # print(" DECAL BACKUP!")
+
+                        for col in obj.users_collection:
+                            # print(f"  unlinking from {col.name}")
+                            col.objects.unlink(obj)
+
+
+@persistent
 def focus_HUD(scene):
     global focusHUD
 
