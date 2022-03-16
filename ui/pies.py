@@ -723,7 +723,7 @@ class PieSave(Menu):
 
         row = column.row()
         row.scale_y = 1.2
-        row.operator("machin3.create_assembly", text="Create Assembly Asset", icon='ASSET_MANAGER')
+        row.operator("machin3.create_assembly_asset", text="Create Assembly Asset", icon='ASSET_MANAGER')
 
         column.separator()
         column.operator("machin3.clean_out_blend_file", text="Clean out .blend", icon_value=get_icon('error'))

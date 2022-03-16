@@ -14,8 +14,8 @@ meshmachine = None
 # TODO: options to hide slectino wires etc?
 
 
-class CreateAssembly(bpy.types.Operator):
-    bl_idname = "machin3.create_assembly"
+class CreateAssemblyAsset(bpy.types.Operator):
+    bl_idname = "machin3.create_assembly_asset"
     bl_label = "MACHIN3: Creaste Assembly Asset"
     bl_description = "Create Assembly Asset from the selected Objects"
     bl_options = {'REGISTER', 'UNDO'}
@@ -91,7 +91,8 @@ class CreateAssembly(bpy.types.Operator):
 
         if name:
             print(f"INFO: Creation Assembly Asset: {name}")
-            objects = context.selected_objects
+
+            objects = self.get_assembly_asset_objects(context)
 
             if decalmachine and self.remove_decal_backups:
                 self.delete_decal_backups(objects)
@@ -125,6 +126,28 @@ class CreateAssembly(bpy.types.Operator):
 
         default = get_prefs().preferred_default_catalog if get_prefs().preferred_default_catalog in self.catalogs else 'NONE'
         bpy.types.WindowManager.M3_asset_catalogs = bpy.props.EnumProperty(name="Asset Categories", items=items, default=default)
+
+    def get_assembly_asset_objects(self, context):
+        '''
+        from the import selection, collect all objects for this assemtly asset, including unselected objects referecenced by boolean and mirror mods
+        '''
+
+        sel = context.selected_objects
+        mod_objects = set()
+
+        for obj in sel:
+            booleans = [mod for mod in obj.modifiers if mod.type == 'BOOLEAN']
+            mirrors = [mod for mod in obj.modifiers if mod.type == 'MIRROR']
+
+            for mod in booleans:
+                if mod.object and mod.object not in sel:
+                    mod_objects.add(mod.object)
+
+            for mod in mirrors:
+                if mod.mirror_object and mod.mirror_object not in sel:
+                    mod_objects.add(mod.mirror_object)
+
+        return list(mod_objects) + sel
 
     def delete_decal_backups(self, objects):
         decals_with_backups = [obj for obj in objects if obj.DM.isdecal and obj.DM.decalbackup]
