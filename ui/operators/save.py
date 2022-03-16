@@ -63,7 +63,7 @@ class SaveAs(bpy.types.Operator):
     bl_idname = "machin3.save_as"
     bl_label = "MACHIN3: Save As"
     bl_description = "Save the current file in the desired location\nALT: Save as Copy\nCTRL: Save as Asset"
-    bl_options = {'REGISTER'}
+    bl_options = {'REGISTER', 'UNDO'}
 
     copy: BoolProperty(name="Save as Copy", default=False)
     asset: BoolProperty(name="Save as Asset", default=False)
@@ -72,6 +72,10 @@ class SaveAs(bpy.types.Operator):
         self.asset = event.ctrl
         self.copy = event.alt
         return self.execute(context)
+
+    def draw(self, context):
+        layout = self.layout
+        column = layout.column()
 
     def execute(self, context):
         assets = [obj for obj in bpy.data.objects if obj.asset_data]
@@ -95,11 +99,9 @@ class SaveAs(bpy.types.Operator):
 
             for obj in remove:
                 print(f"WARNING: Removing {obj.name}")
-                if obj.data:
-                    bpy.data.meshes.remove(obj.data, do_unlink=True)
+                bpy.data.objects.remove(obj, do_unlink=True)
 
-                else:
-                    bpy.data.objects.remove(obj, do_unlink=True)
+            bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
 
             bpy.ops.wm.save_as_mainfile('INVOKE_DEFAULT', copy=True)
 
