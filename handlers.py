@@ -6,6 +6,8 @@ from . utils.group import update_group_name, select_group_children
 from . utils.light import adjust_lights_for_rendering, get_area_light_poll
 from . utils.view import sync_light_visibility
 
+import time
+
 
 focusHUD = None
 surfaceslideHUD = None
@@ -83,22 +85,25 @@ def update_asset(none):
             lastop = operators[-1]
 
             if lastop.bl_idname == 'OBJECT_OT_transform_to_mouse':
-                # print("inserted an asset")
+                # print("inserting an asset")
+                # start = time.time()
 
                 for obj in context.scene.objects:
                     if obj.MM.isstashobj:
                         # print(" STASH!")
 
                         for col in obj.users_collection:
-                            # print(f"  unlinking from {col.name}")
+                            # print(f"  unlinking {obj.name} from {col.name}")
                             col.objects.unlink(obj)
 
                     if obj.DM.isbackup:
                         # print(" DECAL BACKUP!")
 
                         for col in obj.users_collection:
-                            # print(f"  unlinking from {col.name}")
+                            # print(f"  unlinking {obj.name} from {col.name}")
                             col.objects.unlink(obj)
+
+                # print(f" done, after {time.time() - start:.20f} seconds")
 
 
 @persistent
