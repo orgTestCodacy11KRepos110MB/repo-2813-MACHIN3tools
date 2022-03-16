@@ -239,6 +239,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     matpick_spacing_obj: FloatProperty(name="Object Mode Spacing", min=0, default=20)
     matpick_spacing_edit: FloatProperty(name="Edit Mode Spacing", min=0, default=5)
 
+    preferred_default_catalog: StringProperty(name="Preferred Default Catalog", default="Model")
     preferred_assetbrowser_workspace_name: StringProperty(name="Preferred Workspace for Assembly Asset Creation", default="General.alt")
 
     screencast_operator_count: IntProperty(name="Operator Count", description="Maximum number of Operators displayed when Screen Casting", default=12, min=1, max=100)
@@ -779,6 +780,12 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             bb = b.box()
             bb.label(text="Save Pie: Assembly Asset Creation")
+
+            column = bb.column(align=True)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "preferred_default_catalog", text="")
+            r.label(text="Preferred Default Catalog")
 
             column = bb.column(align=True)
             row = column.row(align=True)

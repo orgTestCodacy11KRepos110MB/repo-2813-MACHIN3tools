@@ -20,17 +20,18 @@ class CreateAssembly(bpy.types.Operator):
     bl_description = "Create Assembly Asset from the selected Objects"
     bl_options = {'REGISTER', 'UNDO'}
 
-    name: StringProperty(name="Asset Name")
+    name: StringProperty(name="Asset Name", default="AssemblyAsset")
     move: BoolProperty(name="Move instead of Copy", description="Move Objects into Asset Collection, instead of copying\nThis will unlink them from any existing collections", default=True)
 
     remove_decal_backups: BoolProperty(name="Remove Decal Backups", description="Remove DECALmachine's Decal Backups, if present", default=False)
     remove_stashes: BoolProperty(name="Remove Stashes", description="Remove MESHmachine's Stashes, if present", default=False)
 
+    render_thumbnail: BoolProperty(name="Render Thumbnail", default=True)
     thumbnail_lens: FloatProperty(name="Thumbnail Lens", default=100)
 
     @classmethod
     def poll(cls, context):
-        return context.mode == 'OBJECT' and len(context.selected_objects) > 1
+        return context.mode == 'OBJECT' and context.selected_objects
 
     def draw(self, context):
         global decalmachine, meshmachine
@@ -52,9 +53,14 @@ class CreateAssembly(bpy.types.Operator):
             if meshmachine:
                 row.prop(self, 'remove_stashes', toggle=True)
 
-        column.prop(self, 'thumbnail_lens')
+        row = column.row(align=True)
+        row.prop(self, 'render_thumbnail', toggle=True)
+        r = row.row(align=True)
+        r.active = self.render_thumbnail
+        r.prop(self, 'thumbnail_lens', text='Lens')
 
-        column.prop(context.window_manager, 'M3_asset_catalogs')
+        column.separator()
+        column.prop(context.window_manager, 'M3_asset_catalogs', text='Catalog')
 
     # """
     def invoke(self, context, event):
@@ -76,7 +82,6 @@ class CreateAssembly(bpy.types.Operator):
         global decalmachine, meshmachine
 
         name = self.name.strip()
-        # name = "Test"
 
         # decalmachine = True
         # self.remove_decal_backups = True
@@ -101,7 +106,8 @@ class CreateAssembly(bpy.types.Operator):
             self.adjust_workspace(context)
 
             # render the viewport
-            self.render_viewport(context)
+            if self.render_thumbnail:
+                self.render_viewport(context)
 
         else:
             popup_message("The chosen asset name can't be empty", title="Illegal Name")
@@ -111,13 +117,14 @@ class CreateAssembly(bpy.types.Operator):
     def update_asset_catalogs(self, context):
         self.catalogs = get_catalogs_from_asset_libraries(context, debug=False)
 
-        items = []
+        items = [('NONE', 'None', '')]
 
         for catalog in self.catalogs:
             # print(catalog)
             items.append((catalog, catalog, ""))
 
-        bpy.types.WindowManager.M3_asset_catalogs = bpy.props.EnumProperty(name="Asset Categories", items=items)
+        default = get_prefs().preferred_default_catalog if get_prefs().preferred_default_catalog in self.catalogs else 'NONE'
+        bpy.types.WindowManager.M3_asset_catalogs = bpy.props.EnumProperty(name="Asset Categories", items=items, default=default)
 
     def delete_decal_backups(self, objects):
         decals_with_backups = [obj for obj in objects if obj.DM.isdecal and obj.DM.decalbackup]
@@ -169,10 +176,11 @@ class CreateAssembly(bpy.types.Operator):
 
         catalog = context.window_manager.M3_asset_catalogs
 
-        instance.asset_data.catalog_id = self.catalogs[catalog]['uuid']
+        if catalog and catalog != 'NONE':
+            instance.asset_data.catalog_id = self.catalogs[catalog]['uuid']
 
-        # simple name is read only for some reason
-        # instance.asset_data.catalog_simple_name = self.catalogs[catalog]['simple_name']
+            # simple name is read only for some reason
+            # instance.asset_data.catalog_simple_name = self.catalogs[catalog]['simple_name']
 
     def adjust_workspace(self, context):
         asset_browser_workspace = get_prefs().preferred_assetbrowser_workspace_name

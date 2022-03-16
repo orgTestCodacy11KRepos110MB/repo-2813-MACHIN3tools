@@ -63,7 +63,7 @@ class SaveAs(bpy.types.Operator):
     bl_idname = "machin3.save_as"
     bl_label = "MACHIN3: Save As"
     bl_description = "Save the current file in the desired location\nALT: Save as Copy\nCTRL: Save as Asset"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER'}
 
     copy: BoolProperty(name="Save as Copy", default=False)
     asset: BoolProperty(name="Save as Asset", default=False)
@@ -77,10 +77,10 @@ class SaveAs(bpy.types.Operator):
         assets = [obj for obj in bpy.data.objects if obj.asset_data]
 
         if self.asset and assets:
-            print("\nINFO: Saving as Asset")
+            print(f"\nINFO: Saving as Asset!")
+            print(f"      Found {len(assets)} Object/Assembly Assets in the current file")
 
             keep = []
-            assets = [obj for obj in bpy.data.objects if obj.asset_data]
 
             for asset in assets:
                 keep.append(asset)
@@ -90,7 +90,6 @@ class SaveAs(bpy.types.Operator):
 
                     for obj in collection.objects:
                         keep.append(obj)
-
 
             remove = [obj for obj in bpy.data.objects if obj not in keep]
 
