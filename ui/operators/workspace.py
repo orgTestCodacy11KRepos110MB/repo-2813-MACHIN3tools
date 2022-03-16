@@ -49,6 +49,8 @@ class SwitchWorkspace(bpy.types.Operator):
         if ws and view:
             self.set_view(ws, view)
 
+
+        """
         # when 3d view and asset browser present, ensure you are not in SOLID or WIREFRAME shading!
         if ws:
             space_data = self.has_asset_browser(ws)
@@ -56,6 +58,7 @@ class SwitchWorkspace(bpy.types.Operator):
             if space_data:
                 if space_data.shading.type in ['SOLID', 'WIREFRAME']:
                     space_data.shading.type = 'MATERIAL'
+        """
 
         return {'FINISHED'}
 

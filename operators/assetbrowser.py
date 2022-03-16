@@ -8,6 +8,8 @@ from .. utils.ui import popup_message
 decalmachine = None
 meshmachine = None
 
+# TODO: options to hide slectino wires etc?
+
 
 class CreateAssembly(bpy.types.Operator):
     bl_idname = "machin3.create_assembly"
@@ -68,17 +70,25 @@ class CreateAssembly(bpy.types.Operator):
         name = self.name.strip()
         # name = "Test"
 
+        # decalmachine = True
+        # self.remove_decal_backups = True
+
+        # meshmachine = True
+        # self.remove_stashes = True
+
         if name:
             print(f"INFO: Creation Assembly Asset: {name}")
 
             objects = context.selected_objects
 
             if decalmachine and self.remove_decal_backups:
-                backups = [(obj, obj.DM.decalbackup) for obj in objects if obj.DM.isdecal and obj.DM.decalbackup]
+                decals_with_backups = [obj for obj in objects if obj.DM.isdecal and obj.DM.decalbackup]
 
-                for decal, backup in backups:
-                    print(f"WARNING: Removing {decal.name}'s backup {backup.name}")
-                    bpy.data.meshes.remove(backup.data, do_unlink=True)
+                for decal in decals_with_backups:
+                    print(f"WARNING: Removing {decal.name}'s backup")
+
+                    if decal.DM.decalbackup:
+                        bpy.data.meshes.remove(decal.DM.decalbackup.data, do_unlink=True)
 
             if meshmachine and self.remove_stashes:
                 objs_with_stashes = [obj for obj in objects if obj.MM.stashes]
