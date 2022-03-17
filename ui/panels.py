@@ -17,10 +17,11 @@ class PanelMACHIN3tools(bpy.types.Panel):
     def poll(cls, context):
         p = get_prefs()
 
-        if context.mode == 'OBJECT':
-            return p.activate_smart_drive or p.activate_unity or p.activate_group or p.activate_assetbrowser_tools
-        elif context.mode == 'EDIT_MESH':
-            return p.activate_extrude
+        if p.show_sidebar_panel:
+            if context.mode == 'OBJECT':
+                return p.activate_smart_drive or p.activate_unity or p.activate_group or p.activate_assetbrowser_tools
+            elif context.mode == 'EDIT_MESH':
+                return p.activate_extrude
 
     def draw(self, context):
         layout = self.layout

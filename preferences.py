@@ -335,6 +335,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     # VIEW3D
 
+    show_sidebar_panel: BoolProperty(name="Show Sidebar Panel", description="Show MACHIN3tools Panel in 3D View's Sidebar", default=True)
     use_legacy_line_smoothing: BoolProperty(name="Use Legacy Line Smoothing", description="Legacy Line Smoothing using the depreciated bgl module\nIf this is disabled, lines drawn by MACHIN3tools won't be anti aliased.", default=False)
 
 
@@ -544,6 +545,20 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         b = split.box()
         b.label(text="Settings")
 
+
+        # VIEW 3D settings
+
+        bb = b.box()
+        bb.label(text="View 3D")
+
+        column = bb.column()
+        column.prop(self, "show_sidebar_panel")
+
+        if getattr(bpy.types, "MACHIN3_OT_smart_vert", False):
+            column = bb.column()
+            column.prop(self, "use_legacy_line_smoothing")
+
+
         if any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_material_picker", "OT_surface_slide", "OT_clean_up", "OT_clipping_toggle", "OT_group", "OT_transform_edge_constrained", "OT_focus", "MT_tools_pie"]]):
             bb = b.box()
             bb.label(text="HUD")
@@ -575,16 +590,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
                 if getattr(bpy.types, "MACHIN3_MT_tools_pie", False):
                     row.prop(self, "HUD_fade_tools_pie", text="Tools Pie")
-
-
-        # VIEW 3D settings
-
-        if getattr(bpy.types, "MACHIN3_OT_smart_vert", False):
-            bb = b.box()
-            bb.label(text="View 3D")
-
-            column = bb.column()
-            column.prop(self, "use_legacy_line_smoothing")
 
 
         # FOCUS
@@ -819,7 +824,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         # SAVE PIE
 
         if getattr(bpy.types, "MACHIN3_MT_save_pie", False):
-
             bb = b.box()
             bb.label(text="Save Pie: Export")
 
