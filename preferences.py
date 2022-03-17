@@ -246,6 +246,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     preferred_assetbrowser_workspace_name: StringProperty(name="Preferred Workspace for Assembly Asset Creation", default="General.alt")
     show_assembly_asset_creation_in_save_pie: BoolProperty(name="Show Assembly Asset Creation in Save Pie", default=True)
     show_collection_instance_assembly_in_modes_pie: BoolProperty(name="Show Collection Instance Assembly in Modes Pie", default=True)
+    hide_wire_objects_when_creating_assembly_asset: BoolProperty(name="Hide Wire Objects when creating Assembly Asset", default=True)
+    hide_wire_objects_when_assembling_collection_instance: BoolProperty(name="Hide Wire Objects when assembling Collection Instance", default=True)
 
     screencast_operator_count: IntProperty(name="Operator Count", description="Maximum number of Operators displayed when Screen Casting", default=12, min=1, max=100)
     screencast_fontsize: IntProperty(name="Font Size", default=12, min=2)
@@ -673,12 +675,22 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             row = column.row(align=True)
             r = row.split(factor=0.2, align=True)
             r.prop(self, "preferred_default_catalog", text="")
-            r.label(text="Preferred Default Catalog")
+            r.label(text="Preferred Default Catalog (must exist alredy)")
 
             row = column.row(align=True)
             r = row.split(factor=0.2, align=True)
             r.prop(self, "preferred_assetbrowser_workspace_name", text="")
             r.label(text="Preferred Workspace for Assembly Asset Creation")
+
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "hide_wire_objects_when_creating_assembly_asset", text="True" if self.hide_wire_objects_when_creating_assembly_asset else "False", toggle=True)
+            r.label(text="Hide Wire Objects when creating Assembly Asset")
+
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "hide_wire_objects_when_assembling_collection_instance", text="True" if self.hide_wire_objects_when_assembling_collection_instance else "False", toggle=True)
+            r.label(text="Hide Wire Objects when assembling Collection Instance")
 
             if getattr(bpy.types, "MACHIN3_MT_modes_pie", False):
                 row = column.row(align=True)

@@ -187,7 +187,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
         for obj in objects:
             acol.objects.link(obj)
 
-            if obj.display_type == 'WIRE':
+            if get_prefs().hide_wire_objects_when_creating_assembly_asset and obj.display_type == 'WIRE':
                 obj.hide_set(True)
 
         instance = bpy.data.objects.new(name, object_data=None)
@@ -379,7 +379,7 @@ class AssembleCollectionInstance(bpy.types.Operator):
                 col.objects.link(obj)
 
             # hide wire objects
-            if obj.display_type == 'WIRE':
+            if get_prefs().hide_wire_objects_when_assembling_collection_instance and obj.display_type == 'WIRE':
                 obj.hide_set(True)
 
 
