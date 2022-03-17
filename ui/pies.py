@@ -303,24 +303,48 @@ class PieModes(Menu):
 
                 elif active.type == 'EMPTY':
 
-                    # 4 - LEFT
-                    if active.instance_collection and active.instance_type == 'COLLECTION':
-                        pie.operator("machin3.assemble_collection_instance", text="Assemble Collection Instance")
+                    if get_prefs().activate_assetbrowser_tools and get_prefs().show_collection_instance_assembly_in_modes_pie:
+
+                        # 4 - LEFT
+
+                        if active.instance_collection and active.instance_type == 'COLLECTION':
+                            pie.operator("machin3.assemble_collection_instance", text="Assemble Collection Instance")
+
+                        else:
+                            pie.separator()
+
+                        # 6 - RIGHT
+
+                        if active.instance_collection and active.instance_type == 'COLLECTION' and active.instance_collection.library:
+                            blendpath = abspath(active.instance_collection.library.filepath)
+                            library = active.instance_collection.library.name
+
+                            op = pie.operator("machin3.open_library_blend", text=f"Open {os.path.basename(blendpath)} Library")
+                            op.blendpath = blendpath
+                            op.library = library
+
+                        else:
+                            pie.separator()
 
                     else:
+
+                        # 4 - LEFT
+
+                        if active.instance_collection and active.instance_type == 'COLLECTION' and active.instance_collection.library:
+                            blendpath = abspath(active.instance_collection.library.filepath)
+                            library = active.instance_collection.library.name
+
+                            op = pie.operator("machin3.open_library_blend", text=f"Open {os.path.basename(blendpath)} Library")
+                            op.blendpath = blendpath
+                            op.library = library
+
+                        else:
+                            pie.separator()
+
+                        # 6 - RIGHT
+
                         pie.separator()
 
-                    # 6 - RIGHT
-                    if active.instance_collection and active.instance_type == 'COLLECTION' and active.instance_collection.library:
-                        blendpath = abspath(active.instance_collection.library.filepath)
-                        library = active.instance_collection.library.name
-
-                        op = pie.operator("machin3.open_library_blend", text=f"Open {os.path.basename(blendpath)} Library")
-                        op.blendpath = blendpath
-                        op.library = library
-
-                    else:
-                        pie.separator()
 
                     # 2 - BOTTOM
                     pie.separator()
@@ -719,11 +743,11 @@ class PieSave(Menu):
         r.operator("wm.call_menu", text='', icon_value=get_icon('external_data')).name = "TOPBAR_MT_file_external_data"
         r.operator("machin3.purge_orphans", text="Purge")
 
-        column.separator()
-
-        row = column.row()
-        row.scale_y = 1.2
-        row.operator("machin3.create_assembly_asset", text="Create Assembly Asset", icon='ASSET_MANAGER')
+        if get_prefs().activate_assetbrowser_tools and get_prefs().show_assembly_asset_creation_in_save_pie:
+            column.separator()
+            row = column.row()
+            row.scale_y = 1.2
+            row.operator("machin3.create_assembly_asset", text="Create Assembly Asset", icon='ASSET_MANAGER')
 
         column.separator()
         column.operator("machin3.clean_out_blend_file", text="Clean out .blend", icon_value=get_icon('error'))

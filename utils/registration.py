@@ -387,6 +387,10 @@ def get_tools():
     classlists, keylists, count = get_surface_slide(classlists, keylists, count)
 
 
+    # ASSETBROWSER TOOLS
+    classlists, keylists, count = get_assetbrowser(classlists, keylists, count)
+
+
     # FILEBROWSER TOOLS
     classlists, keylists, count = get_filebrowser(classlists, keylists, count)
 
@@ -599,6 +603,15 @@ def get_surface_slide(classlists=[], keylists=[], count=0):
     if get_prefs().activate_surface_slide:
         classlists.append(classesdict["SURFACE_SLIDE"])
         # keylists.append(keysdict["ALIGN"])
+        count +=1
+
+    return classlists, keylists, count
+
+
+def get_assetbrowser(classlists=[], keylists=[], count=0):
+    if get_prefs().activate_assetbrowser_tools:
+        classlists.append(classesdict["ASSETBROWSER"])
+        # keylists.append(keysdict["FILEBROWSER"])
         count +=1
 
     return classlists, keylists, count

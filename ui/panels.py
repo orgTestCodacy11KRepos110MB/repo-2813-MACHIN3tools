@@ -15,26 +15,29 @@ class PanelMACHIN3tools(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
+        p = get_prefs()
+
         if context.mode == 'OBJECT':
-            return get_prefs().activate_smart_drive or get_prefs().activate_unity or get_prefs().activate_group
+            return p.activate_smart_drive or p.activate_unity or p.activate_group or p.activate_assetbrowser_tools
         elif context.mode == 'EDIT_MESH':
-            return get_prefs().activate_extrude
+            return p.activate_extrude
 
     def draw(self, context):
         layout = self.layout
 
         m3 = context.scene.M3
+        p = get_prefs()
 
         if context.mode == 'OBJECT':
 
-            if get_prefs().activate_smart_drive:
+            if p.activate_smart_drive:
                 box = layout.box()
                 box.prop(m3, "show_smart_drive", text="Smart Drive", icon='TRIA_DOWN' if m3.show_smart_drive else 'TRIA_RIGHT', emboss=False)
 
                 if m3.show_smart_drive:
                     self.draw_smart_drive(m3, box)
 
-            if get_prefs().activate_unity:
+            if p.activate_unity:
                 box = layout.box()
 
                 box.prop(m3, "show_unity", text="Unity", icon='TRIA_DOWN' if m3.show_unity else 'TRIA_RIGHT', emboss=False)
@@ -42,8 +45,7 @@ class PanelMACHIN3tools(bpy.types.Panel):
                 if m3.show_unity:
                     self.draw_unity(context, m3, box)
 
-
-            if get_prefs().activate_group:
+            if p.activate_group:
                 box = layout.box()
 
                 box.prop(m3, "show_group", text="Group", icon='TRIA_DOWN' if m3.show_group else 'TRIA_RIGHT', emboss=False)
@@ -51,9 +53,17 @@ class PanelMACHIN3tools(bpy.types.Panel):
                 if m3.show_group:
                     self.draw_group(context, m3, box)
 
+            if p.activate_assetbrowser_tools:
+                box = layout.box()
+
+                box.prop(m3, "show_assetbrowser_tools", text="Assetbrowser Tools", icon='TRIA_DOWN' if m3.show_assetbrowser_tools else 'TRIA_RIGHT', emboss=False)
+
+                if m3.show_assetbrowser_tools:
+                    self.draw_assetbrowser_tools(context, box)
+
         elif context.mode == 'EDIT_MESH':
 
-            if get_prefs().activate_extrude:
+            if p.activate_extrude:
                 box = layout.box()
 
                 box.prop(m3, "show_extrude", text="Extrude", icon='TRIA_DOWN' if m3.show_extrude else 'TRIA_RIGHT', emboss=False)
@@ -286,3 +296,10 @@ class PanelMACHIN3tools(bpy.types.Panel):
         row.scale_y = 1.2
         row.operator("machin3.cursor_spin", text='Cursor Spin')
         row.operator("machin3.punch_it_a_little", text='Punch It (a little)', icon_value=get_icon('fist'))
+
+    def draw_assetbrowser_tools(self, context, layout):
+        column = layout.column(align=True)
+        column.scale_y = 1.2
+
+        column.operator("machin3.create_assembly_asset", text='Create Assembly Asset', icon='ASSET_MANAGER')
+        column.operator("machin3.assemble_collection_instance", text='Assemble Collection Instance', icon='NETWORK_DRIVE')

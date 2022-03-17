@@ -130,6 +130,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_surface_slide(self, context):
         activate(self, register=self.activate_surface_slide, tool="surface_slide")
 
+    def update_activate_assetbrowser_tools(self, context):
+        activate(self, register=self.activate_assetbrowser_tools, tool="assetbrowser")
+
     def update_activate_filebrowser_tools(self, context):
         activate(self, register=self.activate_filebrowser_tools, tool="filebrowser")
 
@@ -241,6 +244,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     preferred_default_catalog: StringProperty(name="Preferred Default Catalog", default="Model")
     preferred_assetbrowser_workspace_name: StringProperty(name="Preferred Workspace for Assembly Asset Creation", default="General.alt")
+    show_assembly_asset_creation_in_save_pie: BoolProperty(name="Show Assembly Asset Creation in Save Pie", default=True)
+    show_collection_instance_assembly_in_modes_pie: BoolProperty(name="Show Collection Instance Assembly in Modes Pie", default=True)
 
     screencast_operator_count: IntProperty(name="Operator Count", description="Maximum number of Operators displayed when Screen Casting", default=12, min=1, max=100)
     screencast_fontsize: IntProperty(name="Font Size", default=12, min=2)
@@ -292,6 +297,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     activate_select: BoolProperty(name="Select", default=False, update=update_activate_select)
     activate_mesh_cut: BoolProperty(name="Mesh Cut", default=False, update=update_activate_mesh_cut)
     activate_surface_slide: BoolProperty(name="Surface Slide", default=False, update=update_activate_surface_slide)
+    activate_assetbrowser_tools: BoolProperty(name="Assetbrowser Tools", default=False, update=update_activate_assetbrowser_tools)
     activate_filebrowser_tools: BoolProperty(name="Filebrowser Tools", default=False, update=update_activate_filebrowser_tools)
     activate_smart_drive: BoolProperty(name="Smart Drive", default=False, update=update_activate_smart_drive)
     activate_unity: BoolProperty(name="Unity", default=False, update=update_activate_unity)
@@ -431,6 +437,10 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_surface_slide", toggle=True)
         row.label(text="Easily modify Mesh Topology, while maintaining Form.")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_assetbrowser_tools", toggle=True)
+        row.label(text="Easy Assemly Asset Creation and Import via the Assetbrowser.")
 
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_filebrowser_tools", toggle=True)
@@ -653,6 +663,36 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             rr.prop(self, "group_fade_factor", text='Factor')
 
 
+        # ASSETBROWSER TOOL
+
+        if getattr(bpy.types, "MACHIN3_OT_assemble_collection_instance", False):
+            bb = b.box()
+            bb.label(text="Assetbrowser Tools")
+
+            column = bb.column(align=True)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "preferred_default_catalog", text="")
+            r.label(text="Preferred Default Catalog")
+
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "preferred_assetbrowser_workspace_name", text="")
+            r.label(text="Preferred Workspace for Assembly Asset Creation")
+
+            if getattr(bpy.types, "MACHIN3_MT_modes_pie", False):
+                row = column.row(align=True)
+                r = row.split(factor=0.2, align=True)
+                r.prop(self, "show_collection_instance_assembly_in_modes_pie", text="True" if self.show_collection_instance_assembly_in_modes_pie else "False", toggle=True)
+                r.label(text="Show Collection Instance Assembly in Modes Pie")
+
+            if getattr(bpy.types, "MACHIN3_MT_save_pie", False):
+                row = column.row(align=True)
+                r = row.split(factor=0.2, align=True)
+                r.prop(self, "show_assembly_asset_creation_in_save_pie", text="True" if self.show_assembly_asset_creation_in_save_pie else "False", toggle=True)
+                r.label(text="Show Assembly Asset Creation in Save Pie")
+
+
         # RENDER
 
         if getattr(bpy.types, "MACHIN3_OT_render", False):
@@ -663,7 +703,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             row = column.row(align=True)
             r = row.split(factor=0.2, align=True)
             r.prop(self, "render_folder_name", text="")
-            r.label(text="Folder Name")
+            r.label(text="Folder Name (relative to the .blend file)")
 
             row = column.row(align=True)
             r = row.split(factor=0.2, align=True)
@@ -776,23 +816,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             r = row.split(factor=0.2, align=True)
             r.prop(self, "fbx_export_apply_scale_all", text="True" if self.fbx_export_apply_scale_all else "False", toggle=True)
             r.label(text="Use 'Fbx All' for Applying Scale")
-
-
-            bb = b.box()
-            bb.label(text="Save Pie: Assembly Asset Creation")
-
-            column = bb.column(align=True)
-            row = column.row(align=True)
-            r = row.split(factor=0.2, align=True)
-            r.prop(self, "preferred_default_catalog", text="")
-            r.label(text="Preferred Default Catalog")
-
-            column = bb.column(align=True)
-            row = column.row(align=True)
-            r = row.split(factor=0.2, align=True)
-            r.prop(self, "preferred_assetbrowser_workspace_name", text="")
-            r.label(text="Preferred Workspace for Assembly Asset Creation")
-
 
             bb = b.box()
             bb.label(text="Save Pie: Screen Cast")
