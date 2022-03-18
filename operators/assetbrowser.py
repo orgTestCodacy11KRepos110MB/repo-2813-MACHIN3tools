@@ -323,6 +323,9 @@ class AssembleCollectionInstance(bpy.types.Operator):
             if self.keep_empty:
                 for child in root_children:
                     parent(child, instance)
+
+                    instance.select_set(True)
+                    context.view_layer.objects.active = instance
             else:
                 bpy.data.objects.remove(instance, do_unlink=True)
 
@@ -356,32 +359,42 @@ class AssembleCollectionInstance(bpy.types.Operator):
     def assemble_collection_instance(self, context, instance, collection):
         '''
         assemble appended collection instance
+
+        NOTE: we are using the blender duplicate op here, becaue it massively simplies object duplication
+        ####: not only do we need to duplicate the collections objects, but we also need to update all references
+        ####: to parents objects, modifier objects, and driver objets. the later seems particulary laborous
+        ####: but the duplicate op takes care of that for us
         '''
 
         cols = [col for col in instance.users_collection]
         imx = instance.matrix_world
 
-        # link collection referenced by the instance collection object
-        for col in cols:
-            if collection.name not in col.children:
-                col.children.link(collection)
-
         # get the collections's children and root children
         children = [obj for obj in collection.objects]
-        root_children = [obj for obj in children if not obj.parent]
+        # print("children:", [obj.name for obj in children])
 
-        # remove the collection itself too
-        bpy.data.collections.remove(collection)
+        bpy.ops.object.select_all(action='DESELECT')
 
-        # link the children to all collections the instance collection was in
         for obj in children:
             for col in cols:
                 col.objects.link(obj)
+            obj.select_set(True)
 
-            # hide wire objects
-            if get_prefs().hide_wire_objects_when_assembling_collection_instance and obj.display_type == 'WIRE':
-                obj.hide_set(True)
+        # for multi-user collections, duplicate the contensand unlink originals again
+        if len(collection.users_dupli_group) > 1:
+            # print("WARNING: multi user collection, duplicating contents")
 
+            bpy.ops.object.duplicate()
+
+            for obj in children:
+                for col in cols:
+                    col.objects.unlink(obj)
+
+            children = [obj for obj in context.selected_objects]
+            # print("new children:", [obj.name for obj in children])
+
+        root_children = [obj for obj in children if not obj.parent]
+        # print("root children", [obj.name for obj in root_children])
 
         # offset the collection's root children and select them
         for obj in root_children:
@@ -389,5 +402,14 @@ class AssembleCollectionInstance(bpy.types.Operator):
 
             obj.select_set(True)
             context.view_layer.objects.active = obj
+
+        # turn collection instance object into normal empty
+        # this then lowers the user count of the collection accordingly
+        instance.instance_type = 'NONE'
+        instance.instance_collection = None
+
+        if len(collection.users_dupli_group) == 0:
+            # print("removing collection", collection.name)
+            bpy.data.collections.remove(collection)
 
         return root_children

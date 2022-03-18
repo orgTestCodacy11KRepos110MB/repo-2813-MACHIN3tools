@@ -68,34 +68,35 @@ class SaveAs(bpy.types.Operator):
     copy: BoolProperty(name="Save as Copy", default=False)
     asset: BoolProperty(name="Save as Asset", default=False)
 
+    def draw(self, context):
+        layout = self.layout
+        column = layout.column()
+
     def invoke(self, context, event):
         self.asset = event.ctrl
         self.copy = event.alt
         return self.execute(context)
-
-    def draw(self, context):
-        layout = self.layout
-        column = layout.column()
 
     def execute(self, context):
         assets = [obj for obj in bpy.data.objects if obj.asset_data]
 
         if self.asset and assets:
             print(f"\nINFO: Saving as Asset!")
-            print(f"      Found {len(assets)} Object/Assembly Assets in the current file")
+            print(f"      Found {len(assets)} root Object/Assembly Assets in the current file")
 
-            keep = []
+            keep = set()
+            self.get_asset_objects_recursively(assets, keep)
 
-            for asset in assets:
-                keep.append(asset)
+            # print()
+            # print("keep")
 
-                if asset.instance_type == 'COLLECTION' and asset.instance_collection and not asset.instance_collection.library:
-                    collection = asset.instance_collection
-
-                    for obj in collection.objects:
-                        keep.append(obj)
+            # for obj in keep:
+                # print(obj.name)
 
             remove = [obj for obj in bpy.data.objects if obj not in keep]
+
+            # print()
+            # print("remove")
 
             for obj in remove:
                 print(f"WARNING: Removing {obj.name}")
@@ -114,6 +115,19 @@ class SaveAs(bpy.types.Operator):
             bpy.ops.wm.save_as_mainfile('INVOKE_DEFAULT')
 
         return {'FINISHED'}
+
+    def get_asset_objects_recursively(self, assets, keep, depth=0):
+        '''
+        go over passed in asset objects
+        if an asset is a collection instance, go deeper and look recursively for all contained objects
+        '''
+
+        for obj in assets:
+            # print(depth * " ", obj.name)
+            keep.add(obj)
+
+            if obj.type == 'EMPTY' and obj.instance_type == 'COLLECTION' and obj.instance_collection:
+                self.get_asset_objects_recursively(obj.instance_collection.objects, keep, depth + 1)
 
 
 class SaveIncremental(bpy.types.Operator):
