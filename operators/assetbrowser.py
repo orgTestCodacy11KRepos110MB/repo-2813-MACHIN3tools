@@ -11,7 +11,7 @@ from .. utils.object import parent
 decalmachine = None
 meshmachine = None
 
-# TODO: options to hide slectino wires etc?
+# should the asset collection actually be unlinked, when creating the asset?
 
 
 class CreateAssemblyAsset(bpy.types.Operator):
@@ -29,6 +29,33 @@ class CreateAssemblyAsset(bpy.types.Operator):
     render_thumbnail: BoolProperty(name="Render Thumbnail", default=True)
     thumbnail_lens: FloatProperty(name="Thumbnail Lens", default=100)
 
+    def update_hide_instance(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        # prevent enabling both at the same time
+        if self.hide_instance and self.hide_collection:
+            self.avoid_update = True
+            self.hide_instance = False
+
+    def update_hide_collection(self, context):
+        if self.avoid_update:
+            self.avoid_update = False
+            return
+
+        # prevent enabling both at the same time
+        if self.hide_collection and self.hide_instance:
+            self.avoid_update = True
+            self.hide_collection = False
+
+    unlink_collection: BoolProperty(name="Unlink Collection", description="Useful to clean up the scene, and optionally start using the Asset locally right away", default=True)
+    hide_collection: BoolProperty(name="Hide Collection", default=True, description="Useful when you want to start using the Asset locally, while still having easy access to the individual objects", update=update_hide_collection)
+    hide_instance: BoolProperty(name="Hide Instance", default=False, description="Useful when you want to keep working on the Asset's objects", update=update_hide_instance)
+
+    # hidden
+    avoid_update: BoolProperty()
+
     @classmethod
     def poll(cls, context):
         return context.mode == 'OBJECT' and context.selected_objects
@@ -40,6 +67,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
 
         column = layout.column(align=True)
         column.prop(self, 'name')
+        column.prop(context.window_manager, 'M3_asset_catalogs', text='Catalog')
 
         column.separator()
         column.prop(self, 'move', toggle=True)
@@ -54,13 +82,18 @@ class CreateAssemblyAsset(bpy.types.Operator):
                 row.prop(self, 'remove_stashes', toggle=True)
 
         row = column.row(align=True)
+        row.prop(self, 'unlink_collection', toggle=True)
+        r = row.row(align=True)
+        r.active = not self.unlink_collection
+        r.prop(self, 'hide_collection', toggle=True)
+        r.prop(self, 'hide_instance', toggle=True)
+
+        row = column.row(align=True)
         row.prop(self, 'render_thumbnail', toggle=True)
         r = row.row(align=True)
         r.active = self.render_thumbnail
         r.prop(self, 'thumbnail_lens', text='Lens')
 
-        column.separator()
-        column.prop(context.window_manager, 'M3_asset_catalogs', text='Catalog')
 
     # """
     def invoke(self, context, event):
@@ -110,10 +143,12 @@ class CreateAssemblyAsset(bpy.types.Operator):
             if self.render_thumbnail:
                 self.render_viewport(context)
 
+            return {'FINISHED'}
+
         else:
             popup_message("The chosen asset name can't be empty", title="Illegal Name")
 
-        return {'CANCELLED'}
+            return {'CANCELLED'}
 
     def update_asset_catalogs(self, context):
         self.catalogs = get_catalogs_from_asset_libraries(context, debug=False)
@@ -195,7 +230,6 @@ class CreateAssemblyAsset(bpy.types.Operator):
         instance.instance_type = 'COLLECTION'
 
         mcol.objects.link(instance)
-        instance.hide_set(True)
         instance.asset_mark()
 
         # printd(self.catalogs)
@@ -206,7 +240,20 @@ class CreateAssemblyAsset(bpy.types.Operator):
             instance.asset_data.catalog_id = self.catalogs[catalog]['uuid']
 
             # simple name is read only for some reason
+            # turns out, it's read-only
             # instance.asset_data.catalog_simple_name = self.catalogs[catalog]['simple_name']
+
+        if self.unlink_collection:
+            mcol.children.unlink(acol)
+
+        else:
+            if self.hide_collection:
+                context.view_layer.layer_collection.children[acol.name].hide_viewport = True
+                instance.select_set(True)
+                context.view_layer.objects.active = instance
+
+            elif self.hide_instance:
+                instance.hide_set(True)
 
     def adjust_workspace(self, context):
         asset_browser_workspace = get_prefs().preferred_assetbrowser_workspace_name
@@ -369,6 +416,9 @@ class AssembleCollectionInstance(bpy.types.Operator):
         cols = [col for col in instance.users_collection]
         imx = instance.matrix_world
 
+        # print()
+        # print(collection.name, collection.users_dupli_group)
+
         # get the collections's children and root children
         children = [obj for obj in collection.objects]
         # print("children:", [obj.name for obj in children])
@@ -380,7 +430,7 @@ class AssembleCollectionInstance(bpy.types.Operator):
                 col.objects.link(obj)
             obj.select_set(True)
 
-        # for multi-user collections, duplicate the contensand unlink originals again
+        # for multi-user collections, duplicate the contents and unlink originals again
         if len(collection.users_dupli_group) > 1:
             # print("WARNING: multi user collection, duplicating contents")
 
@@ -392,6 +442,11 @@ class AssembleCollectionInstance(bpy.types.Operator):
 
             children = [obj for obj in context.selected_objects]
             # print("new children:", [obj.name for obj in children])
+
+            for obj in children:
+                if obj.name in collection.objects:
+                    # print(f"WARNING: Unlinking {obj.name} from its asset collection {collection.name}")
+                    collection.objects.unlink(obj)
 
         root_children = [obj for obj in children if not obj.parent]
         # print("root children", [obj.name for obj in root_children])
