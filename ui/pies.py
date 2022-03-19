@@ -883,7 +883,8 @@ class PieShading(Menu):
         r.prop(view.overlay, "show_axis_z", text="Z", toggle=True)
 
         row = column.split(factor=0.4, align=True)
-        row.operator("machin3.toggle_wireframe", text="Wireframe", icon_value=get_icon('wireframe'), depress=context.mode=='OBJECT' and overlay.show_wireframes)
+        icon = 'wireframe_xray' if context.scene.M3.show_edit_mesh_wire else 'wireframe'
+        row.operator("machin3.toggle_wireframe", text="Wireframe", icon_value=get_icon(icon), depress=context.mode=='OBJECT' and overlay.show_wireframes)
 
         r = row.row(align=True)
         if context.mode == "OBJECT":
