@@ -168,21 +168,31 @@ class CreateAssemblyAsset(bpy.types.Operator):
         '''
 
         sel = context.selected_objects
-        mod_objects = set()
+        objects = set()
 
         for obj in sel:
+            objects.add(obj)
+
+            if obj.parent and obj.parent not in sel:
+                objects.add(obj.parent)
+
             booleans = [mod for mod in obj.modifiers if mod.type == 'BOOLEAN']
-            mirrors = [mod for mod in obj.modifiers if mod.type == 'MIRROR']
 
             for mod in booleans:
                 if mod.object and mod.object not in sel:
-                    mod_objects.add(mod.object)
+                    objects.add(mod.object)
+
+            mirrors = [mod for mod in obj.modifiers if mod.type == 'MIRROR']
 
             for mod in mirrors:
                 if mod.mirror_object and mod.mirror_object not in sel:
-                    mod_objects.add(mod.mirror_object)
+                    objects.add(mod.mirror_object)
 
-        return list(mod_objects) + sel
+        for obj in context.visible_objects:
+            if obj not in objects and obj.parent and obj.parent in objects:
+                objects.add(obj)
+
+        return objects
 
     def delete_decal_backups(self, objects):
         decals_with_backups = [obj for obj in objects if obj.DM.isdecal and obj.DM.decalbackup]
