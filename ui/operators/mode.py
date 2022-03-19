@@ -26,13 +26,15 @@ class EditMode(bpy.types.Operator):
 
         shading = context.space_data.shading
         toggle_cavity = get_prefs().toggle_cavity
+        toggle_xray = get_prefs().toggle_xray
         sync_tools = get_prefs().sync_tools
 
         if sync_tools:
             active_tool = get_active_tool(context).idname
 
         if context.mode == "OBJECT":
-            set_xray(context)
+            if toggle_xray:
+                set_xray(context)
 
             bpy.ops.object.mode_set(mode="EDIT")
 
@@ -47,7 +49,8 @@ class EditMode(bpy.types.Operator):
 
 
         elif context.mode == "EDIT_MESH":
-            reset_xray(context)
+            if toggle_xray:
+                reset_xray(context)
 
             bpy.ops.object.mode_set(mode="OBJECT")
 
@@ -79,9 +82,11 @@ class MeshMode(bpy.types.Operator):
 
         shading = context.space_data.shading
         toggle_cavity = get_prefs().toggle_cavity
+        toggle_xray = get_prefs().toggle_xray
 
         if context.mode == "OBJECT":
-            set_xray(context)
+            if toggle_xray:
+                set_xray(context)
 
             active_tool = get_active_tool(context).idname if get_prefs().sync_tools else None
 

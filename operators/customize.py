@@ -191,6 +191,7 @@ class Customize(bpy.types.Operator):
                         print(changed_str, kmi_to_string(kmi, docs_mode=docs_mode))
                         kmi.map_type = 'MOUSE'
                         kmi.type = 'MIDDLEMOUSE'
+                        kmi.properties.all = False
                         print(to_str, kmi_to_string(kmi, docs_mode=docs_mode))
 
             # FRAMES

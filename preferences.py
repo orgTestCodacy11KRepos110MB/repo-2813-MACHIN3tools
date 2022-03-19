@@ -230,6 +230,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     snap_show_absolute_grid: BoolProperty(name="Show Absolute Grid Snapping", default=False)
 
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
+    toggle_xray: BoolProperty(name="Toggle X-Ray ON in Edit Mode, OFF in Object Mode, if Pass Through or Wireframe was enabled in Edit Mode", default=True)
     sync_tools: BoolProperty(name="Sync Tool if possible, when switching Modes", default=True)
     focus_view_transition: BoolProperty(name="Viewport Tweening", default=True)
 
@@ -815,10 +816,22 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             bb = b.box()
             bb.label(text="Modes Pie")
 
-            column = bb.column()
+            column = bb.column(align=True)
 
-            column.prop(self, "toggle_cavity")
-            column.prop(self, "sync_tools")
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "toggle_cavity", text="True" if self.toggle_cavity else "False", toggle=True)
+            r.label(text="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode")
+
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "toggle_xray", text="True" if self.toggle_xray else "False", toggle=True)
+            r.label(text="Toggle X-Ray ON in Edit Mode, OFF in Object Mode, if Pass Through or Wireframe was enabled in Edit Mode")
+
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "sync_tools", text="True" if self.sync_tools else "False", toggle=True)
+            r.label(text="Sync Tool if possible, when switching Modes")
 
 
         # SAVE PIE
