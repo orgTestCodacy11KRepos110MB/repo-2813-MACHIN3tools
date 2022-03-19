@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import StringProperty
+from bpy.props import StringProperty, BoolProperty
 from .. utils.system import abspath, open_folder
 from .. utils.property import step_list
 
@@ -64,6 +64,8 @@ class CycleThumbs(bpy.types.Operator):
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO'}
 
+    reverse: BoolProperty(name="Reverse Cycle Diretion")
+
     @classmethod
     def poll(cls, context):
         return context.area.type == 'FILE_BROWSER' and context.space_data.params.display_type == 'THUMBNAIL'
@@ -71,6 +73,6 @@ class CycleThumbs(bpy.types.Operator):
     def execute(self, context):
         sizes = ['TINY', 'SMALL', 'NORMAL', 'LARGE']
         size = bpy.context.space_data.params.display_size
-        bpy.context.space_data.params.display_size = step_list(size, sizes, 1, loop=True)
+        bpy.context.space_data.params.display_size = step_list(size, sizes, -1 if self.reverse else 1, loop=True)
 
         return {'FINISHED'}
