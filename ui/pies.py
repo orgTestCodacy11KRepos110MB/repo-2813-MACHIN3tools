@@ -695,12 +695,13 @@ class PieSave(Menu):
         # col.operator("wm.recover_last_session", text="Recover Last Session", icon='RECOVER_LAST')
         column.operator("wm.revert_mainfile", text="Revert", icon_value=get_icon('revert'))
 
-        column.separator()
+        if get_prefs().show_screencast:
+            column.separator()
 
-        screencast = getattr(wm, 'M3_screen_cast', False)
-        text, icon = ('Disable', 'PAUSE') if screencast else ('Enable', 'PLAY')
+            screencast = getattr(wm, 'M3_screen_cast', False)
+            text, icon = ('Disable', 'PAUSE') if screencast else ('Enable', 'PLAY')
 
-        column.operator('machin3.screen_cast', text=f"{text} Screen Cast", depress=screencast, icon=icon)
+            column.operator('machin3.screen_cast', text=f"{text} Screen Cast", depress=screencast, icon=icon)
 
     def draw_center_column_top(self, context, layout):
         column = layout.column(align=True)

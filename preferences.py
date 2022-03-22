@@ -272,6 +272,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     hide_wire_objects_when_creating_assembly_asset: BoolProperty(name="Hide Wire Objects when creating Assembly Asset", default=True)
     hide_wire_objects_when_assembling_collection_instance: BoolProperty(name="Hide Wire Objects when assembling Collection Instance", default=True)
 
+    show_screencast: BoolProperty(name="Show Screencast in Save Pie", description="Show Screencast in Save Pie", default=True)
     screencast_operator_count: IntProperty(name="Operator Count", description="Maximum number of Operators displayed when Screen Casting", default=12, min=1, max=100)
     screencast_fontsize: IntProperty(name="Font Size", default=12, min=2)
     screencast_highlight_machin3: BoolProperty(name="Highlight MACHIN3 operators", description="Highlight Operators from MACHIN3 addons", default=True)
@@ -873,8 +874,13 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             bb = b.box()
             bb.label(text="Save Pie: Screen Cast")
 
-            split = bb.split(factor=0.5)
+            column = bb.column(align=True)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "show_screencast", text="True" if self.show_screencast else "False", toggle=True)
+            r.label(text="Show Screencast in Save Pie")
 
+            split = bb.split(factor=0.5)
             col = split.column(align=True)
 
             row = col.row(align=True)
