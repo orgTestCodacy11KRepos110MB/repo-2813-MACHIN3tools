@@ -106,8 +106,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_clean_up(self, context):
         activate(self, register=self.activate_clean_up, tool="clean_up")
 
-    def update_activate_clipping_toggle(self, context):
-        activate(self, register=self.activate_clipping_toggle, tool="clipping_toggle")
+    def update_activate_extrude(self, context):
+        activate(self, register=self.activate_extrude, tool="extrude")
 
     def update_activate_focus(self, context):
         activate(self, register=self.activate_focus, tool="focus")
@@ -118,6 +118,33 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_align(self, context):
         activate(self, register=self.activate_align, tool="align")
 
+    def update_activate_group(self, context):
+        activate(self, register=self.activate_group, tool="group")
+
+    def update_activate_smart_drive(self, context):
+        activate(self, register=self.activate_smart_drive, tool="smart_drive")
+
+    def update_activate_assetbrowser_tools(self, context):
+        activate(self, register=self.activate_assetbrowser_tools, tool="assetbrowser")
+
+    def update_activate_filebrowser_tools(self, context):
+        activate(self, register=self.activate_filebrowser_tools, tool="filebrowser")
+
+    def update_activate_render(self, context):
+        activate(self, register=self.activate_render, tool="render")
+
+    def update_activate_smooth(self, context):
+        activate(self, register=self.activate_smooth, tool="smooth")
+
+    def update_activate_clipping_toggle(self, context):
+        activate(self, register=self.activate_clipping_toggle, tool="clipping_toggle")
+
+    def update_activate_surface_slide(self, context):
+        activate(self, register=self.activate_surface_slide, tool="surface_slide")
+
+    def update_activate_material_picker(self, context):
+        activate(self, register=self.activate_material_picker, tool="material_picker")
+
     def update_activate_apply(self, context):
         activate(self, register=self.activate_apply, tool="apply")
 
@@ -127,38 +154,11 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     def update_activate_mesh_cut(self, context):
         activate(self, register=self.activate_mesh_cut, tool="mesh_cut")
 
-    def update_activate_surface_slide(self, context):
-        activate(self, register=self.activate_surface_slide, tool="surface_slide")
-
-    def update_activate_assetbrowser_tools(self, context):
-        activate(self, register=self.activate_assetbrowser_tools, tool="assetbrowser")
-
-    def update_activate_filebrowser_tools(self, context):
-        activate(self, register=self.activate_filebrowser_tools, tool="filebrowser")
-
-    def update_activate_smart_drive(self, context):
-        activate(self, register=self.activate_smart_drive, tool="smart_drive")
-
-    def update_activate_unity(self, context):
-        activate(self, register=self.activate_unity, tool="unity")
-
-    def update_activate_material_picker(self, context):
-        activate(self, register=self.activate_material_picker, tool="material_picker")
-
-    def update_activate_group(self, context):
-        activate(self, register=self.activate_group, tool="group")
-
     def update_activate_thread(self, context):
         activate(self, register=self.activate_thread, tool="thread")
 
-    def update_activate_extrude(self, context):
-        activate(self, register=self.activate_extrude, tool="extrude")
-
-    def update_activate_smooth(self, context):
-        activate(self, register=self.activate_smooth, tool="smooth")
-
-    def update_activate_render(self, context):
-        activate(self, register=self.activate_render, tool="render")
+    def update_activate_unity(self, context):
+        activate(self, register=self.activate_unity, tool="unity")
 
     def update_activate_customize(self, context):
         activate(self, register=self.activate_customize, tool="customize")
@@ -292,24 +292,24 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     activate_smart_edge: BoolProperty(name="Smart Edge", default=False, update=update_activate_smart_edge)
     activate_smart_face: BoolProperty(name="Smart Face", default=False, update=update_activate_smart_face)
     activate_clean_up: BoolProperty(name="Clean Up", default=False, update=update_activate_clean_up)
-    activate_clipping_toggle: BoolProperty(name="Clipping Toggle", default=False, update=update_activate_clipping_toggle)
+    activate_extrude: BoolProperty(name="Extrude", default=False, update=update_activate_extrude)
     activate_focus: BoolProperty(name="Focus", default=True, update=update_activate_focus)
     activate_mirror: BoolProperty(name="Mirror", default=False, update=update_activate_mirror)
     activate_align: BoolProperty(name="Align", default=False, update=update_activate_align)
+    activate_group: BoolProperty(name="Group", default=False, update=update_activate_group)
+    activate_smart_drive: BoolProperty(name="Smart Drive", default=False, update=update_activate_smart_drive)
+    activate_assetbrowser_tools: BoolProperty(name="Assetbrowser Tools", default=False, update=update_activate_assetbrowser_tools)
+    activate_filebrowser_tools: BoolProperty(name="Filebrowser Tools", default=False, update=update_activate_filebrowser_tools)
+    activate_render: BoolProperty(name="Render", default=False, update=update_activate_render)
+    activate_smooth: BoolProperty(name="Smooth", default=False, update=update_activate_smooth)
+    activate_clipping_toggle: BoolProperty(name="Clipping Toggle", default=False, update=update_activate_clipping_toggle)
+    activate_surface_slide: BoolProperty(name="Surface Slide", default=False, update=update_activate_surface_slide)
+    activate_material_picker: BoolProperty(name="Material Picker", default=False, update=update_activate_material_picker)
     activate_apply: BoolProperty(name="Apply", default=False, update=update_activate_apply)
     activate_select: BoolProperty(name="Select", default=False, update=update_activate_select)
     activate_mesh_cut: BoolProperty(name="Mesh Cut", default=False, update=update_activate_mesh_cut)
-    activate_surface_slide: BoolProperty(name="Surface Slide", default=False, update=update_activate_surface_slide)
-    activate_assetbrowser_tools: BoolProperty(name="Assetbrowser Tools", default=False, update=update_activate_assetbrowser_tools)
-    activate_filebrowser_tools: BoolProperty(name="Filebrowser Tools", default=False, update=update_activate_filebrowser_tools)
-    activate_smart_drive: BoolProperty(name="Smart Drive", default=False, update=update_activate_smart_drive)
-    activate_unity: BoolProperty(name="Unity", default=False, update=update_activate_unity)
-    activate_material_picker: BoolProperty(name="Material Picker", default=False, update=update_activate_material_picker)
-    activate_group: BoolProperty(name="Group", default=False, update=update_activate_group)
     activate_thread: BoolProperty(name="Thread", default=False, update=update_activate_thread)
-    activate_extrude: BoolProperty(name="Extrude", default=False, update=update_activate_extrude)
-    activate_smooth: BoolProperty(name="Smooth", default=False, update=update_activate_smooth)
-    activate_render: BoolProperty(name="Render", default=False, update=update_activate_render)
+    activate_unity: BoolProperty(name="Unity", default=False, update=update_activate_unity)
     activate_customize: BoolProperty(name="Customize", default=False, update=update_activate_customize)
 
 
@@ -411,8 +411,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row.label(text="Quick Geometry Clean-up.")
 
         row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_clipping_toggle", toggle=True)
-        row.label(text="Viewport Clipping Plane Toggle.")
+        row.prop(self, "activate_extrude", toggle=True)
+        row.label(text="Fixing Blender's Extrude Manifold and Spin Operators")
 
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_focus", toggle=True)
@@ -427,6 +427,42 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row.label(text="Object per-axis Location, Rotation and Scale Alignment, as well as Object Relative Alignments.")
 
         row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_group", toggle=True)
+        row.label(text="Group Objects using Empties as Parents.")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_smart_drive", toggle=True)
+        row.label(text="Use one Object to drive another.")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_assetbrowser_tools", toggle=True)
+        row.label(text="Easy Assemly Asset Creation and Import via the Assetbrowser.")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_filebrowser_tools", toggle=True)
+        row.label(text="Additional Tools/Shortcuts for the Filebrowser.")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_render", toggle=True)
+        row.label(text="Seed Rendering")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_smooth", toggle=True)
+        row.label(text="Toggle Smoothing in Korean Bevel and SubD workflows.")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_clipping_toggle", toggle=True)
+        row.label(text="Viewport Clipping Plane Toggle.")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_surface_slide", toggle=True)
+        row.label(text="Easily modify Mesh Topology, while maintaining Form.")
+
+        row = column.split(factor=0.25, align=True)
+        row.prop(self, "activate_material_picker", toggle=True)
+        row.label(text="Pick Materials from the Material Workspace's 3D View.")
+
+        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_apply", toggle=True)
         row.label(text="Apply Transformations while keeping the Bevel Width as well as the Child Transformations unchanged.")
 
@@ -439,48 +475,12 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
         row.label(text="Knife Intersect a Mesh-Object, using another one.")
 
         row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_surface_slide", toggle=True)
-        row.label(text="Easily modify Mesh Topology, while maintaining Form.")
-
-        row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_assetbrowser_tools", toggle=True)
-        row.label(text="Easy Assemly Asset Creation and Import via the Assetbrowser.")
-
-        row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_filebrowser_tools", toggle=True)
-        row.label(text="Additional Tools/Shortcuts for the Filebrowser.")
-
-        row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_smart_drive", toggle=True)
-        row.label(text="Use one Object to drive another.")
-
-        row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_unity", toggle=True)
-        row.label(text="Unity related Tools.")
-
-        row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_material_picker", toggle=True)
-        row.label(text="Pick Materials from the Material Workspace's 3D View.")
-
-        row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_group", toggle=True)
-        row.label(text="Group Objects using Empties as Parents.")
-
-        row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_thread", toggle=True)
         row.label(text="Easily turn Cylinder Faces into Thread.")
 
         row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_extrude", toggle=True)
-        row.label(text="Fixing Blender's Extrude Manifold and Spin Operators")
-
-        row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_smooth", toggle=True)
-        row.label(text="Toggle Smoothing in Korean Bevel and SubD workflows.")
-
-        row = column.split(factor=0.25, align=True)
-        row.prop(self, "activate_render", toggle=True)
-        row.label(text="Seed Rendering")
+        row.prop(self, "activate_unity", toggle=True)
+        row.label(text="Unity related Tools.")
 
         row = column.split(factor=0.25)
         row.prop(self, "activate_customize", toggle=True)

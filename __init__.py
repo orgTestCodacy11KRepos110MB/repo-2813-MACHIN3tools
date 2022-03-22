@@ -4,7 +4,7 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (3, 0, 0),
     "location": "",
-    "description": "Streamlining Blender 3.0 and beyond.",
+    "description": "Streamlining Blender 3.0+.",
     "warning": "",
     "doc_url": "https://machin3.io/MACHIN3tools/docs",
     "category": "Mesh"}
