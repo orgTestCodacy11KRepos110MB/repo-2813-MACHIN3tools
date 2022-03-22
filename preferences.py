@@ -1,7 +1,6 @@
 import bpy
-from bpy.props import IntProperty, StringProperty, CollectionProperty, BoolProperty, EnumProperty, FloatProperty, FloatVectorProperty
+from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty, FloatVectorProperty
 import os
-from . properties import AppendMatsCollection
 from . utils.ui import get_icon, draw_keymap_items
 from . utils.registration import activate, get_path, get_name, get_addon
 from . items import preferences_tabs, matcap_background_type_items
@@ -11,27 +10,50 @@ decalmachine = None
 meshmachine = None
 punchit = None
 
+has_sidebar = ['OT_smart_drive',
+               'OT_group',
+               'OT_create_assembly_asset',
+               'OT_prepare_unity_export']
 
-# TODO: check if the append world/materials paths exist and make them absolute
+draws_lines = ['OT_smart_vert',
+               'OT_punch_it']
 
+has_hud = ['OT_material_picker',
+           'OT_surface_slide',
+           'OT_clean_up',
+           'OT_clipping_toggle',
+           'OT_group',
+           'OT_transform_edge_constrained',
+           'OT_focus',
+           'MT_tools_pie']
 
-has_settings = ['OT_smart_vert',
-                'OT_clean_up',
-                'OT_clipping_toggle',
-                'OT_transform_edge_constrained',
-                'OT_clipping_toggle',
-                'OT_focus',
-                'OT_group',
-                'OT_material_picker',
-                'OT_surface_slide',
-                'OT_customize',
-                'MT_cursor_pie',
-                'MT_modes_pie',
-                'MT_save_pie',
-                'MT_shading_pie',
-                'MT_snapping_pie',
-                'MT_tools_pie',
-                'MT_viewport_pie']
+is_fading = ['OT_material_picker',
+             'OT_clean_up',
+             'OT_clipping_toggle',
+             'OT_group',
+             'MT_tools_pie']
+
+has_settings = has_sidebar + draws_lines + has_hud + ['OT_smart_vert',
+                                                      'OT_clean_up',
+                                                      'OT_punch_it',
+                                                      'OT_transform_edge_constrained',
+                                                      'OT_focus',
+                                                      'OT_group',
+                                                      'OT_render',
+                                                      'OT_create_assembly_asset',
+                                                      'OT_clipping_toggle',
+                                                      'OT_surface_slide',
+                                                      'OT_material_picker',
+                                                      'OT_clipping_toggle',
+                                                      'OT_customize',
+
+                                                      'MT_modes_pie',
+                                                      'MT_save_pie',
+                                                      'MT_shading_pie',
+                                                      'MT_cursor_pie',
+                                                      'MT_snapping_pie',
+                                                      'MT_viewport_pie',
+                                                      'MT_tools_pie']
 
 
 class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
@@ -549,18 +571,20 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         # VIEW 3D settings
 
-        bb = b.box()
-        bb.label(text="View 3D")
+        if any([getattr(bpy.types, f'MACHIN3_{name}', False) for name in has_sidebar + draws_lines]):
+            bb = b.box()
+            bb.label(text="View 3D")
 
-        column = bb.column()
-        column.prop(self, "show_sidebar_panel")
+            if any([getattr(bpy.types, f'MACHIN3_{name}', False) for name in has_sidebar]):
+                column = bb.column()
+                column.prop(self, "show_sidebar_panel")
 
-        if getattr(bpy.types, "MACHIN3_OT_smart_vert", False):
-            column = bb.column()
-            column.prop(self, "use_legacy_line_smoothing")
+            if any([getattr(bpy.types, f'MACHIN3_{name}', False) for name in draws_lines]):
+                column = bb.column()
+                column.prop(self, "use_legacy_line_smoothing")
 
 
-        if any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_material_picker", "OT_surface_slide", "OT_clean_up", "OT_clipping_toggle", "OT_group", "OT_transform_edge_constrained", "OT_focus", "MT_tools_pie"]]):
+        if any([getattr(bpy.types, f'MACHIN3_{name}', False) for name in has_hud]):
             bb = b.box()
             bb.label(text="HUD")
 
@@ -570,7 +594,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             r.prop(self, "HUD_scale", text="")
             r.label(text="HUD Scale")
 
-            if any([getattr(bpy.types, "MACHIN3_" + name, False) for name in ["OT_material_picker", "OT_clean_up", "OT_clipping_toggle", "OT_group", "MT_tools_pie"]]):
+            if any([getattr(bpy.types, f'MACHIN3_{name}', False) for name in is_fading]):
                 column = bb.column()
                 column.label(text="Fade time")
 
@@ -601,29 +625,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             column = bb.column()
             column.prop(self, "focus_view_transition")
-
-
-        # MATERIAL PICKER
-
-        if getattr(bpy.types, "MACHIN3_OT_material_picker", False):
-            bb = b.box()
-            bb.label(text="Material Picker")
-
-            column = bb.column(align=True)
-            row = column.row(align=True)
-            r = row.split(factor=0.2, align=True)
-            r.prop(self, "matpick_workspace_names", text="")
-            r.label(text="Workspace Names")
-
-            row = column.row(align=True)
-            r = row.split(factor=0.2, align=True)
-            r.prop(self, "matpick_spacing_obj", text="")
-            r.label(text="Object Mode fpacing")
-
-            row = column.row(align=True)
-            r = row.split(factor=0.2, align=True)
-            r.prop(self, "matpick_spacing_edit", text="")
-            r.label(text="Edit Mode Spacing")
 
 
         # GROUP
@@ -758,6 +759,29 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
                 row = column.row(align=True)
                 row.separator()
                 row.label(text="Enable the Shading Pie for additional options", icon='INFO')
+
+
+        # MATERIAL PICKER
+
+        if getattr(bpy.types, "MACHIN3_OT_material_picker", False):
+            bb = b.box()
+            bb.label(text="Material Picker")
+
+            column = bb.column(align=True)
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "matpick_workspace_names", text="")
+            r.label(text="Workspace Names")
+
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "matpick_spacing_obj", text="")
+            r.label(text="Object Mode fpacing")
+
+            row = column.row(align=True)
+            r = row.split(factor=0.2, align=True)
+            r.prop(self, "matpick_spacing_edit", text="")
+            r.label(text="Edit Mode Spacing")
 
 
         # CUSTOMIZE
@@ -972,7 +996,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         # NO SETTINGS
 
-        if not any([getattr(bpy.types, "MACHIN3_" + name, False) for name in has_settings]):
+        if not any([getattr(bpy.types, f'MACHIN3_{name}', False) for name in has_settings]):
             b.label(text="No tools or pie menus with settings have been activated.")
 
     def draw_keymaps(self, box):

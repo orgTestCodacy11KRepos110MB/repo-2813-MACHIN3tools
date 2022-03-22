@@ -15,9 +15,6 @@ from . items import eevee_preset_items, align_mode_items, render_engine_items, c
 
 # COLLECTIONS
 
-class AppendMatsCollection(bpy.types.PropertyGroup):
-    name: StringProperty()
-
 
 class HistoryObjectsCollection(bpy.types.PropertyGroup):
     name: StringProperty()
