@@ -37,23 +37,36 @@ class Toggle(bpy.types.Operator):
         return context.area.type == 'FILE_BROWSER'
 
     def execute(self, context):
-
         if self.type == 'DISPLAY_TYPE':
-            if context.space_data.params.display_type == 'LIST_VERTICAL':
-                context.space_data.params.display_type = 'THUMBNAIL'
+            if context.area.ui_type == 'FILES':
+                if context.space_data.params.display_type == 'LIST_VERTICAL':
+                    context.space_data.params.display_type = 'THUMBNAIL'
 
-            else:
-                context.space_data.params.display_type = 'LIST_VERTICAL'
+                else:
+                    context.space_data.params.display_type = 'LIST_VERTICAL'
+
+            elif context.area.ui_type == 'ASSETS':
+                if context.space_data.params.asset_library_ref == 'Library':
+                    context.space_data.params.asset_library_ref = 'LOCAL'
+                elif context.space_data.params.asset_library_ref == 'LOCAL':
+                    context.space_data.params.asset_library_ref = 'Library'
 
         elif self.type == 'SORT':
-            if context.space_data.params.sort_method == 'FILE_SORT_ALPHA':
-                context.space_data.params.sort_method = 'FILE_SORT_TIME'
+            if context.area.ui_type == 'FILES':
+                if context.space_data.params.sort_method == 'FILE_SORT_ALPHA':
+                    context.space_data.params.sort_method = 'FILE_SORT_TIME'
 
-            else:
-                context.space_data.params.sort_method = 'FILE_SORT_ALPHA'
+                else:
+                    context.space_data.params.sort_method = 'FILE_SORT_ALPHA'
+
+            elif context.area.ui_type == 'ASSETS':
+                import_types = ['LINK', 'APPEND', 'APPEND_REUSE']
+
+                bpy.context.space_data.params.import_type = step_list(context.space_data.params.import_type, import_types, 1)
 
         elif self.type == 'HIDDEN':
-            context.space_data.params.show_hidden = not context.space_data.params.show_hidden
+            if context.area.ui_type == 'FILES':
+                context.space_data.params.show_hidden = not context.space_data.params.show_hidden
 
         return {'FINISHED'}
 
