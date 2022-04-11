@@ -467,7 +467,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_render", toggle=True)
-        row.label(text="Seed Rendering")
+        row.label(text="Tools for efficient, iterative rendering.")
 
         row = column.split(factor=0.25, align=True)
         row.prop(self, "activate_smooth", toggle=True)
