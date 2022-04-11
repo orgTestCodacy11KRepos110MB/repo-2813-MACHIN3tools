@@ -1,7 +1,5 @@
 
-classes = {'CORE': [('ui.UILists', [('AppendMatsUIList', '')]),
-                    ('properties', [('AppendMatsCollection', '')]),
-                    ('properties', [('HistoryObjectsCollection', ''),
+classes = {'CORE': [('properties', [('HistoryObjectsCollection', ''),
                                     ('HistoryUnmirroredCollection', ''),
                                     ('HistoryEpochCollection', ''),
                                     ('M3SceneProperties', ''),
