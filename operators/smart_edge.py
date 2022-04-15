@@ -111,7 +111,6 @@ class SmartEdge(bpy.types.Operator):
             self.is_knife_projectable = True
             self.is_knife_project = True
 
-
         if self.sharp and self.sharp_mode in ['CHAMFER', 'KOREAN']:
             bevels = [mod for mod in active.modifiers if mod.type == 'BEVEL' and mod.limit_method == 'WEIGHT' and mod.name in ['Chamfer', 'Korean Bevel']]
 

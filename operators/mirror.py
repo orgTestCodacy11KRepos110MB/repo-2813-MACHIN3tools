@@ -229,10 +229,6 @@ class Unmirror(bpy.types.Operator):
         if mirror_gpencils:
             return True
 
-        groups = [obj for obj in context.selected_objects if obj.type == "EMPTY" and obj.instance_collection]
-        if groups:
-            return [empty for empty in groups if any(obj for obj in empty.instance_collection.objects if any(mod.type == "MIRROR" for mod in obj.modifiers))]
-
     def execute(self, context):
         targets = set()
 
