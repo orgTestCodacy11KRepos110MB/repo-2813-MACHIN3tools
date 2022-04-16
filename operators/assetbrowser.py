@@ -1,17 +1,14 @@
 import bpy
 from bpy.props import StringProperty, BoolProperty, FloatProperty
-from .. utils.registration import get_addon, get_prefs
-from .. utils.append import append_collection
+import os
+from .. utils.registration import get_addon, get_prefs, get_path
 from .. utils.ui import popup_message
-from .. utils.system import printd
 from .. utils.asset import get_catalogs_from_asset_libraries
 from .. utils.object import parent
 
 
 decalmachine = None
 meshmachine = None
-
-# should the asset collection actually be unlinked, when creating the asset?
 
 
 class CreateAssemblyAsset(bpy.types.Operator):
@@ -37,7 +34,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
         # prevent enabling both at the same time
         if self.hide_instance and self.hide_collection:
             self.avoid_update = True
-            self.hide_instance = False
+            self.hide_collection = False
 
     def update_hide_collection(self, context):
         if self.avoid_update:
@@ -47,7 +44,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
         # prevent enabling both at the same time
         if self.hide_collection and self.hide_instance:
             self.avoid_update = True
-            self.hide_collection = False
+            self.hide_instance = False
 
     unlink_collection: BoolProperty(name="Unlink Collection", description="Useful to clean up the scene, and optionally start using the Asset locally right away", default=True)
     hide_collection: BoolProperty(name="Hide Collection", default=True, description="Useful when you want to start using the Asset locally, while still having easy access to the individual objects", update=update_hide_collection)
@@ -134,14 +131,19 @@ class CreateAssemblyAsset(bpy.types.Operator):
                 self.delete_stashes(objects)
 
             # create the asset
-            self.create_asset_instance_collection(context, name, objects)
+            instance = self.create_asset_instance_collection(context, name, objects)
 
             # switch to an asset browser workspac and set it to LOCAL
             self.adjust_workspace(context)
 
             # render the viewport
             if self.render_thumbnail:
-                self.render_viewport(context)
+                thumbpath = os.path.join(get_path(), 'resources', 'thumb.png')
+                self.render_viewport(context, thumbpath)
+
+                if os.path.exists(thumbpath):
+                    bpy.ops.ed.lib_id_load_custom_preview({'id': instance}, filepath=thumbpath)
+                    os.unlink(thumbpath)
 
             return {'FINISHED'}
 
@@ -265,6 +267,8 @@ class CreateAssemblyAsset(bpy.types.Operator):
             elif self.hide_instance:
                 instance.hide_set(True)
 
+        return instance
+
     def adjust_workspace(self, context):
         asset_browser_workspace = get_prefs().preferred_assetbrowser_workspace_name
 
@@ -297,7 +301,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
                             # ensure the tool props are shown too, so you can set the thumbnail
                             space.show_region_tool_props = True
 
-    def render_viewport(self, context):
+    def render_viewport(self, context, filepath):
         '''
         render asset thumb
         '''
@@ -322,7 +326,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
         thumb = bpy.data.images.get('Render Result')
 
         if thumb:
-            thumb.save_render(filepath='thumb.jpg')
+            thumb.save_render(filepath=filepath)
 
         # resstore original settings
         context.scene.render.resolution_x = resolution[0]
