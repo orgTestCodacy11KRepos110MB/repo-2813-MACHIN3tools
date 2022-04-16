@@ -71,7 +71,6 @@ classes = {'CORE': [('properties', [('HistoryObjectsCollection', ''),
 
                          ('ui.operators.open_blend', [('OpenLibraryBlend', 'open_library_blend')])],
            'SAVE_PIE': [('ui.pies', [('PieSave', 'save_pie')]),
-                        ('ui.menus', [('MenuAppendMaterials', 'append_materials')]),
                         ('ui.operators.save', [('New', 'new'),
                                                ('Save', 'save'),
                                                ('SaveAs', 'save_as'),
