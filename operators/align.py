@@ -489,44 +489,56 @@ class AlignRelative(bpy.types.Operator):
             self.finish()
 
             # create duplicares/instances
-            dups = []
 
-            for obj in self.targets:
+            for target in self.targets:
+                self.target_map[target] = {'dups': [],
+                                           'map': {}}
+
                 for aligner in self.aligners:
                     dup = aligner.copy()
-                    dups.append(dup)
 
-                    # parent dup to target object
-                    if aligner.parent == self.active:
-                        unparent(dup)
-                        parent(dup, obj)
-
-                    # regroup dup into target objects group
-                    if obj.M3.is_group_object and obj.parent and obj.parent.M3.is_group_empty:
-                        if (aligner.M3.is_group_object and self.active.M3.is_group_object) and (aligner.parent and self.active.parent) and (aligner.parent.M3.is_group_empty and self.active.parent.M3.is_group_empty) and (aligner.parent == self.active.parent):
-                            unparent(dup)
-                            parent(dup, obj.parent)
-
-                    # mirror dup
-                    if any([mod.mirror_object == self.active for mod in aligner.modifiers if mod.type == 'MIRROR']):
-                        for mod in dup.modifiers:
-                            if mod.type == 'MIRROR' and mod.mirror_object == self.active:
-                                mod.mirror_object = obj
+                    # collect dups and their relation to the original aligners
+                    self.target_map[target]['dups'].append(dup)
+                    self.target_map[target]['map'][aligner] = dup
+                    # self.target_map[target]['map'][dup] = aligner
 
                     if aligner.data:
                         dup.data = aligner.data if self.instance else aligner.data.copy()
 
+                    dup.matrix_world = target.matrix_world @ self.deltamx[aligner]
+
                     for col in aligner.users_collection:
                         col.objects.link(dup)
 
-                    dup.matrix_world = obj.matrix_world @ self.deltamx[aligner]
+
+            if self.debug:
+                printd(self.target_map, name='target map')
+
+            for target, dup_data in self.target_map.items():
+                if self.debug:
+                    print(target.name)
+
+                for dup in dup_data['dups']:
+                    if self.debug:
+                        print("", dup.name, " > ", dup_data['map'][dup].name)
+
+                    # re-parent the dup if necessary to the target or another dup
+                    self.reparent(dup_data, target, dup, debug=self.debug)
+
+                    # re-mirror the dup if necessary to the target or another dup
+                    self.remirror(dup_data, target, dup, debug=self.debug)
+
+                    # re-group the dup if necessary
+                    self.regroup(dup_data, target, dup, debug=self.debug)
+
 
             # select only the new dups
             bpy.ops.object.select_all(action='DESELECT')
 
-            for dup in dups:
-                dup.select_set(True)
-                context.view_layer.objects.active = dup
+            for target, dup_data in self.target_map.items():
+                for dup in dup_data['dups']:
+                    dup.select_set(True)
+                    context.view_layer.objects.active = dup
 
             return {'FINISHED'}
 
@@ -539,7 +551,7 @@ class AlignRelative(bpy.types.Operator):
             for obj in self.orig_sel:
                 obj.select_set(True)
 
-                if obj != self.aligner:
+                if obj == self.active:
                     context.view_layer.objects.active = obj
 
             return {'CANCELLED'}
@@ -554,14 +566,20 @@ class AlignRelative(bpy.types.Operator):
         finish_status(self)
 
     def invoke(self, context, event):
+        self.debug = True
+        self.debug = False
+
         self.active = context.active_object
         self.aligners = [obj for obj in context.selected_objects if obj != self.active]
-        # print("reference:", self.active.name)
-        # print(" aligners:", [obj.name for obj in self.aligners])
+
+        if self.debug:
+            print("reference:", self.active.name)
+            print(" aligners:", [obj.name for obj in self.aligners])
 
         self.orig_sel = [self.active] + self.aligners
         self.targets = []
         self.batches = {}
+        self.target_map = {}
 
         # get the deltamatrices, representing the relativ transforms
         self.deltamx = {obj: self.active.matrix_world.inverted_safe() @ obj.matrix_world for obj in self.aligners}
@@ -582,3 +600,58 @@ class AlignRelative(bpy.types.Operator):
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
+
+    def reparent(self, dup_data, target, dup, debug=False):
+        '''
+        check if the dup is parented to the reference object or one of the other aligners
+        and if so, reparerent accordingly to either the target, or the aligner dup
+        '''
+
+        if dup.parent and dup.parent in self.orig_sel:
+            if dup.parent == self.active:
+                pobj = target
+
+                if debug:
+                    print("  duplicate is parented to reference", dup.parent.name)
+
+            else:
+                pobj = dup_data['map'][dup.parent]
+                if debug:
+                    print("  duplicate is parented to another aligner", dup.parent.name)
+
+            unparent(dup)
+            parent(dup, pobj)
+
+    def remirror(self, dup_data, target, dup, debug=False):
+        '''
+        check if the dup is mirrored across the reference object or one of the other aligners
+        and if so, remirror accordingly across either the target, or the aligner dup
+        '''
+
+        mirrors = [mod for mod in dup.modifiers if mod.type == 'MIRROR' and mod.mirror_object in self.orig_sel]
+
+        for mod in mirrors:
+            if mod.mirror_object == self.active:
+                mobj = target
+                if debug:
+                    print("  duplicate is mirrored accross reference", mod.mirror_object.name)
+
+            else:
+                mobj = dup_data['map'][mod.mirror_object]
+                if debug:
+                    print("  duplicate is mirrored accross another aligner", mod.mirror_object.name)
+
+            mod.mirror_object = mobj
+    
+    def regroup(self, dup_data, target, dup, debug=False):
+        '''
+        re-group, if the dup is in the same group as the reference, and the target is also in a group
+        '''
+
+        if target.M3.is_group_object and target.parent and target.parent.M3.is_group_empty:
+            if (dup.M3.is_group_object and self.active.M3.is_group_object) and (dup.parent and self.active.parent) and (dup.parent.M3.is_group_empty and self.active.parent.M3.is_group_empty) and (dup.parent == self.active.parent):
+                if debug:
+                    print("  regrouping to", target.name)
+
+                unparent(dup)
+                parent(dup, target.parent)
