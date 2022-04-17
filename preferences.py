@@ -777,7 +777,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             row = column.row(align=True)
             r = row.split(factor=0.2, align=True)
             r.prop(self, "matpick_spacing_obj", text="")
-            r.label(text="Object Mode fpacing")
+            r.label(text="Object Mode Spacing")
 
             row = column.row(align=True)
             r = row.split(factor=0.2, align=True)
