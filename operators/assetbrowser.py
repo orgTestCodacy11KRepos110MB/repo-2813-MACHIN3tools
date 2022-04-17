@@ -13,7 +13,7 @@ meshmachine = None
 
 class CreateAssemblyAsset(bpy.types.Operator):
     bl_idname = "machin3.create_assembly_asset"
-    bl_label = "MACHIN3: Creaste Assembly Asset"
+    bl_label = "MACHIN3: Create Assembly Asset"
     bl_description = "Create Assembly Asset from the selected Objects"
     bl_options = {'REGISTER', 'UNDO'}
 
