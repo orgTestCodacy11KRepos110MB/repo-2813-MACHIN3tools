@@ -543,6 +543,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
     # ASSETBROWSER
 
     show_assetbrowser_tools: BoolProperty(name="Show Assetbrowser Tools")
+    asset_collect_path: StringProperty(name="Collect Path", subtype="DIR_PATH", default="")
 
     # EXTRUDE
 

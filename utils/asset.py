@@ -1,5 +1,7 @@
+import bpy
 import os
 from . system import printd
+from . registration import get_prefs
 
 
 def get_catalogs_from_asset_libraries(context, debug=False):
@@ -35,9 +37,22 @@ def get_catalogs_from_asset_libraries(context, debug=False):
 
         if catalog not in catalogs:
             catalogs[catalog] = {'uuid': uuid,
-                                   'simple_name': simple_name}
+                                 'simple_name': simple_name}
 
     if debug:
         printd(catalogs)
 
     return catalogs
+
+
+def update_asset_catalogs(self, context):
+    self.catalogs = get_catalogs_from_asset_libraries(context, debug=False)
+
+    items = [('NONE', 'None', '')]
+
+    for catalog in self.catalogs:
+        # print(catalog)
+        items.append((catalog, catalog, ""))
+
+    default = get_prefs().preferred_default_catalog if get_prefs().preferred_default_catalog in self.catalogs else 'NONE'
+    bpy.types.WindowManager.M3_asset_catalogs = bpy.props.EnumProperty(name="Asset Categories", items=items, default=default)

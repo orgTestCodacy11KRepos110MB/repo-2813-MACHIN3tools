@@ -3,8 +3,10 @@ from bpy.props import StringProperty, BoolProperty, FloatProperty
 import os
 from .. utils.registration import get_addon, get_prefs, get_path
 from .. utils.ui import popup_message
-from .. utils.asset import get_catalogs_from_asset_libraries
+from .. utils.asset import get_catalogs_from_asset_libraries, update_asset_catalogs
 from .. utils.object import parent
+
+import time
 
 
 decalmachine = None
@@ -102,7 +104,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
         if meshmachine is None:
             meshmachine = get_addon('MESHmachine')[0]
 
-        self.update_asset_catalogs(context)
+        update_asset_catalogs(self, context)
 
         # return {'FINISHED'}
         return context.window_manager.invoke_props_dialog(self)
@@ -151,18 +153,6 @@ class CreateAssemblyAsset(bpy.types.Operator):
             popup_message("The chosen asset name can't be empty", title="Illegal Name")
 
             return {'CANCELLED'}
-
-    def update_asset_catalogs(self, context):
-        self.catalogs = get_catalogs_from_asset_libraries(context, debug=False)
-
-        items = [('NONE', 'None', '')]
-
-        for catalog in self.catalogs:
-            # print(catalog)
-            items.append((catalog, catalog, ""))
-
-        default = get_prefs().preferred_default_catalog if get_prefs().preferred_default_catalog in self.catalogs else 'NONE'
-        bpy.types.WindowManager.M3_asset_catalogs = bpy.props.EnumProperty(name="Asset Categories", items=items, default=default)
 
     def get_assembly_asset_objects(self, context):
         '''
@@ -482,3 +472,86 @@ class AssembleCollectionInstance(bpy.types.Operator):
             bpy.data.collections.remove(collection)
 
         return root_children
+
+
+class CollectAssets(bpy.types.Operator):
+    bl_idname = "machin3.collect_assets"
+    bl_label = "MACHIN3: Collect Assets"
+    bl_description = "Collect Asssets from current folder"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT':
+            collectpath = context.scene.M3.asset_collect_path
+            return collectpath and os.path.exists(collectpath)
+
+    def draw(self, context):
+        layout = self.layout
+
+        column = layout.column(align=True)
+        column.prop(context.window_manager, 'M3_asset_catalogs', text='Catalog')
+
+    def invoke(self, context, event):
+        collectpath = context.scene.M3.asset_collect_path
+
+        blendpath = bpy.data.filepath
+        self.blendfiles = sorted([os.path.join(collectpath, f) for f in os.listdir(collectpath) if f.endswith('.blend') and f != os.path.basename(blendpath)])
+
+        if self.blendfiles:
+            update_asset_catalogs(self, context)
+            return context.window_manager.invoke_props_dialog(self)
+        else:
+            popup_message("No blend files found in Folder!", title="Info")
+            return {'CANCELLED'}
+
+    def execute(self, context):
+        mcol = context.scene.collection
+
+        print()
+
+        for path in self.blendfiles:
+            materials = self.append_all(path, 'materials')
+
+            for mat in materials:
+                if mat:
+                    print(f"Appended Material {mat.name} as asset")
+                    mat.asset_mark()
+
+                    catalog = context.window_manager.M3_asset_catalogs
+
+                    if catalog and catalog != 'NONE':
+                        mat.asset_data.catalog_id = self.catalogs[catalog]['uuid']
+                        print(f" adding to catalog {catalog}")
+
+                    dirname = os.path.dirname(path)
+                    basename = os.path.basename(path).replace('.blend', '')
+
+                    jpgpath = os.path.join(dirname, basename + '.jpg')
+                    pngpath = os.path.join(dirname, basename + '.png')
+
+                    if os.path.exists(jpgpath):
+                        print(" using existing .jpg thumbnail")
+                        bpy.ops.ed.lib_id_load_custom_preview({'id': mat}, filepath=jpgpath)
+                    elif os.path.exists(pngpath):
+                        print(" using existing .png thumbnail")
+                        bpy.ops.ed.lib_id_load_custom_preview({'id': mat}, filepath=pngpath)
+                    else:
+                        print(" generating new preview")
+                        bpy.ops.ed.lib_id_generate_preview({'id': mat})
+                        time.sleep(0.1)
+
+        return {'FINISHED'}
+
+    def append_all(self, filepath, collection, link=False, relative=False):
+        if os.path.exists(filepath):
+
+            with bpy.data.libraries.load(filepath, link=link, relative=relative) as (data_from, data_to):
+
+                for name in getattr(data_from, collection):
+                    getattr(data_to, collection).append(name)
+
+            return getattr(data_to, collection)
+
+        else:
+            print("The file %s does not exist" % (filepath))
