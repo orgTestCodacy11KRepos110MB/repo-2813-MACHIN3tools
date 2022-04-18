@@ -339,6 +339,17 @@ class Customize(bpy.types.Operator):
                         print(deactivated_str, kmi_to_string(kmi, docs_mode=docs_mode))
                         kmi.active = False
 
+                if kmi.idname == "object.select_hierarchy":
+                    if kmi.type == "LEFT_BRACKET" and kmi.properties.direction == 'PARENT' and not kmi.properties.extend:
+                        print(changed_str, kmi_to_string(kmi, docs_mode=docs_mode))
+                        kmi.type = 'UP_ARROW'
+                        print(to_str, kmi_to_string(kmi, docs_mode=docs_mode))
+
+                    elif kmi.type == "RIGHT_BRACKET" and kmi.properties.direction == 'CHILD' and not kmi.properties.extend:
+                        print(changed_str, kmi_to_string(kmi, docs_mode=docs_mode))
+                        kmi.type = 'DOWN_ARROW'
+                        print(to_str, kmi_to_string(kmi, docs_mode=docs_mode))
+
 
             # OBJECT NON-MODAL
 
