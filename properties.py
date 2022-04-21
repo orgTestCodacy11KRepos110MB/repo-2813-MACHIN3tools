@@ -275,7 +275,7 @@ class M3SceneProperties(bpy.types.PropertyGroup):
 
                 adjust_lights_for_rendering(mode='INCREASE')
 
-        if get_prefs().render_sync_light_visibility:
+        if get_prefs().activate_render and get_prefs().render_sync_light_visibility:
             sync_light_visibility(context.scene)
 
     def update_cycles_device(self, context):

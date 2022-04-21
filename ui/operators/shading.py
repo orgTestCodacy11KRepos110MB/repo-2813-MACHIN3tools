@@ -58,7 +58,7 @@ class SwitchShading(bpy.types.Operator):
                 self.adjust_lights(scene, shading.type, debug=False)
 
             # sync light visibility
-            if shading.type == 'RENDERED' and scene.render.engine == 'CYCLES' and get_prefs().render_sync_light_visibility:
+            if shading.type == 'RENDERED' and scene.render.engine == 'CYCLES' and get_prefs().activate_render and get_prefs().render_sync_light_visibility:
                 sync_light_visibility(scene)
 
         overlay.show_overlays = show_overlays[self.shading_type]

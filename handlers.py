@@ -195,7 +195,7 @@ def decrease_lights_on_render_start(scene):
 
                 adjust_lights_for_rendering(mode='DECREASE')
 
-    if get_prefs().render_sync_light_visibility:
+    if get_prefs().activate_render and get_prefs().render_sync_light_visibility:
         sync_light_visibility(scene)
 
 
