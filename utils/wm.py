@@ -187,6 +187,36 @@ def get_last_operators(context, debug=False):
         elif idname == 'machin3.add_object_at_cursor':
             prop = getattr(op, 'remove', False)
 
+        elif idname == 'machin3.transform_cursor':
+            mode = getattr(op, 'mode', False).capitalize()
+            is_array = getattr(op, 'is_array', False)
+            is_macro = getattr(op, 'is_macro', False)
+            is_duplicate = getattr(op, 'is_duplicate', False)
+
+            if is_macro:
+                geo = 'Mesh Selection' if context.mode == 'EDIT_MESH' else 'Object Selection'
+
+                if is_duplicate:
+                    # prop = f"Duplicate {mode} {geo}"
+                    label = f"Duplicate {mode} {geo}"
+
+                else:
+                    # prop = f"{mode} {geo}"
+                    label = f"{mode} {geo}"
+
+            elif is_array:
+                # prop = f"{mode} Array"
+                # label = f"{mode} Array"
+
+                if mode == 'Translate':
+                    label = f"Linear Array"
+                elif mode == 'Rotate':
+                    label = f"Radial Array"
+
+            else:
+                # prop = f"{mode}"
+                label = f"{mode} Cursor"
+
 
 
         operators.append((addon, label, idname, prop))
