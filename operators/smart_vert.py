@@ -299,7 +299,7 @@ class SmartVert(bpy.types.Operator):
 
         # SLIDE EXTEND
         if self.slideoverride:
-            if tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
+            if context.mode == 'EDIT_MESH' and tuple(bpy.context.scene.tool_settings.mesh_select_mode) == (False, False, True):
                 return {'CANCELLED'}
 
             self.active = context.active_object
@@ -361,7 +361,7 @@ class SmartVert(bpy.types.Operator):
             else:
                 # init mousepos and cursor warp the cursor too, as it's called from the HyperCursor Edit Edge pie menu
                 wm = context.window_manager
-                context.window.cursor_warp(wm.hyper_mousepos[0], wm.hyper_mousepos[1] + 20 * context.preferences.view.ui_scale)
+                context.window.cursor_warp(int(wm.hyper_mousepos[0]), int(wm.hyper_mousepos[1] + 20 * context.preferences.view.ui_scale))
                 self.mousepos = Vector(wm.hyper_mousepos)
 
                 self.bm = bmesh.new()
