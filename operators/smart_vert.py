@@ -213,7 +213,7 @@ class SmartVert(bpy.types.Operator):
 
         # FINISH
 
-        elif event.type in {'LEFTMOUSE', 'SPACE'}:
+        elif event.type in {'LEFTMOUSE', 'SPACE'} and event.value == 'PRESS':
 
             # dissolve edges when snapping
             if self.is_snapping:
