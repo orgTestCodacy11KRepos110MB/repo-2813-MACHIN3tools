@@ -279,6 +279,10 @@ class SmartVert(bpy.types.Operator):
             # force gizmo update
             context.active_object.select_set(True)
 
+            # clear potential hyper edge selection
+            from HyperCursor.utils.select import clear_hyper_edge_selection
+            clear_hyper_edge_selection(context.active_object)
+
     def invoke(self, context, event):
 
         # in object mode only allow slide/extend the passed in index from HyperCursor
@@ -290,6 +294,8 @@ class SmartVert(bpy.types.Operator):
 
             if self.slideoverride and hypercursor:
                 context.active_object.HC.show_geometry_gizmos = False
+
+                from HyperCursor.utils.select import get_selected_edges
 
             else:
                 return {'CANCELLED'}
@@ -369,19 +375,27 @@ class SmartVert(bpy.types.Operator):
                 self.bm.normal_update()
                 self.bm.edges.ensure_lookup_table()
 
-                edge = self.bm.edges[self.index]
+                slayer = self.bm.edges.layers.int.get('HyperEdgeSelect')
 
-                edge_center = average_locations([self.mx @ v.co for v in edge.verts])
+                # get a a list of the passed in index edge, as well as potentially hyper selected edges
+                selected = get_selected_edges(self.bm, slayer=slayer, index=self.index)
+                self.verts = {}
 
-                mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.mousepos, edge_center)
-                mouse_3d_local = self.mx.inverted_safe() @ mouse_3d
+                # for each edge find the closest vert to the mouse pointer (based on proximity to the mouse projected into the edge center depth)
+                for edge in selected:
+                    edge_center = average_locations([self.mx @ v.co for v in edge.verts])
 
-                closest = min([(v, (v.co - mouse_3d_local).length) for v in edge.verts], key=lambda x: x[1])[0]
+                    mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.mousepos, edge_center)
+                    mouse_3d_local = self.mx.inverted_safe() @ mouse_3d
 
-                self.verts = {closest: {'co': closest.co.copy(), 'target': edge.other_vert(closest)}}
+                    closest = min([(v, (v.co - mouse_3d_local).length) for v in edge.verts], key=lambda x: x[1])[0]
+
+                    self.verts[closest] = {'co': closest.co.copy(), 'target': edge.other_vert(closest)}
+
+                    # printd(self.verts)
 
 
-            # check if the conditions are met to flatten the end face next the the vert that is slid
+            # check if the conditions are met to flatten the end face next to the vert that is slid
             self.can_flatten = False
             self.flatten_dict = {}
 
@@ -420,13 +434,22 @@ class SmartVert(bpy.types.Operator):
                                     line = [slide_edges[0].verts[0].co.copy(), slide_edges[0].verts[1].co.copy()]
                                     self.flatten_dict['other_verts'][v] = {'co': v.co.copy(),
                                                                            'line': line}
-
                             # printd(self.flatten_dict)
 
 
             # get average target and slid vert locations in world space
             self.target_avg = self.mx @ average_locations([data['target'].co for _, data in self.verts.items()])
             self.origin = self.mx @ average_locations([v.co for v, _ in self.verts.items()])
+
+            # if you have 2 paralelel edges of the same length and the view angle and mousepos causes oppotite ends being the targets,
+            # then targt avg and and avg origin will be the same, which in turn means the slide vector  interesection can't be created
+            if self.target_avg == self.origin:
+                if context.mode == 'OBJECT':
+                    # re-enabled geoemetry gizmos
+                    context.active_object.HC.show_geometry_gizmos = True
+
+                popup_message("Try to position the view and mouse in a way, that clearly indicates the direction you want to slide towards", title='Ambigious Direction')
+                return {'CANCELLED'}
 
             # create first intersection of the view dir with the origin-to-targetavg vector
             self.init_loc = self.get_slide_vector_intersection(context)
