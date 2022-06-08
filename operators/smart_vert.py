@@ -230,6 +230,11 @@ class SmartVert(bpy.types.Operator):
                 else:
                     self.bm.to_mesh(self.active.data)
 
+            # clear potential hyper edge selection
+            if context.mode == 'OBJECT':
+                from HyperCursor.utils.select import clear_hyper_edge_selection
+                clear_hyper_edge_selection(context.active_object)
+
             self.finish(context)
 
             return {'FINISHED'}
@@ -279,9 +284,6 @@ class SmartVert(bpy.types.Operator):
             # force gizmo update
             context.active_object.select_set(True)
 
-            # clear potential hyper edge selection
-            from HyperCursor.utils.select import clear_hyper_edge_selection
-            clear_hyper_edge_selection(context.active_object)
 
     def invoke(self, context, event):
 
