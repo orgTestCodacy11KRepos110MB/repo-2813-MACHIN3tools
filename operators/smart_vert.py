@@ -377,10 +377,8 @@ class SmartVert(bpy.types.Operator):
                 self.bm.normal_update()
                 self.bm.edges.ensure_lookup_table()
 
-                slayer = self.bm.edges.layers.int.get('HyperEdgeSelect')
-
                 # get a a list of the passed in index edge, as well as potentially hyper selected edges
-                selected = get_selected_edges(self.bm, slayer=slayer, index=self.index)
+                selected = get_selected_edges(self.bm, index=self.index)
                 self.verts = {}
 
                 # for each edge find the closest vert to the mouse pointer (based on proximity to the mouse projected into the edge center depth)
