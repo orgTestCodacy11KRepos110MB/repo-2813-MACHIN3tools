@@ -164,6 +164,7 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
         'ALIGN': [{'label': 'Object Mode', 'keymap': 'Object Mode', 'idname': 'machin3.align', 'type': 'A', 'value': 'PRESS', 'alt': True},
                   {'label': 'Pose Mode', 'keymap': 'Pose', 'idname': 'machin3.align', 'type': 'A', 'value': 'PRESS', 'alt': True}],
         'FILEBROWSER': [{'label': 'Open Filebrowser', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_open', 'type': 'O', 'value': 'PRESS'},
+                        {'label': 'Open .blend File', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_open', 'type': 'O', 'value': 'PRESS', 'alt': True, 'properties': [('blend_file', True)]},
                         {'label': 'Toggle Sorting', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'ONE', 'value': 'PRESS', 'properties': [('type', 'SORT')]},
                         {'label': 'Toggle Display', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_toggle', 'type': 'TWO', 'value': 'PRESS', 'properties': [('type', 'DISPLAY_TYPE')]},
                         {'label': 'Cycle Thumbs Forwards', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_cycle_thumbnail_size', 'type': 'THREE', 'value': 'PRESS', 'properties': [('reverse', False)]},

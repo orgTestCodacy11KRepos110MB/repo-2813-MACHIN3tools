@@ -642,7 +642,7 @@ class AlignRelative(bpy.types.Operator):
                     print("  duplicate is mirrored accross another aligner", mod.mirror_object.name)
 
             mod.mirror_object = mobj
-    
+
     def regroup(self, dup_data, target, dup, debug=False):
         '''
         re-group, if the dup is in the same group as the reference, and the target is also in a group

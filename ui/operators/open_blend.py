@@ -19,7 +19,7 @@ class OpenLibraryBlend(bpy.types.Operator):
         blender = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # it it loeaded successfullly reload the library to update any changes that were done
-        if blender:
+        if blender and self.library:
             lib = bpy.data.libraries.get(self.library)
             if lib:
                 lib.reload()

@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import StringProperty, BoolProperty
+import os
 from .. utils.system import abspath, open_folder
 from .. utils.property import step_list
 
@@ -7,9 +8,10 @@ from .. utils.property import step_list
 class Open(bpy.types.Operator):
     bl_idname = "machin3.filebrowser_open"
     bl_label = "MACHIN3: Open in System's filebrowser"
-    bl_description = "Open the current location in the System's own filebrowser"
+    bl_description = "Open the current location in the System's own filebrowser\nALT: Open . blend file"
 
     path: StringProperty(name="Path")
+    blend_file: BoolProperty(name="Open .blend file")
 
     @classmethod
     def poll(cls, context):
@@ -17,10 +19,20 @@ class Open(bpy.types.Operator):
 
     def execute(self, context):
         params = context.space_data.params
-
         directory = abspath(params.directory.decode())
 
-        open_folder(directory)
+        if self.blend_file:
+            active_file = context.active_file
+
+            if active_file.asset_data:
+                bpy.ops.asset.open_containing_blend_file()
+
+            else:
+                path = os.path.join(directory, active_file.relative_path)
+                bpy.ops.machin3.open_library_blend(blendpath=path)
+
+        else:
+            open_folder(directory)
 
         return {'FINISHED'}
 
