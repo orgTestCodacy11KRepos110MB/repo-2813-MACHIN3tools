@@ -22,7 +22,22 @@ class Group(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.mode == 'OBJECT'
+        '''
+        this poll ensures the operator isn't called when a single object is selected whos parent has at least one boolean mod using the object
+        even without this poll, no group would be created here, due to the object being parented, but this poll prevents any keymap overlap too
+        '''
+
+        if context.mode == 'OBJECT':
+            sel = [obj for obj in context.selected_objects]
+            if len(sel) == 1:
+                obj = sel[0]
+                parent = obj.parent
+
+                if parent:
+                    booleans = [mod for mod in parent.modifiers if mod.type == 'BOOLEAN' and mod.object == obj]
+                    if booleans:
+                        return False
+            return True
 
     def draw(self, context):
         layout = self.layout
