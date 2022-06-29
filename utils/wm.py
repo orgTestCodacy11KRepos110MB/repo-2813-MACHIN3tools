@@ -39,10 +39,9 @@ def get_last_operators(context, debug=False):
 
     for op in context.window_manager.operators:
         idname = op.bl_idname.replace('_OT_', '.').lower()
-        label = op.bl_label.replace('MACHIN3: ', '')
+        label = op.bl_label.replace('MACHIN3: ', '').replace('Macro', '').strip()
         addon = get_parent_addon(idname)
         prop = ''
-
 
         # skip pie menu calls
 

@@ -58,7 +58,7 @@ def get_addon_operator_idnames(addon):
         idnames = []
 
         for imps in classes.values():
-            op_imps = [imp for imp in imps if 'operators' in imp[0]]
+            op_imps = [imp for imp in imps if 'operators' in imp[0] or 'macros' in imp[0]]
             idnames.extend([f"machin3.{idname}" for _, cls in op_imps for _, idname in cls])
 
         return idnames
