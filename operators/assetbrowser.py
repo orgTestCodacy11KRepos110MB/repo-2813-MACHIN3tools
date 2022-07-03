@@ -3,7 +3,7 @@ from bpy.props import StringProperty, BoolProperty, FloatProperty
 import os
 from .. utils.registration import get_addon, get_prefs, get_path
 from .. utils.ui import popup_message
-from .. utils.asset import get_catalogs_from_asset_libraries, update_asset_catalogs
+from .. utils.asset import update_asset_catalogs
 from .. utils.object import parent
 
 import time
