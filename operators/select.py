@@ -55,7 +55,7 @@ class SelectWireObjects(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         if context.mode == 'OBJECT':
-            return [obj for obj in context.visible_objects if obj.display_type == 'WIRE' or obj.type == 'EMPTY']
+            return [obj for obj in context.visible_objects if obj.display_type in ['WIRE', 'BOUNDS'] or obj.type == 'EMPTY']
 
     def invoke(self, context, event):
         bpy.ops.object.select_all(action='DESELECT')
@@ -68,9 +68,9 @@ class SelectWireObjects(bpy.types.Operator):
 
         # get all wire objects, optionally including empties
         if event.ctrl:
-            objects = [obj for obj in context.visible_objects if obj.display_type == 'WIRE' or obj.type == 'EMPTY']
+            objects = [obj for obj in context.visible_objects if obj.display_type in ['WIRE', 'BOUNDS'] or obj.type == 'EMPTY']
         else:
-            objects = [obj for obj in context.visible_objects if obj.display_type == 'WIRE']
+            objects = [obj for obj in context.visible_objects if obj.display_type in ['WIRE', 'BOUNDS']]
 
         for obj in objects:
             if event.alt:
