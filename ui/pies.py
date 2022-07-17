@@ -303,12 +303,12 @@ class PieModes(Menu):
 
                 elif active.type == 'EMPTY':
 
-                    if get_prefs().activate_assetbrowser_tools and get_prefs().show_collection_instance_assembly_in_modes_pie:
+                    if get_prefs().activate_assetbrowser_tools and get_prefs().show_instance_collection_assembly_in_modes_pie:
 
                         # 4 - LEFT
 
                         if active.instance_collection and active.instance_type == 'COLLECTION':
-                            pie.operator("machin3.assemble_collection_instance", text="Assemble Collection Instance")
+                            pie.operator("machin3.assemble_instance_collection", text="Assemble Instance Collection")
 
                         else:
                             pie.separator()

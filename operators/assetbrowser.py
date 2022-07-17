@@ -8,7 +8,7 @@ from .. utils.asset import update_asset_catalogs
 from .. utils.object import parent
 from .. utils.math import average_locations
 from .. utils.draw import draw_point
-from .. items import create_assembly_asset_location_items
+from .. items import create_assembly_asset_empty_location_items, create_assembly_asset_empty_collection_items
 
 import time
 
@@ -26,7 +26,8 @@ class CreateAssemblyAsset(bpy.types.Operator):
     name: StringProperty(name="Asset Name", default="AssemblyAsset")
     move: BoolProperty(name="Move instead of Copy", description="Move Objects into Asset Collection, instead of copying\nThis will unlink them from any existing collections", default=True)
 
-    location: EnumProperty(name="Empty Location", items=create_assembly_asset_location_items, description="Location of Colection Instance Empty", default='AVGFLOOR')
+    location: EnumProperty(name="Empty Location", items=create_assembly_asset_empty_location_items, description="Location of Asset's Empty", default='AVGFLOOR')
+    emptycol: EnumProperty(name="Empty Collection", items=create_assembly_asset_empty_collection_items, description="Collections to put the the Asset's Empty in", default='SCENECOL')
 
     remove_decal_backups: BoolProperty(name="Remove Decal Backups", description="Remove DECALmachine's Decal Backups, if present", default=False)
     remove_stashes: BoolProperty(name="Remove Stashes", description="Remove MESHmachine's Stashes, if present", default=False)
@@ -54,9 +55,9 @@ class CreateAssemblyAsset(bpy.types.Operator):
             self.avoid_update = True
             self.hide_instance = False
 
-    unlink_collection: BoolProperty(name="Unlink Collection", description="Useful to clean up the scene, and optionally start using the Asset locally right away", default=True)
-    hide_collection: BoolProperty(name="Hide Collection", default=True, description="Useful when you want to start using the Asset locally, while still having easy access to the individual objects", update=update_hide_collection)
-    hide_instance: BoolProperty(name="Hide Instance", default=False, description="Useful when you want to keep working on the Asset's objects", update=update_hide_instance)
+    unlink_collection: BoolProperty(name="Unlink Collection", description="Unlink the Asset Collection\nUseful to clean up the scene, and optionally start using the Asset locally right away", default=True)
+    hide_collection: BoolProperty(name="Hide Collection", default=True, description="Hide the Asset Collection\nUseful when you want to start using the Asset locally, while still having easy access to the individual objects", update=update_hide_collection)
+    hide_instance: BoolProperty(name="Hide Instance", default=False, description="Hide the COllection Instance Empty\nUseful when you want to keep working on the Asset's objects", update=update_hide_instance)
 
     # hidden
     avoid_update: BoolProperty()
@@ -74,9 +75,9 @@ class CreateAssemblyAsset(bpy.types.Operator):
         column.prop(self, 'name')
         column.prop(context.window_manager, 'M3_asset_catalogs', text='Catalog')
 
-
         if decalmachine or meshmachine:
             column.separator()
+            column.label(text="DECALmachine and MESHmachine" if decalmachine and meshmachine else "DECALmachine" if decalmachine else "MESHmachine")
             row = column.row(align=True)
 
             if decalmachine:
@@ -86,10 +87,18 @@ class CreateAssemblyAsset(bpy.types.Operator):
                 row.prop(self, 'remove_stashes', toggle=True)
 
         column.separator()
-        row = column.row(align=True)
-        row.prop(self, 'location', expand=True)
+        column.label(text="Asset Object Collections")
         column.prop(self, 'move', toggle=True)
 
+        column.separator()
+        column.label(text="Asset Empty")
+        row = column.row(align=True)
+        row.prop(self, 'emptycol', expand=True)
+        row = column.row(align=True)
+        row.prop(self, 'location', expand=True)
+
+        column.separator()
+        column.label(text="Asset Collection")
         row = column.row(align=True)
         row.prop(self, 'unlink_collection', toggle=True)
         r = row.row(align=True)
@@ -99,8 +108,9 @@ class CreateAssemblyAsset(bpy.types.Operator):
 
 
         column.separator()
+        column.label(text="Asset Thumbnail")
         row = column.row(align=True)
-        row.prop(self, 'render_thumbnail', toggle=True)
+        row.prop(self, 'render_thumbnail', text="Viewport Render", toggle=True)
         r = row.row(align=True)
         r.active = self.render_thumbnail
         r.prop(self, 'thumbnail_lens', text='Lens')
@@ -250,29 +260,47 @@ class CreateAssemblyAsset(bpy.types.Operator):
             obj.MM.stashes.clear()
 
     def create_asset_instance_collection(self, context, name, objects, rootobjs, loc):
+
+        # create new collection for asset and link it to the master collection
         mcol = context.scene.collection
         acol = bpy.data.collections.new(name)
-
         mcol.children.link(acol)
 
+        # collect the collections, the asset objects are currently in
+        cols = {col for obj in objects for col in obj.users_collection}
+
+        # optionally move out asset objects from their current collections
         if self.move:
             for obj in objects:
                 for col in obj.users_collection:
-                    col.objects.unlink(obj)
+                    if col in cols:
+                        col.objects.unlink(obj)
 
+        # link the objects to the new asset collection
         for obj in objects:
             acol.objects.link(obj)
 
-            if get_prefs().hide_wire_objects_when_creating_assembly_asset and obj.display_type == 'WIRE':
+            if get_prefs().hide_wire_objects_when_creating_assembly_asset and obj.display_type in ['WIRE', 'BOUNDS']:
                 obj.hide_set(True)
 
+                # just hiding is not enough, when part of an instance collection, what matters is the hide_viewport prop
+                obj.hide_viewport = True
+
+        # create the asset's instance collection empty
         instance = bpy.data.objects.new(name, object_data=None)
         instance.instance_collection = acol
         instance.instance_type = 'COLLECTION'
 
-        mcol.objects.link(instance)
+        # link it to the master collection
+        if self.emptycol == 'SCENECOL':
+            mcol.objects.link(instance)
 
-        # move instance empty to loc, and offset the root objecst to compensate
+        # link it to the asset object's collection
+        else:
+            for col in cols:
+                col.objects.link(instance)
+
+        # move instance empty to chosen locatino, and offset the root objects to compensate
         instance.location = loc
 
         for obj in rootobjs:
@@ -372,10 +400,10 @@ class CreateAssemblyAsset(bpy.types.Operator):
         context.scene.render.image_settings.file_format = file_format
 
 
-class AssembleCollectionInstance(bpy.types.Operator):
-    bl_idname = "machin3.assemble_collection_instance"
-    bl_label = "MACHIN3: Assemle Collection Instance"
-    bl_description = "Make Collection Instance objects accessible\nALT: Keep Empty as Root"
+class AssembleInstanceCollection(bpy.types.Operator):
+    bl_idname = "machin3.assemble_instance_collection"
+    bl_label = "MACHIN3: Assemle Instance Collection"
+    bl_description = "Make Instance Collection objects accessible\nALT: Keep Empty as Root"
     bl_options = {'REGISTER'}
 
     keep_empty: BoolProperty(name="Keep Empty as Root", default=False)
@@ -402,7 +430,7 @@ class AssembleCollectionInstance(bpy.types.Operator):
 
         instances = {active} | {obj for obj in context.selected_objects if obj.type == 'EMPTY' and obj.instance_collection}
 
-        # linked collection instances need to be made local first
+        # linked instance collections need to be made local first
         if any((i.instance_collection.library for i in instances)):
             # print(" linked collection instance present")
             bpy.ops.object.make_local(type='ALL')
@@ -414,8 +442,8 @@ class AssembleCollectionInstance(bpy.types.Operator):
         for instance in instances:
             collection = instance.instance_collection
 
-            # assembled collection instance
-            root_children = self.assemble_collection_instance(context, instance, collection)
+            # assembled instance collection
+            root_children = self.assemble_instance_collection(context, instance, collection)
 
             if self.keep_empty:
                 for child in root_children:
@@ -453,9 +481,9 @@ class AssembleCollectionInstance(bpy.types.Operator):
 
         return {'FINISHED'}
 
-    def assemble_collection_instance(self, context, instance, collection):
+    def assemble_instance_collection(self, context, instance, collection):
         '''
-        assemble appended collection instance
+        assemble appended instance collection
 
         NOTE: we are using the blender duplicate op here, becaue it massively simplies object duplication
         ####: not only do we need to duplicate the collections objects, but we also need to update all references
@@ -480,6 +508,12 @@ class AssembleCollectionInstance(bpy.types.Operator):
                 if obj.name not in col.objects:
                     col.objects.link(obj)
             obj.select_set(True)
+
+            if get_prefs().hide_wire_objects_when_assembling_instance_collection and obj.display_type in ['WIRE', 'BOUNDS']:
+                obj.hide_set(True)
+
+                # make sure hide_viewport is (no longer) set, as it would prevent unhiding the objects
+                obj.hide_viewport = False
 
         # for multi-user collections, duplicate the contents and unlink originals again
         if len(collection.users_dupli_group) > 1:
@@ -509,7 +543,7 @@ class AssembleCollectionInstance(bpy.types.Operator):
             obj.select_set(True)
             context.view_layer.objects.active = obj
 
-        # turn collection instance object into normal empty
+        # turn instance collection object into normal empty
         # this then lowers the user count of the collection accordingly
         instance.instance_type = 'NONE'
         instance.instance_collection = None

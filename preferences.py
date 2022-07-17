@@ -268,9 +268,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     preferred_default_catalog: StringProperty(name="Preferred Default Catalog", default="Model")
     preferred_assetbrowser_workspace_name: StringProperty(name="Preferred Workspace for Assembly Asset Creation", default="General.alt")
     show_assembly_asset_creation_in_save_pie: BoolProperty(name="Show Assembly Asset Creation in Save Pie", default=True)
-    show_collection_instance_assembly_in_modes_pie: BoolProperty(name="Show Collection Instance Assembly in Modes Pie", default=True)
+    show_instance_collection_assembly_in_modes_pie: BoolProperty(name="Show Collection Instance Assembly in Modes Pie", default=True)
     hide_wire_objects_when_creating_assembly_asset: BoolProperty(name="Hide Wire Objects when creating Assembly Asset", default=True)
-    hide_wire_objects_when_assembling_collection_instance: BoolProperty(name="Hide Wire Objects when assembling Collection Instance", default=True)
+    hide_wire_objects_when_assembling_instance_collection: BoolProperty(name="Hide Wire Objects when assembling Collection Instance", default=True)
 
     show_screencast: BoolProperty(name="Show Screencast in Save Pie", description="Show Screencast in Save Pie", default=True)
     screencast_operator_count: IntProperty(name="Operator Count", description="Maximum number of Operators displayed when Screen Casting", default=12, min=1, max=100)
@@ -675,7 +675,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
         # ASSETBROWSER TOOL
 
-        if getattr(bpy.types, "MACHIN3_OT_assemble_collection_instance", False):
+        if getattr(bpy.types, "MACHIN3_OT_assemble_instance_collection", False):
             bb = b.box()
             bb.label(text="Assetbrowser Tools")
 
@@ -697,14 +697,14 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
             row = column.row(align=True)
             r = row.split(factor=0.2, align=True)
-            r.prop(self, "hide_wire_objects_when_assembling_collection_instance", text="True" if self.hide_wire_objects_when_assembling_collection_instance else "False", toggle=True)
-            r.label(text="Hide Wire Objects when assembling Collection Instance")
+            r.prop(self, "hide_wire_objects_when_assembling_instance_collection", text="True" if self.hide_wire_objects_when_assembling_instance_collection else "False", toggle=True)
+            r.label(text="Hide Wire Objects when assembling Instance Collection")
 
             if getattr(bpy.types, "MACHIN3_MT_modes_pie", False):
                 row = column.row(align=True)
                 r = row.split(factor=0.2, align=True)
-                r.prop(self, "show_collection_instance_assembly_in_modes_pie", text="True" if self.show_collection_instance_assembly_in_modes_pie else "False", toggle=True)
-                r.label(text="Show Collection Instance Assembly in Modes Pie")
+                r.prop(self, "show_instance_collection_assembly_in_modes_pie", text="True" if self.show_instance_collection_assembly_in_modes_pie else "False", toggle=True)
+                r.label(text="Show Instance Collection Assembly in Modes Pie")
 
             if getattr(bpy.types, "MACHIN3_MT_save_pie", False):
                 row = column.row(align=True)
