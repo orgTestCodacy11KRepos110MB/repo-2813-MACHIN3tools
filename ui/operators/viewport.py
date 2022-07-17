@@ -50,13 +50,15 @@ class ViewAxis(bpy.types.Operator):
 
             # """
             # setting these props is required for prefs.inputs.use_auto_perspective to work
-            # r3d.is_orthographic_side_view = True
-            # r3d.is_perspective = True
+            r3d.is_orthographic_side_view = True
+            r3d.is_perspective = True
 
+            # but no longer works as of 3.2, or even 3.1
             # TODO: report it
 
             # """
 
+            """
             print("\nregion")
             for r in dir(context.region):
                 print(r, getattr(context.region, r))
@@ -64,6 +66,7 @@ class ViewAxis(bpy.types.Operator):
             print("\nregion data")
             for r in dir(context.region_data):
                 print(r, getattr(context.region_data, r))
+            """
 
 
             # bl_rna
