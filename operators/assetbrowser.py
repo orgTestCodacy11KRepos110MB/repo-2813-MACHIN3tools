@@ -1,10 +1,14 @@
 import bpy
-from bpy.props import StringProperty, BoolProperty, FloatProperty
+from bpy.props import StringProperty, BoolProperty, FloatProperty, EnumProperty
 import os
+from mathutils import Vector
 from .. utils.registration import get_addon, get_prefs, get_path
 from .. utils.ui import popup_message
 from .. utils.asset import update_asset_catalogs
 from .. utils.object import parent
+from .. utils.math import average_locations
+from .. utils.draw import draw_point
+from .. items import create_assembly_asset_location_items
 
 import time
 
@@ -21,6 +25,8 @@ class CreateAssemblyAsset(bpy.types.Operator):
 
     name: StringProperty(name="Asset Name", default="AssemblyAsset")
     move: BoolProperty(name="Move instead of Copy", description="Move Objects into Asset Collection, instead of copying\nThis will unlink them from any existing collections", default=True)
+
+    location: EnumProperty(name="Empty Location", items=create_assembly_asset_location_items, description="Location of Colection Instance Empty", default='AVGFLOOR')
 
     remove_decal_backups: BoolProperty(name="Remove Decal Backups", description="Remove DECALmachine's Decal Backups, if present", default=False)
     remove_stashes: BoolProperty(name="Remove Stashes", description="Remove MESHmachine's Stashes, if present", default=False)
@@ -68,10 +74,9 @@ class CreateAssemblyAsset(bpy.types.Operator):
         column.prop(self, 'name')
         column.prop(context.window_manager, 'M3_asset_catalogs', text='Catalog')
 
-        column.separator()
-        column.prop(self, 'move', toggle=True)
 
         if decalmachine or meshmachine:
+            column.separator()
             row = column.row(align=True)
 
             if decalmachine:
@@ -80,6 +85,11 @@ class CreateAssemblyAsset(bpy.types.Operator):
             if meshmachine:
                 row.prop(self, 'remove_stashes', toggle=True)
 
+        column.separator()
+        row = column.row(align=True)
+        row.prop(self, 'location', expand=True)
+        column.prop(self, 'move', toggle=True)
+
         row = column.row(align=True)
         row.prop(self, 'unlink_collection', toggle=True)
         r = row.row(align=True)
@@ -87,6 +97,8 @@ class CreateAssemblyAsset(bpy.types.Operator):
         r.prop(self, 'hide_collection', toggle=True)
         r.prop(self, 'hide_instance', toggle=True)
 
+
+        column.separator()
         row = column.row(align=True)
         row.prop(self, 'render_thumbnail', toggle=True)
         r = row.row(align=True)
@@ -124,7 +136,11 @@ class CreateAssemblyAsset(bpy.types.Operator):
         if name:
             print(f"INFO: Creation Assembly Asset: {name}")
 
+            # from the selection get all the objects to create the
             objects = self.get_assembly_asset_objects(context)
+
+            # get location to place the instance collection empty in
+            rootobjs, loc = self.get_empty_location(context, objects)
 
             if decalmachine and self.remove_decal_backups:
                 self.delete_decal_backups(objects)
@@ -133,7 +149,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
                 self.delete_stashes(objects)
 
             # create the asset
-            instance = self.create_asset_instance_collection(context, name, objects)
+            instance = self.create_asset_instance_collection(context, name, objects, rootobjs, loc)
 
             # switch to an asset browser workspac and set it to LOCAL
             self.adjust_workspace(context)
@@ -186,6 +202,29 @@ class CreateAssemblyAsset(bpy.types.Operator):
 
         return objects
 
+    def get_empty_location(self, context, objects):
+        '''
+        from collection objects, get root objects
+        return root objecst and the averaged location of them
+        '''
+
+        # get the root objects of these objects
+        rootobjs = [obj for obj in objects if not obj.parent]
+
+        if self.location in ['AVG', 'AVGFLOOR']:
+            loc = average_locations([obj.matrix_world.decompose()[0] for obj in rootobjs])
+
+            if self.location == 'AVGFLOOR':
+                loc[2] = 0
+
+        else:
+            loc = Vector((0, 0, 0))
+
+        # draw_point(loc, color=(1, 1, 0) if self.location == 'AVGFLOOR' else (1, 1, 1) if self.location == 'AVG' else (0, 1, 0), modal=False)
+        # context.area.tag_redraw()
+
+        return rootobjs, loc
+
     def delete_decal_backups(self, objects):
         decals_with_backups = [obj for obj in objects if obj.DM.isdecal and obj.DM.decalbackup]
 
@@ -210,7 +249,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
 
             obj.MM.stashes.clear()
 
-    def create_asset_instance_collection(self, context, name, objects):
+    def create_asset_instance_collection(self, context, name, objects, rootobjs, loc):
         mcol = context.scene.collection
         acol = bpy.data.collections.new(name)
 
@@ -232,10 +271,17 @@ class CreateAssemblyAsset(bpy.types.Operator):
         instance.instance_type = 'COLLECTION'
 
         mcol.objects.link(instance)
+
+        # move instance empty to loc, and offset the root objecst to compensate
+        instance.location = loc
+
+        for obj in rootobjs:
+            obj.location = obj.location - loc
+
+        # mark instace as asset
         instance.asset_mark()
 
         # printd(self.catalogs)
-
         catalog = context.window_manager.M3_asset_catalogs
 
         if catalog and catalog != 'NONE':
@@ -431,7 +477,8 @@ class AssembleCollectionInstance(bpy.types.Operator):
 
         for obj in children:
             for col in cols:
-                col.objects.link(obj)
+                if obj.name not in col.objects:
+                    col.objects.link(obj)
             obj.select_set(True)
 
         # for multi-user collections, duplicate the contents and unlink originals again

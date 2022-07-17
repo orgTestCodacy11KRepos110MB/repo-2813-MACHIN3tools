@@ -129,6 +129,10 @@ cursor_spin_angle_preset_items = [('None', 'None', ''),
                                   ('180', '180', '')]
 
 
+create_assembly_asset_location_items = [('AVG', 'Average', ''),
+                                        ('AVGFLOOR', 'Average Floor', ''),
+                                        ('WORLDORIGIN', 'World Origin', '')]
+
 # PIES
 
 eevee_preset_items = [('NONE', 'None', ''),
