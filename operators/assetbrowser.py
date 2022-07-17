@@ -34,6 +34,7 @@ class CreateAssemblyAsset(bpy.types.Operator):
 
     render_thumbnail: BoolProperty(name="Render Thumbnail", default=True)
     thumbnail_lens: FloatProperty(name="Thumbnail Lens", default=100)
+    toggle_overlays: BoolProperty(name="Toggle Overlays", default=True)
 
     def update_hide_instance(self, context):
         if self.avoid_update:
@@ -113,8 +114,8 @@ class CreateAssemblyAsset(bpy.types.Operator):
         row.prop(self, 'render_thumbnail', text="Viewport Render", toggle=True)
         r = row.row(align=True)
         r.active = self.render_thumbnail
+        r.prop(self, 'toggle_overlays', text="Toggle Overlays", toggle=True)
         r.prop(self, 'thumbnail_lens', text='Lens')
-
 
     # """
     def invoke(self, context, event):
@@ -374,17 +375,21 @@ class CreateAssemblyAsset(bpy.types.Operator):
         resolution = (context.scene.render.resolution_x, context.scene.render.resolution_y)
         file_format = context.scene.render.image_settings.file_format
         lens = context.space_data.lens
+        show_overlays = context.space_data.overlay.show_overlays
 
-
-        # adjsut for thumbnail rendering
+        # adjust for thumbnail rendering
         context.scene.render.resolution_x = 500
         context.scene.render.resolution_y = 500
         context.scene.render.image_settings.file_format = 'JPEG'
 
         context.space_data.lens = self.thumbnail_lens
 
+        if show_overlays and self.toggle_overlays:
+            context.space_data.overlay.show_overlays = False
+
         # render
         bpy.ops.render.opengl()
+
 
         # fetch the render result and save it
         thumb = bpy.data.images.get('Render Result')
@@ -398,6 +403,9 @@ class CreateAssemblyAsset(bpy.types.Operator):
         context.space_data.lens = lens
 
         context.scene.render.image_settings.file_format = file_format
+
+        if show_overlays and self.toggle_overlays:
+            context.space_data.overlay.show_overlays = True
 
 
 class AssembleInstanceCollection(bpy.types.Operator):
