@@ -28,10 +28,6 @@ class MenuMACHIN3toolsObjectContextMenu(bpy.types.Menu):
         if p.activate_mirror:
             layout.operator("machin3.unmirror", text="Un-Mirror")
 
-        if hypercursor:
-            layout.operator("machin3.remove_array", text="Un-Array")
-            layout.operator("machin3.remove_boolean", text="Un-Boolean")
-
         if p.activate_select:
             layout.operator("machin3.select_center_objects", text="Select Center Objects")
             layout.operator("machin3.select_wire_objects", text="Select Wire Objects")
