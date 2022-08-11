@@ -1,8 +1,6 @@
 import bpy
 import bmesh
-from bpy.props import EnumProperty, BoolProperty, StringProperty
-from mathutils import Matrix, Euler, Quaternion
-from math import radians
+from bpy.props import EnumProperty, BoolProperty
 from ... utils.view import reset_viewport
 from ... utils.math import average_locations
 from ... items import view_axis_items
@@ -48,49 +46,6 @@ class ViewAxis(bpy.types.Operator):
             # always use ortho for aligned views like this
             r3d.view_perspective = 'ORTHO'
 
-            # """
-            # setting these props is required for prefs.inputs.use_auto_perspective to work
-            r3d.is_orthographic_side_view = True
-            r3d.is_perspective = True
-
-            # but no longer works as of 3.2, or even 3.1
-            # TODO: report it
-
-            # """
-
-            """
-            print("\nregion")
-            for r in dir(context.region):
-                print(r, getattr(context.region, r))
-
-            print("\nregion data")
-            for r in dir(context.region_data):
-                print(r, getattr(context.region_data, r))
-            """
-
-
-            # bl_rna
-            # clip_planes
-            # is_orthographic_side_view
-            # is_perspective
-            # lock_rotation
-            # perspective_matrix
-            # rna_type
-            # show_sync_view
-            # update
-            # use_box_clip
-            # use_clip_planes
-            # view_camera_offset
-            # view_camera_zoom
-            # view_distance
-            # view_location
-            # view_matrix
-            # view_perspective
-            # view_rotation
-            # window_matrix
-
-
-
         # align custom view in object or cursor space
         elif m3.custom_views_local or m3.custom_views_cursor:
             mx = context.scene.cursor.matrix if m3.custom_views_cursor else context.active_object.matrix_world if m3.custom_views_local and context.active_object else None
@@ -117,11 +72,6 @@ class ViewAxis(bpy.types.Operator):
             r3d.view_rotation = rot
 
             r3d.view_perspective = 'ORTHO'
-
-            # setting these props is required for prefs.inputs.use_auto_perspective to work
-            r3d.is_orthographic_side_view = True
-            r3d.is_perspective = True
-
 
         # align in world space
         else:
