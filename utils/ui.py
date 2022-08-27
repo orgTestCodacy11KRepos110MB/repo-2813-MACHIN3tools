@@ -1,5 +1,7 @@
 import bpy
 import rna_keymap_ui
+from mathutils import Vector
+from bpy_extras.view3d_utils import region_2d_to_location_3d, location_3d_to_region_2d
 from bl_ui.space_statusbar import STATUSBAR_HT_header as statusbar
 
 
@@ -91,6 +93,51 @@ def popup_message(message, title="Info", icon="INFO", terminal=True):
             print(" »", ", ".join(message))
         else:
             print(" »", message)
+
+
+# ZOOM FACTOR
+
+def get_zoom_factor(context, depth_location, scale=10):
+    '''
+    get factor to scale 3dview items to behave as if in screen space
+    '''
+
+    center = Vector((context.region.width / 2, context.region.height / 2))
+    offset = center + Vector((scale, 0))
+
+    center_3d = region_2d_to_location_3d(context.region, context.region_data, center, depth_location)
+    offset_3d = region_2d_to_location_3d(context.region, context.region_data, offset, depth_location)
+
+    # draw_point(center_3d, color=(1, 1, 0), modal=False)
+    # draw_point(offset_3d, color=(1, 0, 0), modal=False)
+
+    # take object scaling into account
+    if context.active_object:
+        mx = context.active_object.matrix_world.to_3x3()
+        zoom_vector = mx.inverted_safe() @ Vector(((center_3d - offset_3d).length, 0, 0))
+        return zoom_vector.length
+    return (center_3d - offset_3d).length
+
+
+# HUD
+
+def get_flick_direction(self, context):
+    # origin_2d = location_3d_to_region_2d(context.region, context.region_data, self.origin)
+    origin_2d = location_3d_to_region_2d(context.region, context.region_data, self.init_mouse_3d, default=Vector((context.region.width / 2, context.region.height / 2)))
+
+    axes_2d = {}
+
+    for direction, axis in self.axes.items():
+        # print(direction, axis)
+
+        # axis_2d = location_3d_to_region_2d(context.region, context.region_data, self.origin + axis)
+        axis_2d = location_3d_to_region_2d(context.region, context.region_data, self.init_mouse_3d + axis, default=origin_2d)
+
+        # avoid zero length vectors from ortho views
+        if (axis_2d - origin_2d).length:
+            axes_2d[direction] = (axis_2d - origin_2d).normalized()
+
+    return min([(d, abs(self.flick_vector.xy.angle_signed(a))) for d, a in axes_2d.items()], key=lambda x: x[1])[0]
 
 
 # HEADER

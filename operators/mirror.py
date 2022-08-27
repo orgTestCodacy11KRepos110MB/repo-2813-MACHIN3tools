@@ -5,10 +5,11 @@ from mathutils import Vector
 from .. utils.registration import get_addon
 from .. utils.tools import get_active_tool
 from .. utils.object import parent, unparent
+from .. utils.modifier import remove_mod
 from .. utils.ui import get_zoom_factor, get_flick_direction, init_status, finish_status
 from .. utils.draw import draw_vector, draw_circle, draw_point, draw_label
 from .. colors import red, green, blue, white
-from .. items import axis_items
+from .. items import axis_items, axis_index_mapping
 
 
 decalmachine = None
@@ -138,14 +139,16 @@ class Mirror(bpy.types.Operator):
             alpha = 1 if self.remove else 0.8
             draw_label(context, title=title, coords=(self.init_mouse[0], self.init_mouse[1] + self.flick_distance - (30 * self.scale)), center=True, color=color, alpha=alpha)
 
-            draw_label(context, title=self.flick_direction.replace('_', ' ').title(), coords=(self.init_mouse[0], self.init_mouse[1] - self.flick_distance), center=True, alpha=0.4)
+            title = self.flick_direction.split('_')[1] if self.remove else self.flick_direction.replace('_', ' ').title()
+            draw_label(context, title=title, coords=(self.init_mouse[0], self.init_mouse[1] - self.flick_distance), center=True, alpha=0.4)
 
     def draw_VIEW3D(self, context):
         for direction, axis, color in zip(self.axes.keys(), self.axes.values(), self.colors):
             positive = 'POSITIVE' in direction
 
             # draw_vector(axis * self.zoom / 2, origin=self.origin, color=color, width=2 if positive else 1, alpha=0.99 if positive else 0.3)
-            draw_vector(axis * self.zoom / 2, origin=self.init_mouse_3d, color=color, width=2 if positive else 1, alpha=0.99 if positive else 0.3)
+            width, alpha = (2, 0.99) if positive or self.remove else (1, 0.3)
+            draw_vector(axis * self.zoom / 2, origin=self.init_mouse_3d, color=color, width=width, alpha=alpha)
 
         # draw axis highlight
         # draw_point(self.origin + self.axes[self.flick_direction] * self.zoom / 2 * 1.2, size=5, alpha=0.8)
@@ -300,7 +303,11 @@ class Mirror(bpy.types.Operator):
         active = context.active_object
         self.sel = context.selected_objects
 
-        self.mirror(context, active, self.sel)
+        if self.flick and self.remove:
+            self.remove_mirror(active)
+
+        else:
+            self.mirror(context, active, self.sel)
 
         return {'FINISHED'}
 
@@ -420,6 +427,19 @@ class Mirror(bpy.types.Operator):
 
         if direction == 'POSITIVE':
             setattr(self, f'flip_{axis.lower()}', True)
+
+    def remove_mirror(self, obj):
+        '''
+        remove the last mirror mod in that stack that matches the axis of the flick_direction
+        '''
+
+        axis = self.flick_direction.split('_')[1]
+
+        mods = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.use_axis[axis_index_mapping[axis]]]
+
+        if mods:
+            remove_mod(mods[-1].name)
+            return True
 
 
 class Unmirror(bpy.types.Operator):

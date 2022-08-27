@@ -4,6 +4,10 @@ axis_items = [('X', 'X', ''),
               ('Y', 'Y', ''),
               ('Z', 'Z', '')]
 
+axis_index_mapping = {'X': 0,
+                      'Y': 1,
+                      'Z': 2}
+
 axis_vector_mappings = {'X': Vector((1, 0, 0)),
                         'Y': Vector((0, 1, 0)),
                         'Z': Vector((0, 0, 1))}
