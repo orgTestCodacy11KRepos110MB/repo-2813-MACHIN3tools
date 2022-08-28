@@ -158,9 +158,13 @@ keys = {'SMART_VERT': [{'label': 'Merge Last', 'keymap': 'Mesh', 'idname': 'mach
         'FOCUS': [{'label': 'View Selected', 'keymap': '3D View Generic', 'space_type': 'VIEW_3D', 'idname': 'machin3.focus', 'type': 'F', 'value': 'PRESS', 'properties': [('method', 'VIEW_SELECTED')]},
                   {'label': 'Local View', 'keymap': 'Object Mode', 'idname': 'machin3.focus', 'type': 'F', 'value': 'PRESS', 'ctrl': True, 'properties': [('method', 'LOCAL_VIEW'), ('invert', False)]},
                   {'label': 'Local View (Inverted)', 'keymap': 'Object Mode', 'idname': 'machin3.focus', 'type': 'F', 'value': 'PRESS', 'ctrl': True, 'alt': True, 'properties': [('method', 'LOCAL_VIEW'), ('invert', True)]}],
-        'MIRROR': [{'label': 'X Axis', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'X', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('use_x', True), ('use_y', False), ('use_z', False)]},
-                   {'label': 'Y Axis', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'Y', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('use_x', False), ('use_y', True), ('use_z', False)]},
-                   {'label': 'Z Axis', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'Z', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('use_x', False), ('use_y', False), ('use_z', True)]}],
+
+        'MIRROR': [{'label': 'Flick Mirror', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'X', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('flick', True), ('remove', False)]}],
+
+        # 'MIRROR': [{'label': 'X Axis', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'X', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('use_x', True), ('use_y', False), ('use_z', False)]},
+                   # {'label': 'Y Axis', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'Y', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('use_x', False), ('use_y', True), ('use_z', False)]},
+                   # {'label': 'Z Axis', 'keymap': 'Object Mode', 'idname': 'machin3.mirror', 'type': 'Z', 'value': 'PRESS', 'alt': True, 'shift': True, 'properties': [('use_x', False), ('use_y', False), ('use_z', True)]}],
+
         'ALIGN': [{'label': 'Object Mode', 'keymap': 'Object Mode', 'idname': 'machin3.align', 'type': 'A', 'value': 'PRESS', 'alt': True},
                   {'label': 'Pose Mode', 'keymap': 'Pose', 'idname': 'machin3.align', 'type': 'A', 'value': 'PRESS', 'alt': True}],
         'FILEBROWSER': [{'label': 'Open Filebrowser', 'keymap': 'File Browser', 'space_type': 'FILE_BROWSER', 'idname': 'machin3.filebrowser_open', 'type': 'O', 'value': 'PRESS'},
