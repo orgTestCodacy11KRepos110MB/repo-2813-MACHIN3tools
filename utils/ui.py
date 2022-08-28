@@ -97,7 +97,7 @@ def popup_message(message, title="Info", icon="INFO", terminal=True):
 
 # ZOOM FACTOR
 
-def get_zoom_factor(context, depth_location, scale=10):
+def get_zoom_factor(context, depth_location, scale=10, ignore_obj_scale=False):
     '''
     get factor to scale 3dview items to behave as if in screen space
     '''
@@ -112,7 +112,7 @@ def get_zoom_factor(context, depth_location, scale=10):
     # draw_point(offset_3d, color=(1, 0, 0), modal=False)
 
     # take object scaling into account
-    if context.active_object:
+    if not ignore_obj_scale and context.active_object:
         mx = context.active_object.matrix_world.to_3x3()
         zoom_vector = mx.inverted_safe() @ Vector(((center_3d - offset_3d).length, 0, 0))
         return zoom_vector.length

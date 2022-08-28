@@ -167,7 +167,7 @@ class Mirror(bpy.types.Operator):
                 self.passthrough = False
                 self.init_mouse = self.mousepos
                 self.init_mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.init_mouse, self.origin)
-                self.zoom = get_zoom_factor(context, depth_location=self.origin, scale=self.flick_distance)
+                self.zoom = get_zoom_factor(context, depth_location=self.oArigin, scale=self.flick_distance, ignore_obj_scale=True)
 
             self.flick_vector = self.mousepos - self.init_mouse
             # print(self.flick_vector.length)
@@ -265,7 +265,7 @@ class Mirror(bpy.types.Operator):
             # turns out using the clip_start also has issues?, view_dir * 10 seems to work for all 3 clip start values
             self.origin = view_origin + view_dir * 10
 
-            self.zoom = get_zoom_factor(context, depth_location=self.origin, scale=self.flick_distance)
+            self.zoom = get_zoom_factor(context, depth_location=self.origin, scale=self.flick_distance, ignore_obj_scale=True)
 
             self.init_mouse = self.mousepos
             self.init_mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.init_mouse, self.origin)
