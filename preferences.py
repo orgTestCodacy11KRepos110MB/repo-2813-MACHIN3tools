@@ -25,7 +25,8 @@ has_hud = ['OT_material_picker',
            'OT_group',
            'OT_transform_edge_constrained',
            'OT_focus',
-           'MT_tools_pie']
+           'MT_tools_pie',
+           'OT_mirror']
 
 is_fading = ['OT_material_picker',
              'OT_clean_up',
@@ -372,6 +373,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     HUD_fade_group: FloatProperty(name="Group HUD Fade Time (seconds)", default=1, min=0.1)
     HUD_fade_tools_pie: FloatProperty(name="Tools Pie HUD Fade Time (seconds)", default=0.75, min=0.1)
 
+    mirror_flick_distance: IntProperty(name="Flick Distance", default=75, min=20, max=1000)
+
 
     # hidden
 
@@ -594,6 +597,11 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             r = row.split(factor=0.2)
             r.prop(self, "HUD_scale", text="")
             r.label(text="HUD Scale")
+
+            if getattr(bpy.types, "MACHIN3_OT_mirror", False):
+                r = row.split(factor=0.3)
+                r.prop(self, "mirror_flick_distance", text="")
+                r.label(text="Mirror Flick Distance")
 
             if any([getattr(bpy.types, f'MACHIN3_{name}', False) for name in is_fading]):
                 column = bb.column()

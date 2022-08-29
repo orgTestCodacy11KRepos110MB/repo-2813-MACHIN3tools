@@ -2,7 +2,7 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty
 from bpy_extras.view3d_utils import region_2d_to_location_3d, region_2d_to_origin_3d, region_2d_to_vector_3d
 from mathutils import Vector
-from .. utils.registration import get_addon
+from .. utils.registration import get_addon, get_prefs
 from .. utils.tools import get_active_tool
 from .. utils.object import parent, unparent
 from .. utils.modifier import remove_mod
@@ -250,10 +250,8 @@ class Mirror(bpy.types.Operator):
             mx = active.matrix_world
 
             # initialize
-            # self.scale = context.preferences.view.ui_scale * get_prefs().modal_hud_scale
-            # self.flick_distance = get_prefs().symmetrize_flick_distance * self.scale
-            self.scale = 1
-            self.flick_distance = 75
+            self.scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
+            self.flick_distance = get_prefs().mirror_flick_distance * self.scale
 
             # get self.origin, which is a point under the mouse and always ahead of the view in 3d space
             self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y, 0))
