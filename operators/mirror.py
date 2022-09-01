@@ -41,13 +41,14 @@ def draw_mirror(op):
             row.label(text="", icon='EVENT_X')
             row.label(text=f"Remove Mirror: {op.remove}")
 
-            if not op.misaligned['isallmisaligned']:
-                row.label(text="", icon='EVENT_Q')
-                row.label(text="Togggle Mirror Object")
+            if op.misaligned:
+                if op.misaligned['isallmisaligned']:
+                    row.label(text="", icon='EVENT_Q')
+                    row.label(text="Togggle Mirror Object")
 
-            if op.remove and op.misaligned:
-                row.label(text="", icon='MOUSE_MMB')
-                row.label(text="Cycle Mirror Object")
+                if op.remove:
+                    row.label(text="", icon='MOUSE_MMB')
+                    row.label(text="Cycle Mirror Object")
 
     return draw
 
