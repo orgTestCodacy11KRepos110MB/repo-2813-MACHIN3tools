@@ -1,6 +1,6 @@
 import bpy
 import bmesh
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 from . math import flatten_matrix
 
 
@@ -163,3 +163,7 @@ def set_obj_origin(obj, mx, bm=None, decalmachine=False, meshmachine=False):
 
             stash.obj.data.transform(deltamx)
             stash.obj.matrix_world = mx
+
+
+def get_eval_bbox(obj):
+    return [Vector(co) for co in obj.bound_box]

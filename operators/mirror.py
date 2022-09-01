@@ -4,11 +4,14 @@ from bpy_extras.view3d_utils import region_2d_to_location_3d, region_2d_to_origi
 from mathutils import Vector
 from .. utils.registration import get_addon, get_prefs
 from .. utils.tools import get_active_tool
-from .. utils.object import parent, unparent
+from .. utils.object import parent, unparent, get_eval_bbox
+from .. utils.mesh import get_coords
 from .. utils.modifier import remove_mod
 from .. utils.ui import get_zoom_factor, get_flick_direction, init_status, finish_status
-from .. utils.draw import draw_vector, draw_circle, draw_point, draw_label
-from .. colors import red, green, blue, white
+from .. utils.draw import draw_vector, draw_circle, draw_point, draw_label, draw_bbox
+from .. utils.system import printd
+from .. utils.property import step_list
+from .. colors import red, green, blue, white, yellow
 from .. items import axis_items, axis_index_mapping
 
 
@@ -34,8 +37,17 @@ def draw_mirror(op):
 
         row.separator(factor=10)
 
-        row.label(text="", icon='EVENT_X')
-        row.label(text=f"Mode: {'Remove' if op.remove else 'Mirror'}")
+        if op.mirror_mods:
+            row.label(text="", icon='EVENT_X')
+            row.label(text=f"Remove Mirror: {op.remove}")
+
+            if not op.misaligned['isallmisaligned']:
+                row.label(text="", icon='EVENT_Q')
+                row.label(text="Togggle Mirror Object")
+
+            if op.remove and op.misaligned:
+                row.label(text="", icon='MOUSE_MMB')
+                row.label(text="Cycle Mirror Object")
 
     return draw
 
@@ -139,6 +151,10 @@ class Mirror(bpy.types.Operator):
             alpha = 1 if self.remove else 0.8
             draw_label(context, title=title, coords=(self.init_mouse[0], self.init_mouse[1] + self.flick_distance - (30 * self.scale)), center=True, color=color, alpha=alpha)
 
+            if self.remove and self.misaligned:
+                name, alpha = (self.mirror_obj.name, 1) if self.usemisalign else ('None', 0.3)
+                draw_label(context, title=f"misaligned: {name}", coords=(self.init_mouse[0], self.init_mouse[1] + self.flick_distance - (45 * self.scale)), center=True, color=yellow if self.usemisalign else white, alpha=alpha)
+
             title = self.flick_direction.split('_')[1] if self.remove else self.flick_direction.replace('_', ' ').title()
             draw_label(context, title=title, coords=(self.init_mouse[0], self.init_mouse[1] - self.flick_distance), center=True, alpha=0.4)
 
@@ -154,45 +170,102 @@ class Mirror(bpy.types.Operator):
         # draw_point(self.origin + self.axes[self.flick_direction] * self.zoom / 2 * 1.2, size=5, alpha=0.8)
         draw_point(self.init_mouse_3d + self.axes[self.flick_direction] * self.zoom / 2 * 1.2, size=5, alpha=0.8)
 
+        # draw chosen misaligned mirror obj
+        if self.remove and self.misaligned and self.usemisalign:
+            bbox = get_eval_bbox(self.mirror_obj)
+            mx = self.misaligned['matrices'][self.mirror_obj]
+
+            draw_bbox(bbox, mx=mx, color=yellow, corners=0.1, alpha=0.5)
+
     def modal(self, context, event):
         context.area.tag_redraw()
 
         self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y, 0))
 
-        events = ['MOUSEMOVE', 'X', 'D', 'R']
+        events = ['MOUSEMOVE']
+
+        if self.mirror_mods:
+            events.extend(['X', 'D', 'R'])
+
+            if self.remove and self.misaligned:
+                # events.append('Q')
+                events.extend(['Q', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'])
 
         if event.type in events:
-
             if self.passthrough:
                 self.passthrough = False
                 self.init_mouse = self.mousepos
                 self.init_mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.init_mouse, self.origin)
-                self.zoom = get_zoom_factor(context, depth_location=self.oArigin, scale=self.flick_distance, ignore_obj_scale=True)
+                self.zoom = get_zoom_factor(context, depth_location=self.origin, scale=self.flick_distance, ignore_obj_scale=True)
 
-            self.flick_vector = self.mousepos - self.init_mouse
-            # print(self.flick_vector.length)
+            # GET flick direction
 
-            # get/set the best fitting direction
-            if self.flick_vector.length:
-                self.flick_direction = get_flick_direction(self, context)
-                # print(self.flick_direction)
+            if event.type == 'MOUSEMOVE':
 
-                # get/set the direction used by the symmetrize op, which is oppositite of what you pick when flicking(sel.matched_direction)
-                self.set_mirror_props()
+                self.flick_vector = self.mousepos - self.init_mouse
+                # print(self.flick_vector.length)
 
-            if self.flick_vector.length > self.flick_distance:
-                self.finish()
+                # get/set the best fitting direction
+                if self.flick_vector.length:
+                    self.flick_direction = get_flick_direction(context, self.init_mouse_3d, self.flick_vector, self.axes)
+                    # print(self.flick_direction)
 
-                self.execute(context)
-                return {'FINISHED'}
+                    # get/set the direction used by the symmetrize op, which is oppositite of what you pick when flicking(sel.matched_direction)
+                    self.set_mirror_props()
+
+                if self.flick_vector.length > self.flick_distance:
+                    self.finish()
+
+                    self.execute(context)
+                    return {'FINISHED'}
+
+
+            elif event.type in {'X', 'D', 'R', 'Q', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'} and event.value == 'PRESS':
+
+                # TOGGLE remove mode
+
+                if event.type in {'X', 'D', 'R'}:
+                    self.remove = not self.remove
+                    context.active_object.select_set(True)
+
+                if self.misaligned:
+
+                    # TOGGLE use misalignment (but only if not all mods are using misaligned objects, otherwise it will be forcibly enabled in invoke() already)
+
+                    if not self.misaligned['isallmisaligned'] and event.type == 'Q' and event.value == 'PRESS':
+                        self.usemisalign = not self.usemisalign
+                        context.active_object.select_set(True)
+
+
+                    # CYCLE misaligned object
+
+                    if event.type in ['WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'] and event.value == 'PRESS':
+                        if self.usemisalign:
+                            if event.type in ['WHEELDOWNMOUSE', 'ONE']:
+                                self.mirror_obj = step_list(self.mirror_obj, self.misaligned['sorted_objects'], step=-1, loop=True)
+
+                            elif event.type in ['WHEELUPMOUSE', 'tWO']:
+                                self.mirror_obj = step_list(self.mirror_obj, self.misaligned['sorted_objects'], step=1, loop=True)
+                        else:
+                            self.usemisalign = True
+                            context.active_object.select_set(True)
+
+
+                # update HUD axes
+                if self.remove and self.misaligned and self.usemisalign:
+                    mo_mx = self.misaligned['matrices'][self.mirror_obj]
+                    self.axes = self.get_axes(mo_mx)
+                else:
+                    self.axes = self.get_axes(self.mx)
+
+
+
+        # PASS THROUGH
 
         if event.type in {'MIDDLEMOUSE'} or (event.alt and event.type in {'LEFTMOUSE', 'RIGHTMOUSE'}) or event.type.startswith('NDOF'):
             self.passthrough = True
             return {'PASS_THROUGH'}
 
-        elif event.type in {'X', 'D', 'R'} and event.value == 'PRESS':
-            self.remove = not self.remove
-            context.active_object.select_set(True)
 
         elif event.type in {'LEFTMOUSE', 'SPACE'}:
                 self.finish()
@@ -202,8 +275,6 @@ class Mirror(bpy.types.Operator):
 
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            print("cancelling")
-
             self.finish()
 
             # force statusbar update
@@ -247,11 +318,23 @@ class Mirror(bpy.types.Operator):
             self.flip_x = self.flip_y = self.flip_z = False
 
         if self.flick:
-            mx = active.matrix_world
+            self.mx = active.matrix_world
 
             # initialize
             self.scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
             self.flick_distance = get_prefs().mirror_flick_distance * self.scale
+            self.mirror_mods = [mod for mod in active.modifiers if mod.type == 'MIRROR']
+
+            # init mislalignment
+            self.misaligned = self.get_misaligned_mods(context, active, self.mx, debug=False)
+            # printd(self.misaligned)
+
+            if self.misaligned:
+
+                # if all mods use a misaligned mirror object
+                self.usemisalign = self.misaligned['isallmisaligned']
+                self.mirror_obj = self.misaligned['sorted_objects'][-1]
+
 
             # get self.origin, which is a point under the mouse and always ahead of the view in 3d space
             self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y, 0))
@@ -272,12 +355,7 @@ class Mirror(bpy.types.Operator):
             self.flick_direction = 'NEGATIVE_X'
 
             # get object axes in world space
-            self.axes = {'POSITIVE_X': mx.to_quaternion() @ Vector((1, 0, 0)),
-                         'NEGATIVE_X': mx.to_quaternion() @ Vector((-1, 0, 0)),
-                         'POSITIVE_Y': mx.to_quaternion() @ Vector((0, 1, 0)),
-                         'NEGATIVE_Y': mx.to_quaternion() @ Vector((0, -1, 0)),
-                         'POSITIVE_Z': mx.to_quaternion() @ Vector((0, 0, 1)),
-                         'NEGATIVE_Z': mx.to_quaternion() @ Vector((0, 0, -1))}
+            self.axes = self.get_axes(self.mx)
 
             # and the axes colors
             self.colors = [red, red, green, green, blue, blue]
@@ -308,6 +386,26 @@ class Mirror(bpy.types.Operator):
             self.mirror(context, active, self.sel)
 
         return {'FINISHED'}
+
+
+    # MODAL
+
+    def get_axes(self, mx):
+        '''
+        return axis dict based on passed in matrix
+        '''
+
+        axes = {'POSITIVE_X': mx.to_quaternion() @ Vector((1, 0, 0)),
+                'NEGATIVE_X': mx.to_quaternion() @ Vector((-1, 0, 0)),
+                'POSITIVE_Y': mx.to_quaternion() @ Vector((0, 1, 0)),
+                'NEGATIVE_Y': mx.to_quaternion() @ Vector((0, -1, 0)),
+                'POSITIVE_Z': mx.to_quaternion() @ Vector((0, 0, 1)),
+                'NEGATIVE_Z': mx.to_quaternion() @ Vector((0, 0, -1))}
+
+        return axes
+
+
+    # MIRROR
 
     def mirror(self, context, active, sel):
         '''
@@ -426,6 +524,9 @@ class Mirror(bpy.types.Operator):
         if direction == 'POSITIVE':
             setattr(self, f'flip_{axis.lower()}', True)
 
+
+    # REMOVE MIRROR
+
     def remove_mirror(self, obj):
         '''
         remove the last mirror mod in that stack that matches the axis of the flick_direction
@@ -433,11 +534,83 @@ class Mirror(bpy.types.Operator):
 
         axis = self.flick_direction.split('_')[1]
 
-        mods = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.use_axis[axis_index_mapping[axis]]]
+        if self.misaligned and self.usemisalign:
+            mods = [mod for mod in self.misaligned['object_mods'][self.mirror_obj] if mod.use_axis[axis_index_mapping[axis]]]
+
+        else:
+            mods = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.use_axis[axis_index_mapping[axis]]]
 
         if mods:
             remove_mod(mods[-1].name)
             return True
+
+    def get_misaligned_mods(self, context, active, mx, debug=False):
+        '''
+        get mirror mods with mirror_objs who are mis-aligned with the mirrored object
+        '''
+
+        object_mirror_mods = [mod for mod in self.mirror_mods if mod.mirror_object]
+
+        if debug:
+            print(object_mirror_mods)
+
+        misaligned = {'sorted_mods': [],
+                      'sorted_objects': [],
+                      'object_mods': {},
+                      'matrices': {},
+                      'batches': {},
+                      'isallmisaligned': False}
+
+        # check if mis-alinged
+        for mod in object_mirror_mods:
+            mirror_obj = mod.mirror_object
+
+            mo_mx = mirror_obj.matrix_world
+
+            origin = mx.to_translation()
+
+            # compare the x axes of the mirrored and mirror objects
+            x = mx.to_3x3().normalized() @ Vector((1, 0, 0))
+            mo_x = mo_mx.to_3x3().normalized() @ Vector((1, 0, 0))
+
+            if debug:
+                draw_vector(x * 1.1, origin=origin, color=yellow, modal=False)
+                draw_vector(mo_x, origin=origin, color=blue, modal=False)
+                context.area.tag_redraw()
+
+            dot = round(x.dot(mo_x), 6)
+
+            # if there is a misalignment, populate the dictionary
+            if dot != 1:
+                if debug:
+                    print(mod.name, dot, "is mis-aligned")
+
+                misaligned['sorted_mods'].append(mod)
+
+                # collect the order of the objects in the stack
+                if mirror_obj not in misaligned['sorted_objects']:
+                    misaligned['sorted_objects'].append(mirror_obj)
+
+                # and for each object, collect the mods using it
+                if mirror_obj in misaligned['object_mods']:
+                    misaligned['object_mods'][mirror_obj].append(mod)
+
+                else:
+                    misaligned['object_mods'][mirror_obj] = [mod]
+                    misaligned['matrices'][mirror_obj] = mirror_obj.matrix_world
+                    misaligned['batches'][mirror_obj] = get_coords(mirror_obj.data, mx=mo_mx, indices=True)
+
+
+        # determine if all the mirror mods are misaligned, in that case the self.use_misalign will be enabled by default
+        if len(self.mirror_mods) == len(misaligned['sorted_mods']):
+            misaligned['isallmisaligned'] = True
+
+        if debug:
+            printd(misaligned)
+
+        # only returned if the dict was actually populated
+        if misaligned['sorted_mods']:
+            return misaligned
 
 
 class Unmirror(bpy.types.Operator):

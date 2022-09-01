@@ -121,23 +121,23 @@ def get_zoom_factor(context, depth_location, scale=10, ignore_obj_scale=False):
 
 # HUD
 
-def get_flick_direction(self, context):
+def get_flick_direction(context, mouse_loc_3d, flick_vector, axes):
     # origin_2d = location_3d_to_region_2d(context.region, context.region_data, self.origin)
-    origin_2d = location_3d_to_region_2d(context.region, context.region_data, self.init_mouse_3d, default=Vector((context.region.width / 2, context.region.height / 2)))
+    origin_2d = location_3d_to_region_2d(context.region, context.region_data, mouse_loc_3d, default=Vector((context.region.width / 2, context.region.height / 2)))
 
     axes_2d = {}
 
-    for direction, axis in self.axes.items():
+    for direction, axis in axes.items():
         # print(direction, axis)
 
         # axis_2d = location_3d_to_region_2d(context.region, context.region_data, self.origin + axis)
-        axis_2d = location_3d_to_region_2d(context.region, context.region_data, self.init_mouse_3d + axis, default=origin_2d)
+        axis_2d = location_3d_to_region_2d(context.region, context.region_data, mouse_loc_3d + axis, default=origin_2d)
 
         # avoid zero length vectors from ortho views
         if (axis_2d - origin_2d).length:
             axes_2d[direction] = (axis_2d - origin_2d).normalized()
 
-    return min([(d, abs(self.flick_vector.xy.angle_signed(a))) for d, a in axes_2d.items()], key=lambda x: x[1])[0]
+    return min([(d, abs(flick_vector.xy.angle_signed(a))) for d, a in axes_2d.items()], key=lambda x: x[1])[0]
 
 
 # HEADER

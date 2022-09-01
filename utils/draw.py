@@ -542,6 +542,64 @@ def draw_mesh_wire(batch, color=(1, 1, 1), width=1, alpha=1, xray=True, modal=Tr
         bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_VIEW')
 
 
+def draw_bbox(bbox, mx=Matrix(), color=(1, 1, 1), corners=0, width=1, alpha=1, xray=True, modal=True):
+    """
+    takes an even amount of coordinates and draws half as many 2-point lines
+    """
+    def draw():
+        if corners:
+            length = corners
+
+            coords = [bbox[0], bbox[0] + (bbox[1] - bbox[0]) * length, bbox[0] + (bbox[3] - bbox[0]) * length, bbox[0] + (bbox[4] - bbox[0]) * length,
+                      bbox[1], bbox[1] + (bbox[0] - bbox[1]) * length, bbox[1] + (bbox[2] - bbox[1]) * length, bbox[1] + (bbox[5] - bbox[1]) * length,
+                      bbox[2], bbox[2] + (bbox[1] - bbox[2]) * length, bbox[2] + (bbox[3] - bbox[2]) * length, bbox[2] + (bbox[6] - bbox[2]) * length,
+                      bbox[3], bbox[3] + (bbox[0] - bbox[3]) * length, bbox[3] + (bbox[2] - bbox[3]) * length, bbox[3] + (bbox[7] - bbox[3]) * length,
+                      bbox[4], bbox[4] + (bbox[0] - bbox[4]) * length, bbox[4] + (bbox[5] - bbox[4]) * length, bbox[4] + (bbox[7] - bbox[4]) * length,
+                      bbox[5], bbox[5] + (bbox[1] - bbox[5]) * length, bbox[5] + (bbox[4] - bbox[5]) * length, bbox[5] + (bbox[6] - bbox[5]) * length,
+                      bbox[6], bbox[6] + (bbox[2] - bbox[6]) * length, bbox[6] + (bbox[5] - bbox[6]) * length, bbox[6] + (bbox[7] - bbox[6]) * length,
+                      bbox[7], bbox[7] + (bbox[3] - bbox[7]) * length, bbox[7] + (bbox[4] - bbox[7]) * length, bbox[7] + (bbox[6] - bbox[7]) * length]
+
+            indices = [(0, 1), (0, 2), (0, 3),
+                       (4, 5), (4, 6), (4, 7),
+                       (8, 9), (8, 10), (8, 11),
+                       (12, 13), (12, 14), (12, 15),
+                       (16, 17), (16, 18), (16, 19),
+                       (20, 21), (20, 22), (20, 23),
+                       (24, 25), (24, 26), (24, 27),
+                       (28, 29), (28, 30), (28, 31)]
+
+
+        else:
+            coords = bbox
+            indices = [(0, 1), (1, 2), (2, 3), (3, 0),
+                       (4, 5), (5, 6), (6, 7), (7, 4),
+                       (0, 4), (1, 5), (2, 6), (3, 7)]
+
+        shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+        shader.bind()
+        shader.uniform_float("color", (*color, alpha))
+
+        gpu.state.depth_test_set('NONE' if xray else 'LESS_EQUAL')
+        gpu.state.blend_set('ALPHA' if alpha < 1 else 'NONE')
+        gpu.state.line_width_set(width)
+
+        use_legacy_line_smoothing(alpha, width)
+
+        if mx != Matrix():
+            batch = batch_for_shader(shader, 'LINES', {"pos": [mx @ co for co in coords]}, indices=indices)
+
+        else:
+            batch = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
+
+        batch.draw(shader)
+
+    if modal:
+        draw()
+
+    else:
+        bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_VIEW')
+
+
 def draw_tris(coords, indices=None, mx=Matrix(), color=(1, 1, 1), width=1, alpha=1, xray=True, modal=True):
     def draw():
         shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
