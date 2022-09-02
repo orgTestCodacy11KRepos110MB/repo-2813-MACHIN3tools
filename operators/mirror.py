@@ -38,17 +38,25 @@ def draw_mirror(op):
         row.separator(factor=10)
 
         if op.mirror_mods:
+            row.label(text="", icon='EVENT_A')
+            row.label(text=f"Remove All + Finish")
+
+            row.separator(factor=1)
+
             row.label(text="", icon='EVENT_X')
             row.label(text=f"Remove Mirror: {op.remove}")
 
-            if op.misaligned:
-                if op.misaligned['isallmisaligned']:
+            if op.remove and op.misaligned:
+                if not op.misaligned['isallmisaligned']:
+                    row.separator(factor=1)
+
                     row.label(text="", icon='EVENT_Q')
                     row.label(text="Togggle Mirror Object")
 
-                if op.remove:
-                    row.label(text="", icon='MOUSE_MMB')
-                    row.label(text="Cycle Mirror Object")
+                row.separator(factor=1)
+
+                row.label(text="", icon='MOUSE_MMB')
+                row.label(text="Cycle Mirror Object")
 
     return draw
 
@@ -186,7 +194,7 @@ class Mirror(bpy.types.Operator):
         events = ['MOUSEMOVE']
 
         if self.mirror_mods:
-            events.extend(['X', 'D', 'R'])
+            events.extend(['A', 'X', 'D', 'R'])
 
             if self.remove and self.misaligned:
                 # events.append('Q')
@@ -221,7 +229,7 @@ class Mirror(bpy.types.Operator):
                     return {'FINISHED'}
 
 
-            elif event.type in {'X', 'D', 'R', 'Q', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'} and event.value == 'PRESS':
+            elif event.type in {'A', 'X', 'D', 'R', 'Q', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'} and event.value == 'PRESS':
 
                 # TOGGLE remove mode
 
@@ -259,6 +267,16 @@ class Mirror(bpy.types.Operator):
                 else:
                     self.axes = self.get_axes(self.mx)
 
+
+                # FINISH REMOVE ALL
+
+                if event.type == 'A':
+                    self.finish()
+
+                    for mod in self.mirror_mods:
+                        remove_mod(mod.name)
+
+                    return {'FINISHED'}
 
 
         # PASS THROUGH
