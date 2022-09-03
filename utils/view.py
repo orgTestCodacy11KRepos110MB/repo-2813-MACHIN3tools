@@ -1,4 +1,5 @@
-from mathutils import Matrix
+from mathutils import Matrix, Vector
+from bpy_extras.view3d_utils import location_3d_to_region_2d
 
 
 def set_xray(context):
@@ -64,3 +65,12 @@ def sync_light_visibility(scene):
 
             if light.hide_render != hidden:
                 light.hide_render = hidden
+
+
+def get_loc_2d(context, loc):
+    '''
+    project 3d location into 2d space
+    '''
+
+    loc_2d = location_3d_to_region_2d(context.region, context.region_data, loc)
+    return loc_2d if loc_2d else Vector((-1000, -1000))

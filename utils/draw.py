@@ -546,6 +546,7 @@ def draw_bbox(bbox, mx=Matrix(), color=(1, 1, 1), corners=0, width=1, alpha=1, x
     """
     takes an even amount of coordinates and draws half as many 2-point lines
     """
+
     def draw():
         if corners:
             length = corners
@@ -598,6 +599,48 @@ def draw_bbox(bbox, mx=Matrix(), color=(1, 1, 1), corners=0, width=1, alpha=1, x
 
     else:
         bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_VIEW')
+
+
+def draw_cross_3d(co, mx=Matrix(), color=(1, 1, 1), width=1, length=1, alpha=1, xray=True, modal=True):
+    """
+    takes an even amount of coordinates and draws half as many 2-point lines
+    """
+    def draw():
+
+        x = Vector((1, 0, 0))
+        y = Vector((0, 1, 0))
+        z = Vector((0, 0, 1))
+
+        coords = [(co - x) * length, (co + x) * length,
+                  (co - y) * length, (co + y) * length,
+                  (co - z) * length, (co + z) * length]
+
+        indices = [(0, 1), (2, 3), (4, 5)]
+
+        shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+        shader.bind()
+        shader.uniform_float("color", (*color, alpha))
+
+        gpu.state.depth_test_set('NONE' if xray else 'LESS_EQUAL')
+        gpu.state.blend_set('ALPHA' if alpha < 1 else 'NONE')
+        gpu.state.line_width_set(width)
+
+        use_legacy_line_smoothing(alpha, width)
+
+        if mx != Matrix():
+            batch = batch_for_shader(shader, 'LINES', {"pos": [mx @ co for co in coords]}, indices=indices)
+
+        else:
+            batch = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
+
+        batch.draw(shader)
+
+    if modal:
+        draw()
+
+    else:
+        bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_VIEW')
+
 
 
 def draw_tris(coords, indices=None, mx=Matrix(), color=(1, 1, 1), width=1, alpha=1, xray=True, modal=True):
