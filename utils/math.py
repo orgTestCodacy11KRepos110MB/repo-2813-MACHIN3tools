@@ -27,6 +27,8 @@ def dynamic_format(value, decimal_offset=0):
     return f"{'-' if value < 0 else ''}{abs(value):.{precision}f}"
 
 
+# VECTOR
+
 def get_center_between_points(point1, point2, center=0.5):
     return point1 + (point2 - point1) * center
 
@@ -66,9 +68,23 @@ def average_normals(normalslist):
     return avg.normalized()
 
 
+# MATRIX
+
 def flatten_matrix(mx):
     dimension = len(mx)
     return [mx[j][i] for i in range(dimension) for j in range(dimension)]
+
+
+def compare_matrix(mx1, mx2, precision=4):
+    '''
+    matrix comparison by rounding the individual values
+    this is used for comparing cursor matrices,
+    which if changed used set_cursor has the tendenciy to have float precission issues prevent proper comparison
+    '''
+
+    round1 = [round(i, precision) for i in flatten_matrix(mx1)]
+    round2 = [round(i, precision) for i in flatten_matrix(mx2)]
+    return round1 == round2
 
 
 def get_loc_matrix(location):
