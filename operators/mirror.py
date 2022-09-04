@@ -39,7 +39,20 @@ def draw_mirror(op):
 
         row.separator(factor=10)
 
+        if not op.remove:
+            row.label(text="", icon='EVENT_C')
+            row.label(text=f"Cursor: {op.cursor}")
+
+            if op.cursor and op.cursor_empty:
+                row.separator(factor=1)
+
+                row.label(text="", icon='EVENT_E')
+                row.label(text=f"Use Existing: {op.use_existing_cursor}")
+
+            row.separator(factor=1)
+
         if op.mirror_mods:
+
             row.label(text="", icon='EVENT_A')
             row.label(text=f"Remove All + Finish")
 
@@ -112,7 +125,7 @@ class Mirror(bpy.types.Operator):
         row.prop(self, "use_y", toggle=True)
         row.prop(self, "use_z", toggle=True)
 
-        if self.meshes_present and len(context.selected_objects) == 1 and context.active_object in context.selected_objects:
+        if self.meshes_present and len(context.selected_objects) == 1 and self.active in context.selected_objects:
             row = column.row(align=True)
             r = row.row()
             r.active = self.use_x
@@ -172,10 +185,7 @@ class Mirror(bpy.types.Operator):
                 draw_label(context, title=name, coords=(self.init_mouse[0], self.init_mouse[1] - self.flick_distance + (15 * self.scale)), center=True, color=color, alpha=alpha)
 
             elif not self.remove and self.cursor or len(self.sel) > 1:
-                    # color = blue if self.cursor else yellow
-                    color = blue if self.cursor else yellow
-                    title = 'Cursor' if self.cursor else self.active.name
-
+                    title, color = ('New Cursor', green) if self.cursor and not self.use_existing_cursor else ('Existing Cursor', blue) if self.cursor else (self.active.name, yellow)
                     draw_label(context, title=title, coords=(self.init_mouse[0], self.init_mouse[1] - self.flick_distance + (15 * self.scale)), center=True, alpha=1, color=color)
 
             title = self.flick_direction.split('_')[1] if self.remove else self.flick_direction.replace('_', ' ').title()
@@ -227,11 +237,13 @@ class Mirror(bpy.types.Operator):
         if not self.remove:
             events.append('C')
 
+            if self.cursor and self.cursor_empty:
+                events.append('E')
+
         if self.mirror_mods:
             events.extend(['A', 'X', 'D', 'R'])
 
             if self.remove and self.misaligned:
-                # events.append('Q')
                 events.extend(['Q', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'])
 
         if event.type in events:
@@ -273,19 +285,26 @@ class Mirror(bpy.types.Operator):
 
             # REMOVE mod + misaligned object selection
 
-            elif event.type in {'C', 'A', 'X', 'D', 'R', 'Q', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'} and event.value == 'PRESS':
+            elif event.type in {'C', 'E', 'A', 'X', 'D', 'R', 'Q', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'} and event.value == 'PRESS':
 
                 # TOGGLE remove mode
 
                 if event.type in {'X', 'D', 'R'}:
                     self.remove = not self.remove
-                    context.active_object.select_set(True)
+                    self.active.select_set(True)
 
 
                 # TOGGLE cursor
 
                 elif event.type == 'C':
                     self.cursor = not self.cursor
+                    self.active.select_set(True)
+
+                # TOGGLE use_cursor_cursor
+
+                elif event.type == 'E':
+                    self.use_existing_cursor = not self.use_existing_cursor
+                    self.active.select_set(True)
 
 
                 if self.misaligned:
@@ -294,7 +313,7 @@ class Mirror(bpy.types.Operator):
 
                     if not self.misaligned['isallmisaligned'] and event.type == 'Q' and event.value == 'PRESS':
                         self.usemisalign = not self.usemisalign
-                        context.active_object.select_set(True)
+                        self.active.select_set(True)
 
 
                     # CYCLE misaligned object
@@ -308,7 +327,7 @@ class Mirror(bpy.types.Operator):
                                 self.mirror_obj = step_list(self.mirror_obj, self.misaligned['sorted_objects'], step=1, loop=True)
                         else:
                             self.usemisalign = True
-                            context.active_object.select_set(True)
+                            self.active.select_set(True)
 
 
                 # update HUD axes
@@ -357,7 +376,7 @@ class Mirror(bpy.types.Operator):
             self.finish()
 
             # force statusbar update
-            context.active_object.select_set(True)
+            self.active.select_set(True)
 
             return {'CANCELLED'}
 
@@ -383,11 +402,10 @@ class Mirror(bpy.types.Operator):
         scene = context.scene
         hc = scene.HC if hypercursor else None
 
-        self.active = context.active_object
-
         active_tool = get_active_tool(context).idname
         self.cursor = hypercursor and 'machin3.tool_hyper_cursor' in active_tool and hc and hc.show_gizmos
 
+        self.active = context.active_object
         self.sel = context.selected_objects
         self.meshes_present = True if any([obj for obj in self.sel if obj.type == 'MESH']) else False
         self.decals_present = True if self.decalmachine and any([obj for obj in self.sel if obj.DM.isdecal]) else False
@@ -405,6 +423,9 @@ class Mirror(bpy.types.Operator):
             self.flick_distance = get_prefs().mirror_flick_distance * self.scale
             self.mirror_mods = [mod for mod in self.active.modifiers if mod.type == 'MIRROR']
             self.cursor_empty = self.get_matching_cursor_empty(context)
+
+            # always default to using an existing cursor empty, if present
+            self.use_existing_cursor = True if self.cursor_empty else False
 
             # init mislalignment
             self.misaligned = self.get_misaligned_mods(context, self.active, self.mx, debug=False)
@@ -446,7 +467,7 @@ class Mirror(bpy.types.Operator):
 
             # statusbar
             init_status(self, context, func=draw_mirror(self))
-            context.active_object.select_set(True)
+            self.active.select_set(True)
 
             # handlers
             self.HUD = bpy.types.SpaceView3D.draw_handler_add(self.draw_HUD, (context, ), 'WINDOW', 'POST_PIXEL')
@@ -460,14 +481,11 @@ class Mirror(bpy.types.Operator):
             return {'FINISHED'}
 
     def execute(self, context):
-        active = context.active_object
-        self.sel = context.selected_objects
-
         if self.flick and self.remove:
-            self.remove_mirror(active)
+            self.remove_mirror(self.active)
 
         else:
-            self.mirror(context, active, self.sel)
+            self.mirror(context, self.active, self.sel)
 
         return {'FINISHED'}
 
@@ -510,12 +528,12 @@ class Mirror(bpy.types.Operator):
 
         # create mirror empty
         if self.cursor:
-            if self.cursor_empty:
-                print("reusing existing empty")
+            if self.cursor_empty and self.use_existing_cursor:
+                # print("reusing existing empty")
                 empty = self.cursor_empty
 
             else:
-                print("creating new empty")
+                # print("creating new empty")
                 empty = bpy.data.objects.new(name=f"{active.name} Mirror", object_data=None)
                 context.collection.objects.link(empty)
                 empty.matrix_world = self.cmx
