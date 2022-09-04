@@ -49,13 +49,14 @@ def draw_mirror(op):
                 row.label(text="", icon='EVENT_E')
                 row.label(text=f"Use Existing: {op.use_existing_cursor}")
 
-            row.separator(factor=1)
 
-        if op.mirror_mods:
+        if op.sel_mirror_mods:
+            row.separator(factor=1)
 
             row.label(text="", icon='EVENT_A')
             row.label(text=f"Remove All + Finish")
 
+        if op.mirror_mods:
             row.separator(factor=1)
 
             row.label(text="", icon='EVENT_X')
@@ -241,10 +242,13 @@ class Mirror(bpy.types.Operator):
                 events.append('E')
 
         if self.mirror_mods:
-            events.extend(['A', 'X', 'D', 'R'])
+            events.extend(['X', 'D', 'R'])
 
             if self.remove and self.misaligned:
                 events.extend(['Q', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'])
+
+        if self.sel_mirror_mods:
+            events.append('A')
 
         if event.type in events:
             if self.passthrough:
@@ -347,13 +351,16 @@ class Mirror(bpy.types.Operator):
                     self.cursor_empty_zoom = get_zoom_factor(context, depth_location=loc, scale=10, ignore_obj_scale=True)
 
 
-                # FINISH REMOVE ALL
+                # FINISH REMOVE ALL (and on all selected objects)
 
                 if event.type == 'A':
                     self.finish()
 
-                    for mod in self.mirror_mods:
-                        remove_mod(mod.name)
+                    for obj in self.sel:
+                        mirror_mods = [mod for mod in obj.modifiers if mod.type == 'MIRROR']
+
+                        for mod in mirror_mods:
+                            remove_mod(mod.name, context, obj)
 
                     return {'FINISHED'}
 
@@ -421,7 +428,9 @@ class Mirror(bpy.types.Operator):
             # initialize
             self.scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
             self.flick_distance = get_prefs().mirror_flick_distance * self.scale
+
             self.mirror_mods = [mod for mod in self.active.modifiers if mod.type == 'MIRROR']
+            self.sel_mirror_mods = [mod for obj in self.sel for mod in obj.modifiers if mod.type == 'MIRROR']
             self.cursor_empty = self.get_matching_cursor_empty(context)
 
             # always default to using an existing cursor empty, if present
