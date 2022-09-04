@@ -5,6 +5,7 @@ from mathutils import Vector
 from .. utils.registration import get_addon, get_prefs
 from .. utils.tools import get_active_tool
 from .. utils.object import parent, unparent, get_eval_bbox
+from .. utils.math import compare_matrix
 from .. utils.mesh import get_coords
 from .. utils.modifier import remove_mod
 from .. utils.ui import get_zoom_factor, get_flick_direction, init_status, finish_status
@@ -93,6 +94,7 @@ class Mirror(bpy.types.Operator):
 
     # (hyper)cursor
     cursor: BoolProperty(name="Mirror across Cursor", default=False)
+    use_existing_cursor: BoolProperty(name="Use existing Cursor Empty", default=False)
 
     # hidden
     passthrough = None
@@ -169,8 +171,8 @@ class Mirror(bpy.types.Operator):
                 # draw_label(context, title=f"misaligned: {name}", coords=(self.init_mouse[0], self.init_mouse[1] + self.flick_distance - (45 * self.scale)), center=True, color=color, alpha=alpha)
                 draw_label(context, title=name, coords=(self.init_mouse[0], self.init_mouse[1] - self.flick_distance + (15 * self.scale)), center=True, color=color, alpha=alpha)
 
-            else:
-                if self.cursor or len(self.sel) > 1:
+            elif not self.remove and self.cursor or len(self.sel) > 1:
+                    # color = blue if self.cursor else yellow
                     color = blue if self.cursor else yellow
                     title = 'Cursor' if self.cursor else self.active.name
 
@@ -191,9 +193,7 @@ class Mirror(bpy.types.Operator):
 
                 draw_circle(self.mirror_obj_2d, size=10 * self.scale, width=2 * self.scale, color=blue, alpha=0.99)
 
-
     def draw_VIEW3D(self, context):
-
         for direction, axis, color in zip(self.axes.keys(), self.axes.values(), self.colors):
             positive = 'POSITIVE' in direction
 
@@ -215,15 +215,17 @@ class Mirror(bpy.types.Operator):
             elif self.mirror_obj.type == 'EMPTY':
                 # get cursor's local space location haha
                 loc = mx.inverted_safe() @ mx.to_translation()
-                draw_cross_3d(loc, mx=mx, color=blue, width=2 * self.scale, length=2 * self.cursor_zoom, alpha=0.99)
-
+                draw_cross_3d(loc, mx=mx, color=blue, width=2 * self.scale, length=2 * self.cursor_empty_zoom, alpha=0.99)
 
     def modal(self, context, event):
         context.area.tag_redraw()
 
         self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y, 0))
 
-        events = ['MOUSEMOVE', 'C']
+        events = ['MOUSEMOVE']
+
+        if not self.remove:
+            events.append('C')
 
         if self.mirror_mods:
             events.extend(['A', 'X', 'D', 'R'])
@@ -240,9 +242,11 @@ class Mirror(bpy.types.Operator):
                 self.zoom = get_zoom_factor(context, depth_location=self.origin, scale=self.flick_distance, ignore_obj_scale=True)
 
                 if self.mirror_obj.type == 'EMPTY':
-                    self.mirror_obj_2d = get_loc_2d(context, self.mirror_obj.matrix_world.to_translation())
+                    loc = self.mirror_obj.matrix_world.to_translation()
+                    self.mirror_obj_2d = get_loc_2d(context, loc)
 
-                self.cursor_zoom = get_zoom_factor(context, depth_location=self.cmx.to_translation(), scale=10, ignore_obj_scale=True)
+                    # self.cursor_empty_zoom = get_zoom_factor(context, depth_location=self.cmx.to_translation(), scale=10, ignore_obj_scale=True)
+                    self.cursor_empty_zoom = get_zoom_factor(context, depth_location=loc, scale=10, ignore_obj_scale=True)
 
 
             # GET flick direction
@@ -319,7 +323,9 @@ class Mirror(bpy.types.Operator):
                     self.axes = self.get_axes(self.mx)
 
                 if self.misaligned and self.mirror_obj.type == 'EMPTY':
-                    self.mirror_obj_2d = get_loc_2d(context, self.mirror_obj.matrix_world.to_translation())
+                    loc = self.mirror_obj.matrix_world.to_translation()
+                    self.mirror_obj_2d = get_loc_2d(context, loc)
+                    self.cursor_empty_zoom = get_zoom_factor(context, depth_location=loc, scale=10, ignore_obj_scale=True)
 
 
                 # FINISH REMOVE ALL
@@ -398,6 +404,7 @@ class Mirror(bpy.types.Operator):
             self.scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
             self.flick_distance = get_prefs().mirror_flick_distance * self.scale
             self.mirror_mods = [mod for mod in self.active.modifiers if mod.type == 'MIRROR']
+            self.cursor_empty = self.get_matching_cursor_empty(context)
 
             # init mislalignment
             self.misaligned = self.get_misaligned_mods(context, self.active, self.mx, debug=False)
@@ -410,7 +417,9 @@ class Mirror(bpy.types.Operator):
                 self.mirror_obj = self.misaligned['sorted_objects'][-1]
 
                 if self.mirror_obj.type == 'EMPTY':
-                    self.mirror_obj_2d = get_loc_2d(context, self.mirror_obj.matrix_world.to_translation())
+                    loc = self.mirror_obj.matrix_world.to_translation()
+                    self.mirror_obj_2d = get_loc_2d(context, loc)
+                    self.cursor_empty_zoom = get_zoom_factor(context, depth_location=loc, scale=10, ignore_obj_scale=True)
 
             # get self.origin, which is a point under the mouse and always ahead of the view in 3d space
             self.mousepos = Vector((event.mouse_region_x, event.mouse_region_y, 0))
@@ -421,10 +430,7 @@ class Mirror(bpy.types.Operator):
             # self.origin = view_origin + view_dir * context.space_data.clip_start
             # turns out using the clip_start also has issues?, view_dir * 10 seems to work for all 3 clip start values
             self.origin = view_origin + view_dir * 10
-
             self.zoom = get_zoom_factor(context, depth_location=self.origin, scale=self.flick_distance, ignore_obj_scale=True)
-
-            self.cursor_zoom = get_zoom_factor(context, depth_location=self.cmx.to_translation(), scale=10, ignore_obj_scale=True)
 
             self.init_mouse = self.mousepos
             self.init_mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.init_mouse, self.origin)
@@ -482,6 +488,18 @@ class Mirror(bpy.types.Operator):
 
         return axes
 
+    def get_matching_cursor_empty(self, context):
+        '''
+        find empties in the scene, that match the current cursor matrix
+        '''
+
+        scene = context.scene
+
+        matching_empties = [obj for obj in scene.objects if obj.type == 'EMPTY' and compare_matrix(obj.matrix_world, self.cmx, precision=5)]
+
+        if matching_empties:
+            return matching_empties[0]
+
 
     # MIRROR
 
@@ -492,13 +510,22 @@ class Mirror(bpy.types.Operator):
 
         # create mirror empty
         if self.cursor:
-            empty = bpy.data.objects.new(name=f"{active.name} Mirror", object_data=None)
-            context.collection.objects.link(empty)
-            empty.matrix_world = context.scene.cursor.matrix
-            empty.show_in_front = True
-            empty.empty_display_type = 'ARROWS'
-            empty.empty_display_size = (context.scene.cursor.location - sel[0].matrix_world.to_translation()).length / 10
+            if self.cursor_empty:
+                print("reusing existing empty")
+                empty = self.cursor_empty
+
+            else:
+                print("creating new empty")
+                empty = bpy.data.objects.new(name=f"{active.name} Mirror", object_data=None)
+                context.collection.objects.link(empty)
+                empty.matrix_world = self.cmx
+
+                empty.show_in_front = True
+                empty.empty_display_type = 'ARROWS'
+                empty.empty_display_size = (context.scene.cursor.location - sel[0].matrix_world.to_translation()).length / 10
+
             empty.hide_set(True)
+
 
         if len(sel) == 1 and active in sel:
             if active.type in ["MESH", "CURVE"]:
