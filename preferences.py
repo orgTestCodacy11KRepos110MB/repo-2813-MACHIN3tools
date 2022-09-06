@@ -255,7 +255,9 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
     toggle_xray: BoolProperty(name="Toggle X-Ray ON in Edit Mode, OFF in Object Mode, if Pass Through or Wireframe was enabled in Edit Mode", default=True)
     sync_tools: BoolProperty(name="Sync Tool if possible, when switching Modes", default=True)
+
     focus_view_transition: BoolProperty(name="Viewport Tweening", default=True)
+    focus_lights: BoolProperty(name="Ignore Lights (keep them always visible)", default=False)
 
     tools_show_boxcutter_presets: BoolProperty(name="Show BoxCutter Presets", default=True)
     tools_show_hardops_menu: BoolProperty(name="Show Hard Ops Menu", default=True)
@@ -635,6 +637,8 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             column = bb.column()
             column.prop(self, "focus_view_transition")
 
+            column = bb.column()
+            column.prop(self, "focus_lights")
 
         # GROUP
 
