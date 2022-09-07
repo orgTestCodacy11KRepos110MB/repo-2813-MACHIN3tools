@@ -2598,6 +2598,22 @@ class PieWorkspace(Menu):
         layout = self.layout
         pie = layout.menu_pie()
 
+        p = get_prefs()
+
+        # for piedir in ['left', 'top_left', 'top', 'top_right', 'right', 'bottom_right', 'bottom', 'bottom_left']:
+        for piedir in ['left', 'right', 'bottom', 'top', 'top_left', 'top_right', 'bottom_left', 'bottom_right']:
+            name = getattr(p, f'pie_workspace_{piedir}_name')
+            text = getattr(p, f'pie_workspace_{piedir}_text')
+            icon = getattr(p, f'pie_workspace_{piedir}_icon')
+
+            if name:
+                pie.operator("machin3.switch_workspace", text=text if text else name, icon=icon if icon else 'BLENDER').name=name
+
+            else:
+                pie.separator()
+
+
+        """
         # 4 - LEFT
         pie.operator("machin3.switch_workspace", text="MACHIN3", icon='VIEW3D').name="General"
 
@@ -2621,7 +2637,16 @@ class PieWorkspace(Menu):
 
         # 3 - BOTTOM - RIGHT
         # pie.operator("machin3.switch_workspace", text="Video", icon='FILE_MOVIE').name="Video"
+
         pie.separator()
+        """
+
+
+
+
+
+
+
 
 
 class PieTools(Menu):

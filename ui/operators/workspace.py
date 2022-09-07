@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import StringProperty
+from ... utils.registration import get_addon
 
 
 class SwitchWorkspace(bpy.types.Operator):
@@ -250,3 +251,20 @@ class SwitchWorkspace(bpy.types.Operator):
 
         if has_asset_browser:
             return space_data
+
+
+class GetIconNameHelp(bpy.types.Operator):
+    bl_idname = "machin3.get_icon_name_help"
+    bl_label = "MACHIN3: Get Icon Name Help"
+    bl_description = ""
+    bl_options = {'INTERNAL'}
+
+    def execute(self, context):
+        icon_viewer, name, _, _ = get_addon('Icon Viewer')
+
+        if not icon_viewer:
+            bpy.ops.preferences.addon_enable(module=name)
+
+        bpy.ops.iv.icons_show('INVOKE_DEFAULT', filter_auto_focus="", filter="", selected_icon="")
+
+        return {'FINISHED'}

@@ -312,6 +312,40 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     render_adjust_lights_on_render: BoolProperty(name="Ajust Area Lights when Rendering in Cycles", description="Adjust Area Lights when Rendering, to better match Eevee and Cycles", default=True)
 
 
+    # workspace pie customization
+    pie_workspace_left_name: StringProperty(name="Left Workspace Name", default="Layout")
+    pie_workspace_left_text: StringProperty(name="Left Workspace Custom Label", default="General")
+    pie_workspace_left_icon: StringProperty(name="Left Workspace Icon", default="VIEW3D")
+
+    pie_workspace_top_left_name: StringProperty(name="Top-Left Workspace Name", default="UV Editing")
+    pie_workspace_top_left_text: StringProperty(name="Top-Left Workspace Custom Label", default="UVs")
+    pie_workspace_top_left_icon: StringProperty(name="Top-Left Workspace Icon", default="GROUP_UVS")
+
+    pie_workspace_top_name: StringProperty(name="Top Workspace Name", default="Shading")
+    pie_workspace_top_text: StringProperty(name="Top Workspace Custom Label", default="Materials")
+    pie_workspace_top_icon: StringProperty(name="Top Workspace Icon", default="MATERIAL_DATA")
+
+    pie_workspace_top_right_name: StringProperty(name="Top-Right Workspace Name", default="")
+    pie_workspace_top_right_text: StringProperty(name="Top-Right Workspace Custom Label", default="")
+    pie_workspace_top_right_icon: StringProperty(name="Top-Right Workspace Icon", default="")
+
+    pie_workspace_right_name: StringProperty(name="Right Workspace Name", default="Rendering")
+    pie_workspace_right_text: StringProperty(name="Right Workspace Custom Label", default="")
+    pie_workspace_right_icon: StringProperty(name="Right Workspace Icon", default="")
+
+    pie_workspace_bottom_right_name: StringProperty(name="Bottom-Right Workspace Name", default="")
+    pie_workspace_bottom_right_text: StringProperty(name="Bottom-Right Workspace Custom Label", default="")
+    pie_workspace_bottom_right_icon: StringProperty(name="Bottom-Right Workspace Icon", default="")
+
+    pie_workspace_bottom_name: StringProperty(name="Bottom Workspace Name", default="Scripting")
+    pie_workspace_bottom_text: StringProperty(name="Bottom Workspace Custom Label", default="")
+    pie_workspace_bottom_icon: StringProperty(name="Bottom Workspace Icon", default="CONSOLE")
+
+    pie_workspace_bottom_left_name: StringProperty(name="Bottom-Left Workspace Name", default="")
+    pie_workspace_bottom_left_text: StringProperty(name="Bottom-Left Workspace Custom Label", default="")
+    pie_workspace_bottom_left_icon: StringProperty(name="Bottom-Left Workspace Icon", default="")
+
+
     # MACHIN3tools
 
     activate_smart_vert: BoolProperty(name="Smart Vert", default=False, update=update_activate_smart_vert)
@@ -986,6 +1020,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
                     if self.activate_shading_pie:
                         column.prop(self, "cursor_toggle_axes_drawing")
 
+        # SNAPPING PIE
 
         if getattr(bpy.types, "MACHIN3_MT_snapping_pie", False):
             bb = b.box()
@@ -993,6 +1028,164 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             column = bb.column()
 
             column.prop(self, "snap_show_absolute_grid")
+
+        # WORKSPACE PIE
+
+        if getattr(bpy.types, "MACHIN3_MT_workspace_pie", False):
+            bb = b.box()
+            bb.label(text="Workspace Pie")
+            column = bb.column()
+
+            column.label(text="It's your responsibility to pick workspace- and icon names that actually exist!", icon='ERROR')
+
+
+            # TOP
+
+            first = column.split(factor=0.2)
+            first.separator()
+
+            second = first.split(factor=0.25)
+            second.separator()
+
+            third = second.split(factor=0.33)
+
+            col = third.column()
+            col.label(text="Top")
+
+            col.prop(self, 'pie_workspace_top_name', text="", icon='WORKSPACE')
+            col.prop(self, 'pie_workspace_top_text', text="", icon='SMALL_CAPS')
+            col.prop(self, 'pie_workspace_top_icon', text="", icon='IMAGE_DATA')
+
+            fourth = third.split(factor=0.5)
+            fourth.separator()
+
+            fifth = fourth
+            fifth.separator()
+
+
+            # TOP-LEFT + TOP-RIGHT
+
+            first = column.split(factor=0.2)
+            first.separator()
+
+            second = first.split(factor=0.25)
+
+            col = second.column()
+            col.label(text="Top-Left")
+
+            col.prop(self, 'pie_workspace_top_left_name', text="", icon='WORKSPACE')
+            col.prop(self, 'pie_workspace_top_left_text', text="", icon='SMALL_CAPS')
+            col.prop(self, 'pie_workspace_top_left_icon', text="", icon='IMAGE_DATA')
+
+            third = second.split(factor=0.33)
+            third.separator()
+
+            fourth = third.split(factor=0.5)
+
+            col = fourth.column()
+            col.label(text="Top-Right")
+
+            col.prop(self, 'pie_workspace_top_right_name', text="", icon='WORKSPACE')
+            col.prop(self, 'pie_workspace_top_right_text', text="", icon='SMALL_CAPS')
+            col.prop(self, 'pie_workspace_top_right_icon', text="", icon='IMAGE_DATA')
+
+            fifth = fourth
+            fifth.separator()
+
+
+            # LEFT + RIGHT
+
+            first = column.split(factor=0.2)
+
+            col = first.column()
+            col.label(text="Left")
+
+            col.prop(self, 'pie_workspace_left_name', text="", icon='WORKSPACE')
+            col.prop(self, 'pie_workspace_left_text', text="", icon='SMALL_CAPS')
+            col.prop(self, 'pie_workspace_left_icon', text="", icon='IMAGE_DATA')
+
+            second = first.split(factor=0.25)
+            second.separator()
+
+            third = second.split(factor=0.33)
+            # third.separator()
+
+            col = third.column()
+            col.label(text="")
+            col.label(text="")
+            col.operator('machin3.get_icon_name_help', text="Icon Names?", icon='INFO')
+
+            fourth = third.split(factor=0.5)
+            fourth.separator()
+
+            fifth = fourth
+
+            col = fifth.column()
+            col.label(text="Right")
+
+            col.prop(self, 'pie_workspace_right_name', text="", icon='WORKSPACE')
+            col.prop(self, 'pie_workspace_right_text', text="", icon='SMALL_CAPS')
+            col.prop(self, 'pie_workspace_right_icon', text="", icon='IMAGE_DATA')
+
+
+            # BOTTOM-LEFT + BOTTOM-RIGHT
+
+            first = column.split(factor=0.2)
+            first.separator()
+
+            second = first.split(factor=0.25)
+
+            col = second.column()
+            col.label(text="Bottom-Left")
+
+            col.prop(self, 'pie_workspace_bottom_left_name', text="", icon='WORKSPACE')
+            col.prop(self, 'pie_workspace_bottom_left_text', text="", icon='SMALL_CAPS')
+            col.prop(self, 'pie_workspace_bottom_left_icon', text="", icon='IMAGE_DATA')
+
+            third = second.split(factor=0.33)
+            third.separator()
+
+            fourth = third.split(factor=0.5)
+
+            col = fourth.column()
+            col.label(text="Bottom-Right")
+
+            col.prop(self, 'pie_workspace_bottom_right_name', text="", icon='WORKSPACE')
+            col.prop(self, 'pie_workspace_bottom_right_text', text="", icon='SMALL_CAPS')
+            col.prop(self, 'pie_workspace_bottom_right_icon', text="", icon='IMAGE_DATA')
+
+            fifth = fourth
+            fifth.separator()
+
+
+            # BOTTOM
+
+            first = column.split(factor=0.2)
+            first.separator()
+
+            second = first.split(factor=0.25)
+            second.separator()
+
+            third = second.split(factor=0.33)
+
+            col = third.column()
+            col.label(text="Bottom")
+
+            col.prop(self, 'pie_workspace_bottom_name', text="", icon='WORKSPACE')
+            col.prop(self, 'pie_workspace_bottom_text', text="", icon='SMALL_CAPS')
+            col.prop(self, 'pie_workspace_bottom_icon', text="", icon='IMAGE_DATA')
+
+            fourth = third.split(factor=0.5)
+            fourth.separator()
+
+            fifth = fourth
+            fifth.separator()
+
+
+
+            # column.prop(self, "snap_show_absolute_grid")
+
+
 
 
         # TOOLS PIE
