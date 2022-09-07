@@ -39,26 +39,28 @@ class AlignUV(bpy.types.Operator):
         else:
             loops = [l for f in bm.faces if f.select for l in f.loops if l[uvs].select]
 
-        axiscoords = [l[uvs].uv[axis] for l in loops]
+        # it's possible you have verts/faces selected but no loops, if you multiple objects are in edit mode and non of the selected loops are in the active object
+        if loops:
+            axiscoords = [l[uvs].uv[axis] for l in loops]
 
-        # get target value depending on type
-        if type == "MIN":
-            target = min(axiscoords)
+            # get target value depending on type
+            if type == "MIN":
+                target = min(axiscoords)
 
-        elif type == "MAX":
-            target = max(axiscoords)
+            elif type == "MAX":
+                target = max(axiscoords)
 
-        elif type == "ZERO":
-            target = 0
+            elif type == "ZERO":
+                target = 0
 
-        elif type == "AVERAGE":
-            target = sum(axiscoords) / len(axiscoords)
+            elif type == "AVERAGE":
+                target = sum(axiscoords) / len(axiscoords)
 
-        elif type == "CURSOR":
-            target = context.space_data.cursor_location[axis]
+            elif type == "CURSOR":
+                target = context.space_data.cursor_location[axis]
 
-        # set the new coordinates
-        for l in loops:
-            l[uvs].uv[axis] = target
+            # set the new coordinates
+            for l in loops:
+                l[uvs].uv[axis] = target
 
-        bmesh.update_edit_mesh(active.data)
+            bmesh.update_edit_mesh(active.data)
