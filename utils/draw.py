@@ -2,6 +2,7 @@ import bpy
 from mathutils import Vector, Matrix
 import gpu
 from gpu_extras.batch import batch_for_shader
+from gpu_extras.presets import draw_circle_2d
 import blf
 from . wm import get_last_operators
 from . registration import get_prefs
@@ -485,6 +486,23 @@ def draw_vectors(vectors, origins, mx=Matrix(), color=(1, 1, 1), width=1, alpha=
         batch = batch_for_shader(shader, 'LINES', {"pos": coords}, indices=indices)
         batch.draw(shader)
 
+
+    if modal:
+        draw()
+
+    else:
+        bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_VIEW')
+
+
+def draw_circle(coords, size=10, width=1, segments=64, color=(1, 1, 1), alpha=1, xray=True, modal=True):
+    def draw():
+        gpu.state.depth_test_set('NONE' if xray else 'LESS_EQUAL')
+        gpu.state.blend_set('ALPHA' if alpha < 1 else 'NONE')
+        gpu.state.line_width_set(width)
+
+        use_legacy_line_smoothing(alpha, width)
+
+        draw_circle_2d(coords, (*color, alpha), size, segments=segments)
 
     if modal:
         draw()
