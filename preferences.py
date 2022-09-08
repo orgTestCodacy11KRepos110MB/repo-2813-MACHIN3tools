@@ -251,6 +251,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     cursor_toggle_axes_drawing: BoolProperty(name="Toggle Cursor Axes Drawing", default=True)
 
     snap_show_absolute_grid: BoolProperty(name="Show Absolute Grid Snapping", default=False)
+    snap_show_volume: BoolProperty(name="Show Volume Snapping", default=False)
 
     toggle_cavity: BoolProperty(name="Toggle Cavity/Curvature OFF in Edit Mode, ON in Object Mode", default=True)
     toggle_xray: BoolProperty(name="Toggle X-Ray ON in Edit Mode, OFF in Object Mode, if Pass Through or Wireframe was enabled in Edit Mode", default=True)
@@ -1028,6 +1029,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             column = bb.column()
 
             column.prop(self, "snap_show_absolute_grid")
+            column.prop(self, "snap_show_volume")
 
         # WORKSPACE PIE
 

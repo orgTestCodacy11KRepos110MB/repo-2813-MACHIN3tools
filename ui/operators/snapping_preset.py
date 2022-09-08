@@ -31,6 +31,9 @@ class SetSnappingPreset(bpy.types.Operator):
         elif properties.element == 'INCREMENT':
             return "Snap to Absolute Grid Points"
 
+        elif properties.element == 'VOLUME':
+            return "Snap to Volumes"
+
     @classmethod
     def poll(cls, context):
         return context.space_data.type == 'VIEW_3D'
@@ -42,6 +45,9 @@ class SetSnappingPreset(bpy.types.Operator):
 
         if self.element == 'INCREMENT':
             ts.use_snap_grid_absolute = True
+
+        elif self.element == 'VOLUME':
+            pass
 
         else:
             ts.snap_target = self.target

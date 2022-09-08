@@ -2159,7 +2159,7 @@ class PieSnapping(Menu):
         ts = scene.tool_settings
 
         absolute_grid = get_prefs().snap_show_absolute_grid
-
+        volume = get_prefs().snap_show_volume
 
         # 4 - LEFT
         op = pie.operator('machin3.set_snapping_preset', text='Vertex', depress=ts.snap_elements == {'VERTEX'} and ts.snap_target == 'CLOSEST' and not ts.use_snap_align_rotation, icon='SNAP_VERTEX')
@@ -2168,9 +2168,13 @@ class PieSnapping(Menu):
         op.align_rotation = False
 
         # 6 - RIGHT
-        if absolute_grid:
+        if absolute_grid or (absolute_grid and volume):
             op = pie.operator('machin3.set_snapping_preset', text='Absolute Grid', depress=ts.snap_elements == {'INCREMENT'} and ts.use_snap_grid_absolute, icon='SNAP_GRID')
             op.element = 'INCREMENT'
+
+        elif volume:
+            op = pie.operator('machin3.set_snapping_preset', text='Volume', depress=ts.snap_elements == {'VOLUME'}, icon='SNAP_VOLUME')
+            op.element = 'VOLUME'
 
         else:
             op = pie.operator('machin3.set_snapping_preset', text='Surface', depress=ts.snap_elements == {'FACE'} and ts.snap_target == 'MEDIAN' and ts.use_snap_align_rotation, icon='SNAP_FACE')
@@ -2179,7 +2183,7 @@ class PieSnapping(Menu):
             op.align_rotation = True
 
         # 2 - BOTTOM
-        if absolute_grid:
+        if absolute_grid or volume:
             op = pie.operator('machin3.set_snapping_preset', text='Surface', depress=ts.snap_elements == {'FACE'} and ts.snap_target == 'MEDIAN' and ts.use_snap_align_rotation, icon='SNAP_FACE')
             op.element = 'FACE'
             op.target = 'MEDIAN'
@@ -2207,7 +2211,7 @@ class PieSnapping(Menu):
         pie.separator()
 
         # 1 - BOTTOM - LEFT
-        if absolute_grid:
+        if absolute_grid or volume:
             op = pie.operator('machin3.set_snapping_preset', text='Edge', depress=ts.snap_elements == {'EDGE'} and ts.snap_target == 'CLOSEST' and not ts.use_snap_align_rotation, icon='SNAP_EDGE')
             op.element = 'EDGE'
             op.target = 'CLOSEST'
@@ -2217,7 +2221,12 @@ class PieSnapping(Menu):
             pie.separator()
 
         # 3 - BOTTOM - RIGHT
-        pie.separator()
+        if absolute_grid and volume:
+            op = pie.operator('machin3.set_snapping_preset', text='Volume', depress=ts.snap_elements == {'VOLUME'}, icon='SNAP_VOLUME')
+            op.element = 'VOLUME'
+
+        else:
+            pie.separator()
 
 
     def draw_center_column(self, tool_settings, layout):
@@ -2229,6 +2238,7 @@ class PieSnapping(Menu):
         row = column.row(align=True)
         row.scale_y = 1.25
         row.popover(panel="VIEW3D_PT_snapping", text="More...")
+        row.prop(get_prefs(), 'snap_show_volume', text='', icon='SNAP_VOLUME')
         row.prop(get_prefs(), 'snap_show_absolute_grid', text='', icon='SNAP_GRID')
 
 
@@ -2640,13 +2650,6 @@ class PieWorkspace(Menu):
 
         pie.separator()
         """
-
-
-
-
-
-
-
 
 
 class PieTools(Menu):
