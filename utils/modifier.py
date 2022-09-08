@@ -1,3 +1,4 @@
+import bpy
 from .. items import mirror_props
 
 
