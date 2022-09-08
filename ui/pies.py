@@ -40,7 +40,7 @@ class PieModes(Menu):
         pie = layout.menu_pie()
 
         if active:
-            if context.mode in ['OBJECT', 'EDIT_MESH', 'EDIT_ARMATURE', 'POSE', 'EDIT_CURVE', 'EDIT_TEXT', 'EDIT_SURFACE', 'EDIT_METABALL', 'EDIT_LATTICE', 'EDIT_GPENCIL', 'PAINT_GPENCIL', 'SCULPT_GPENCIL', 'WEIGHT_GPENCIL']:
+            if context.mode in ['OBJECT', 'EDIT_MESH', 'EDIT_ARMATURE', 'POSE', 'EDIT_CURVE', 'EDIT_TEXT', 'EDIT_SURFACE', 'EDIT_METABALL', 'EDIT_LATTICE', 'EDIT_GPENCIL', 'PAINT_GPENCIL', 'SCULPT_GPENCIL', 'WEIGHT_GPENCIL', 'SCULPT_CURVES']:
                 if active.type == 'MESH':
                     if context.area.type == "VIEW_3D":
 
@@ -224,6 +224,56 @@ class PieModes(Menu):
                         row.prop(context.scene.M3, "pass_through", text="Pass Through" if context.scene.M3.pass_through else "Occlude", icon="XRAY")
                     else:
                         pie.separator()
+
+                elif active.type == 'CURVES':
+
+                    # 4 - LEFT
+                    pie.separator()
+
+                    # 6 - RIGHT
+                    pie.separator()
+
+                    # 2 - BOTTOM
+                    pie.separator()
+
+                    # 8 - TOP
+                    pie.separator()
+
+                    # 7 - TOP - LEFT
+                    self.draw_hair_modes(context, pie)
+
+                    # 9 - TOP - RIGHT
+                    if context.mode == 'SCULPT_CURVES':
+                        box = pie.split()
+                        column = box.column()
+                        column.scale_y = 1.5
+                        column.scale_x = 1.5
+
+                        row = column.row(align=True)
+
+                        # Combine the "use selection" toggle with the "set domain" operators
+                        # to allow turning selection off directly.
+                        domain = active.data.selection_domain
+
+                        if domain == 'POINT':
+                            row.prop(active.data, "use_sculpt_selection", text="", icon='CURVE_BEZCIRCLE')
+                        else:
+                            row.operator("curves.set_selection_domain", text="", icon='CURVE_BEZCIRCLE').domain = 'POINT'
+
+                        if domain == 'CURVE':
+                            row.prop(active.data, "use_sculpt_selection", text="", icon='CURVE_PATH')
+                        else:
+                            row.operator("curves.set_selection_domain", text="", icon='CURVE_PATH').domain = 'CURVE'
+
+                    else:
+                        pie.separator()
+
+                    # 1 - BOTTOM - LEFT
+                    pie.separator()
+
+                    # 3 - BOTTOM - RIGHT
+                    pie.separator()
+
 
                 elif active.type == 'GPENCIL':
                     gpd = context.gpencil_data
@@ -626,6 +676,22 @@ class PieModes(Menu):
         r = row.row(align=True)
         r.active = False if context.mode == 'EDIT_MESH' else True
         r.operator("object.mode_set", text="", icon="EDITMODE_HLT").mode = 'EDIT'
+
+    def draw_hair_modes(self, context, pie):
+        box = pie.split()
+        column = box.column()
+        column.scale_y = 1.5
+        column.scale_x = 1.5
+
+        row = column.row(align=True)
+
+        r = row.row(align=True)
+        r.active = False if context.mode == 'SCULPT_CURVES' else True
+        r.operator("object.mode_set", text="", icon="SCULPTMODE_HLT").mode = 'SCULPT_CURVES'
+
+        r = row.row(align=True)
+        r.active = False if context.mode == 'OBJECT' else True
+        r.operator("object.mode_set", text="", icon="OBJECT_DATA").mode = 'OBJECT'
 
 
 class PieSave(Menu):
