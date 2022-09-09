@@ -118,6 +118,7 @@ class Mirror(bpy.types.Operator):
     across = False
     removeacross = False
     removecursor = False
+    removeall = False
 
     def draw(self, context):
         layout = self.layout
@@ -366,6 +367,7 @@ class Mirror(bpy.types.Operator):
                         obj = mod.id_data
                         remove_mod(mod.name, objtype=obj.type, context=context, object=obj)
 
+                    self.removeall = True
                     return {'FINISHED'}
 
 
@@ -386,9 +388,6 @@ class Mirror(bpy.types.Operator):
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
             self.finish()
 
-            # force statusbar update
-            self.active.select_set(True)
-
             return {'CANCELLED'}
 
         return {'RUNNING_MODAL'}
@@ -398,6 +397,9 @@ class Mirror(bpy.types.Operator):
         bpy.types.SpaceView3D.draw_handler_remove(self.VIEW3D, 'WINDOW')
 
         finish_status(self)
+
+        # force statusbar update
+        self.active.select_set(True)
 
     def invoke(self, context, event):
         global decalmachine, hypercursor
@@ -436,6 +438,9 @@ class Mirror(bpy.types.Operator):
 
             # always default to using an existing cursor empty, if present
             self.use_existing_cursor = True if self.cursor_empty else False
+
+            # screencast
+            self.removeall = False
 
             # get aligned and mislalignment mods
             self.aligned, self.misaligned = self.get_misaligned_mods(context, self.active, self.mx, debug=False)
@@ -621,6 +626,7 @@ class Mirror(bpy.types.Operator):
         mirror.use_axis = (self.use_x, self.use_y, self.use_z)
         mirror.use_bisect_axis = (self.bisect_x, self.bisect_y, self.bisect_z)
         mirror.use_bisect_flip_axis = (self.flip_x, self.flip_y, self.flip_z)
+        mirror.show_expanded = False
 
         if mirror_object:
             mirror.mirror_object = mirror_object
@@ -642,6 +648,7 @@ class Mirror(bpy.types.Operator):
         mirror.use_axis_x = self.use_x
         mirror.use_axis_y = self.use_y
         mirror.use_axis_z = self.use_z
+        mirror.show_expanded = False
 
         if mirror_object:
             mirror.object = mirror_object

@@ -153,25 +153,31 @@ def get_last_operators(context, debug=False):
                 prop = 'LocalView'
 
         elif idname == 'machin3.mirror':
-            axis = getattr(op, 'axis')
-            remove = getattr(op, 'remove')
+            removeall = getattr(op, 'removeall')
 
-            if remove:
-                label = "Remove Mirror"
-
-                across = getattr(op, 'removeacross')
-                cursor = getattr(op, 'removecursor')
+            if removeall:
+                label = "Remove All Mirrors"
 
             else:
-                cursor = getattr(op, 'cursor')
-                across = getattr(op, 'across')
+                axis = getattr(op, 'axis')
+                remove = getattr(op, 'remove')
 
-            if cursor:
-                prop = f'Cursor {axis}'
-            elif across:
-                prop = f'Object {axis}'
-            else:
-                prop = f'Local {axis}'
+                if remove:
+                    label = "Remove Mirror"
+
+                    across = getattr(op, 'removeacross')
+                    cursor = getattr(op, 'removecursor')
+
+                else:
+                    cursor = getattr(op, 'cursor')
+                    across = getattr(op, 'across')
+
+                if cursor:
+                    prop = f'Cursor {axis}'
+                elif across:
+                    prop = f'Object {axis}'
+                else:
+                    prop = f'Local {axis}'
 
 
         # DECALmachine
