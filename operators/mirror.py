@@ -489,6 +489,9 @@ class Mirror(bpy.types.Operator):
             return {'FINISHED'}
 
     def execute(self, context):
+        self.active = context.active_object
+        self.sel = context.selected_objects
+
         if self.flick and self.remove:
             self.remove_mirror(self.active)
 
