@@ -40,7 +40,7 @@ def add_bevel(obj, method='WEIGHT'):
 
 # REMOVE
 
-def remove_mod(modname, context=None, object=None):
+def remove_mod(modname, objtype='MESH', context=None, object=None):
     '''
     remove modifier named modname
     optionaly with context override on an object that isn't active
@@ -48,9 +48,16 @@ def remove_mod(modname, context=None, object=None):
 
     if context and object:
         with context.temp_override(object=object):
-            bpy.ops.object.modifier_remove(modifier=modname)
+            if objtype == 'GPENCIL':
+                bpy.ops.object.gpencil_modifier_remove(modifier=modname)
+            else:
+                bpy.ops.object.modifier_remove(modifier=modname)
+
     else:
-        bpy.ops.object.modifier_remove(modifier=modname)
+        if objtype == 'GPENCIL':
+            bpy.ops.object.gpencil_modifier_remove(modifier=modname)
+        else:
+            bpy.ops.object.modifier_remove(modifier=modname)
 
 
 def remove_triangulate(obj):

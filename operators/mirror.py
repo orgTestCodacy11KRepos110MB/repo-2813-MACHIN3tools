@@ -250,6 +250,7 @@ class Mirror(bpy.types.Operator):
         if self.sel_mirror_mods:
             events.append('A')
 
+
         if event.type in events:
             if self.passthrough:
                 self.passthrough = False
@@ -356,11 +357,9 @@ class Mirror(bpy.types.Operator):
                 if event.type == 'A':
                     self.finish()
 
-                    for obj in self.sel:
-                        mirror_mods = [mod for mod in obj.modifiers if mod.type == 'MIRROR']
-
-                        for mod in mirror_mods:
-                            remove_mod(mod.name, context, obj)
+                    for mod in self.sel_mirror_mods:
+                        obj = mod.id_data
+                        remove_mod(mod.name, objtype=obj.type, context=context, object=obj)
 
                     return {'FINISHED'}
 
@@ -429,8 +428,8 @@ class Mirror(bpy.types.Operator):
             self.scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
             self.flick_distance = get_prefs().mirror_flick_distance * self.scale
 
-            self.mirror_mods = [mod for mod in self.active.modifiers if mod.type == 'MIRROR']
-            self.sel_mirror_mods = [mod for obj in self.sel for mod in obj.modifiers if mod.type == 'MIRROR']
+            self.mirror_mods = self.get_mirror_mods([self.active])
+            self.sel_mirror_mods = self.get_mirror_mods(self.sel)
             self.cursor_empty = self.get_matching_cursor_empty(context)
 
             # always default to using an existing cursor empty, if present
@@ -526,6 +525,23 @@ class Mirror(bpy.types.Operator):
 
         if matching_empties:
             return matching_empties[0]
+
+    def get_mirror_mods(self, objects):
+        '''
+        fetch mirror mods from passed in objects
+        NOTE: treat grease pencil objects differently
+        '''
+
+        mods = []
+
+        for obj in objects:
+            if obj.type == 'GPENCIL':
+                mods.extend([mod for mod in obj.grease_pencil_modifiers if mod.type == 'GP_MIRROR'])
+
+            else:
+                mods.extend([mod for mod in obj.modifiers if mod.type == 'MIRROR'])
+
+        return mods
 
 
     # MIRROR
@@ -667,13 +683,19 @@ class Mirror(bpy.types.Operator):
         axis = self.flick_direction.split('_')[1]
 
         if self.misaligned and self.usemisalign:
-            mods = [mod for mod in self.misaligned['object_mods'][self.mirror_obj] if mod.use_axis[axis_index_mapping[axis]]]
+            if obj.type == 'GPENCIL':
+                mods = [mod for mod in self.misaligned['object_mods'][self.mirror_obj] if getattr(mod, f'use_axis_{axis.lower()}')]
+            else:
+                mods = [mod for mod in self.misaligned['object_mods'][self.mirror_obj] if mod.use_axis[axis_index_mapping[axis]]]
 
         else:
-            mods = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.use_axis[axis_index_mapping[axis]]]
+            if obj.type == 'GPENCIL':
+                mods = [mod for mod in obj.grease_pencil_modifiers if mod.type == 'GP_MIRROR' and getattr(mod, f'use_axis_{axis.lower()}')]
+            else:
+                mods = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.use_axis[axis_index_mapping[axis]]]
 
         if mods:
-            remove_mod(mods[-1].name)
+            remove_mod(mods[-1].name, objtype=obj.type)
             return True
 
     def get_misaligned_mods(self, context, active, mx, debug=False):
@@ -681,7 +703,7 @@ class Mirror(bpy.types.Operator):
         get mirror mods with mirror_objs who are mis-aligned with the mirrored object
         '''
 
-        object_mirror_mods = [mod for mod in self.mirror_mods if mod.mirror_object]
+        object_mirror_mods = [mod for mod in self.mirror_mods if (mod.type == 'MIRROR' and mod.mirror_object) or (mod.type == 'GP_MIRROR' and mod.object)]
 
         if debug:
             print(object_mirror_mods)
@@ -694,7 +716,7 @@ class Mirror(bpy.types.Operator):
 
         # check if mis-alinged
         for mod in object_mirror_mods:
-            mirror_obj = mod.mirror_object
+            mirror_obj = mod.mirror_object if mod.type == 'MIRROR' else mod.object
 
             mo_mx = mirror_obj.matrix_world
 
