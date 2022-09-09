@@ -152,6 +152,28 @@ def get_last_operators(context, debug=False):
             if op.properties.get('method', 0) == 1:
                 prop = 'LocalView'
 
+        elif idname == 'machin3.mirror':
+            axis = getattr(op, 'axis')
+            remove = getattr(op, 'remove')
+
+            if remove:
+                label = "Remove Mirror"
+
+                across = getattr(op, 'removeacross')
+                cursor = getattr(op, 'removecursor')
+
+            else:
+                cursor = getattr(op, 'cursor')
+                across = getattr(op, 'across')
+
+            if cursor:
+                prop = f'Cursor {axis}'
+            elif across:
+                prop = f'Object {axis}'
+            else:
+                prop = f'Local {axis}'
+
+
         # DECALmachine
 
         elif idname == 'machin3.decal_library_visibility_preset':
@@ -220,7 +242,7 @@ def get_last_operators(context, debug=False):
 
         operators.append((addon, label, idname, prop))
 
-    # if there aren#t any last ops, it's because you've just done an undo
+    # if there aren't any last ops, it's because you've just done an undo
     if not operators:
         operators.append((None, 'Undo', 'ed.undo', ''))
 

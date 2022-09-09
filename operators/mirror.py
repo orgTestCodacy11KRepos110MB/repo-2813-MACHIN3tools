@@ -67,7 +67,7 @@ def draw_mirror(op):
                     row.separator(factor=1)
 
                     row.label(text="", icon='EVENT_Q')
-                    row.label(text="Togggle Mirror Object")
+                    row.label(text=f"Togggle Mirror Object: {op.use_misalign}")
 
                 row.separator(factor=1)
 
@@ -108,10 +108,16 @@ class Mirror(bpy.types.Operator):
 
     # (hyper)cursor
     cursor: BoolProperty(name="Mirror across Cursor", default=False)
+    use_misalign: BoolProperty(name="Use Mislinged Object Removal", default=False)
     use_existing_cursor: BoolProperty(name="Use existing Cursor Empty", default=False)
 
     # hidden
     passthrough = None
+
+    # screencas
+    across = False
+    removeacross = False
+    removecursor = False
 
     def draw(self, context):
         layout = self.layout
@@ -126,7 +132,7 @@ class Mirror(bpy.types.Operator):
         row.prop(self, "use_y", toggle=True)
         row.prop(self, "use_z", toggle=True)
 
-        if self.meshes_present and len(context.selected_objects) == 1 and self.active in context.selected_objects:
+        if self.meshes_present and len(context.selected_objects) == 1 and self.active in context.selected_objects and not self.cursor:
             row = column.row(align=True)
             r = row.row()
             r.active = self.use_x
@@ -177,10 +183,10 @@ class Mirror(bpy.types.Operator):
             alpha = 1 if self.remove else 0.8
             draw_label(context, title=title, coords=(self.init_mouse[0], self.init_mouse[1] + self.flick_distance - (30 * self.scale)), center=True, color=color, alpha=alpha)
 
-            if self.remove and self.misaligned:
-                name = 'Cursor Empty' if self.usemisalign and self.mirror_obj.type == 'EMPTY' else self.mirror_obj.name if self.usemisalign else 'None'
-                alpha = 1 if self.usemisalign else 0.3
-                color = blue if self.usemisalign and self.mirror_obj.type == 'EMPTY' else yellow if self.usemisalign else white
+            if self.remove and self.misaligned and self.use_misalign:
+                name = 'Cursor Empty' if self.use_misalign and self.mirror_obj.type == 'EMPTY' else self.mirror_obj.name if self.use_misalign else 'None'
+                alpha = 1 if self.use_misalign else 0.3
+                color = blue if self.use_misalign and self.mirror_obj.type == 'EMPTY' else yellow if self.use_misalign else white
 
                 # draw_label(context, title=f"misaligned: {name}", coords=(self.init_mouse[0], self.init_mouse[1] + self.flick_distance - (45 * self.scale)), center=True, color=color, alpha=alpha)
                 draw_label(context, title=name, coords=(self.init_mouse[0], self.init_mouse[1] - self.flick_distance + (15 * self.scale)), center=True, color=color, alpha=alpha)
@@ -194,7 +200,7 @@ class Mirror(bpy.types.Operator):
 
 
         # draw chosen misaligned mirror obj (cant be drawn when passing through, as we cant update the cursor location then)
-        if self.remove and self.misaligned and self.usemisalign:
+        if self.remove and self.misaligned and self.use_misalign:
 
             if self.mirror_obj.type == 'EMPTY':
 
@@ -216,7 +222,7 @@ class Mirror(bpy.types.Operator):
         draw_point(self.init_mouse_3d + self.axes[self.flick_direction] * self.zoom / 2 * 1.2, size=5, alpha=0.8)
 
         # draw chosen misaligned mirror obj
-        if self.remove and self.misaligned and self.usemisalign:
+        if self.remove and self.misaligned and self.use_misalign:
             mx = self.misaligned['matrices'][self.mirror_obj]
 
             if self.mirror_obj.type == 'MESH':
@@ -316,26 +322,26 @@ class Mirror(bpy.types.Operator):
                     # TOGGLE use misalignment (but only if not all mods are using misaligned objects, otherwise it will be forcibly enabled in invoke() already)
 
                     if not self.misaligned['isallmisaligned'] and event.type == 'Q' and event.value == 'PRESS':
-                        self.usemisalign = not self.usemisalign
+                        self.use_misalign = not self.use_misalign
                         self.active.select_set(True)
 
 
                     # CYCLE misaligned object
 
                     if event.type in ['WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'ONE', 'TWO'] and event.value == 'PRESS':
-                        if self.usemisalign:
+                        if self.use_misalign:
                             if event.type in ['WHEELDOWNMOUSE', 'ONE']:
                                 self.mirror_obj = step_list(self.mirror_obj, self.misaligned['sorted_objects'], step=-1, loop=True)
 
                             elif event.type in ['WHEELUPMOUSE', 'tWO']:
                                 self.mirror_obj = step_list(self.mirror_obj, self.misaligned['sorted_objects'], step=1, loop=True)
                         else:
-                            self.usemisalign = True
+                            self.use_misalign = True
                             self.active.select_set(True)
 
 
                 # update HUD axes
-                if self.remove and self.misaligned and self.usemisalign:
+                if self.remove and self.misaligned and self.use_misalign:
                     mo_mx = self.misaligned['matrices'][self.mirror_obj]
                     self.axes = self.get_axes(mo_mx)
 
@@ -415,10 +421,6 @@ class Mirror(bpy.types.Operator):
         self.meshes_present = True if any([obj for obj in self.sel if obj.type == 'MESH']) else False
         self.decals_present = True if self.decalmachine and any([obj for obj in self.sel if obj.DM.isdecal]) else False
 
-        if len(self.sel) > 1:
-            self.bisect_x = self.bisect_y = self.bisect_z = False
-            self.flip_x = self.flip_y = self.flip_z = False
-
         if self.flick:
             self.mx = self.active.matrix_world
             self.cmx = scene.cursor.matrix
@@ -435,14 +437,15 @@ class Mirror(bpy.types.Operator):
             # always default to using an existing cursor empty, if present
             self.use_existing_cursor = True if self.cursor_empty else False
 
-            # init mislalignment
-            self.misaligned = self.get_misaligned_mods(context, self.active, self.mx, debug=False)
+            # get aligned and mislalignment mods
+            self.aligned, self.misaligned = self.get_misaligned_mods(context, self.active, self.mx, debug=False)
+            # print(self.aligned)
             # printd(self.misaligned)
 
             if self.misaligned:
 
                 # if all mods use a misaligned mirror object
-                self.usemisalign = self.misaligned['isallmisaligned']
+                self.use_misalign = self.misaligned['isallmisaligned']
                 self.mirror_obj = self.misaligned['sorted_objects'][-1]
 
                 if self.mirror_obj.type == 'EMPTY':
@@ -496,6 +499,9 @@ class Mirror(bpy.types.Operator):
             self.remove_mirror(self.active)
 
         else:
+            # screencast prop
+            self.across = len(self.sel) > 1
+
             self.mirror(context, self.active, self.sel)
 
         return {'FINISHED'}
@@ -572,8 +578,14 @@ class Mirror(bpy.types.Operator):
 
             empty.hide_set(True)
 
-
+        # mirror one object (locally or across cursor)
         if len(sel) == 1 and active in sel:
+
+            # don't bisect or flip when mirroring across cursor
+            if self.cursor:
+                self.bisect_x = self.bisect_y = self.bisect_z = False
+                self.flip_x = self.flip_y = self.flip_z = False
+
             if active.type in ["MESH", "CURVE"]:
                 self.mirror_mesh_obj(context, active, mirror_object=empty if self.cursor else None)
 
@@ -583,7 +595,12 @@ class Mirror(bpy.types.Operator):
             elif active.type == "EMPTY" and active.instance_collection:
                 self.mirror_instance_collection(context, active, mirror_object=empty if self.cursor else None)
 
+        # mirror multiple objects across the active or cursor
         elif len(sel) > 1 and active in sel:
+
+            # don't bisect or flip when mirroring across active or cursor
+            self.bisect_x = self.bisect_y = self.bisect_z = False
+            self.flip_x = self.flip_y = self.flip_z = False
 
             # mirror across the active object, so remove it from the selection
             if not self.cursor:
@@ -675,6 +692,9 @@ class Mirror(bpy.types.Operator):
         if direction == 'POSITIVE':
             setattr(self, f'flip_{axis.lower()}', True)
 
+        # set the ops axis prop too, for screencast
+        self.axis = axis
+
 
     # REMOVE MIRROR
 
@@ -685,7 +705,7 @@ class Mirror(bpy.types.Operator):
 
         axis = self.flick_direction.split('_')[1]
 
-        if self.misaligned and self.usemisalign:
+        if self.misaligned and self.use_misalign:
             if obj.type == 'GPENCIL':
                 mods = [mod for mod in self.misaligned['object_mods'][self.mirror_obj] if getattr(mod, f'use_axis_{axis.lower()}')]
             else:
@@ -693,29 +713,49 @@ class Mirror(bpy.types.Operator):
 
         else:
             if obj.type == 'GPENCIL':
-                mods = [mod for mod in obj.grease_pencil_modifiers if mod.type == 'GP_MIRROR' and getattr(mod, f'use_axis_{axis.lower()}')]
+                mods = [mod for mod in self.aligned if getattr(mod, f'use_axis_{axis.lower()}')]
             else:
-                mods = [mod for mod in obj.modifiers if mod.type == 'MIRROR' and mod.use_axis[axis_index_mapping[axis]]]
+                mods = [mod for mod in self.aligned if mod.use_axis[axis_index_mapping[axis]]]
 
         if mods:
-            remove_mod(mods[-1].name, objtype=obj.type)
+            mod = mods[-1]
+
+            # screencast prep
+            mod_object = mod.object if mod.type == 'GP_MIRROR' else mod.mirror_object
+
+            if mod_object:
+                if mod_object.type == 'EMPTY':
+                    self.removeacross = False
+                    self.removecursor = True
+                else:
+                    self.removeacross = True
+                    self.removecursor = False
+            else:
+                self.removeacross = False
+                self.removecursor = False
+
+            remove_mod(mod.name, objtype=obj.type)
             return True
 
     def get_misaligned_mods(self, context, active, mx, debug=False):
         '''
         get mirror mods with mirror_objs who are mis-aligned with the mirrored object
+        also collect the aligned ones and throw them together with the ones that don't use objects at all
         '''
 
         object_mirror_mods = [mod for mod in self.mirror_mods if (mod.type == 'MIRROR' and mod.mirror_object) or (mod.type == 'GP_MIRROR' and mod.object)]
+        aligned = [mod for mod in self.mirror_mods if mod not in object_mirror_mods]
 
         if debug:
-            print(object_mirror_mods)
+            print("object mirrors:", object_mirror_mods)
+            print("non-object mirrors:", aligned)
 
         misaligned = {'sorted_mods': [],
                       'sorted_objects': [],
                       'object_mods': {},
                       'matrices': {},
                       'isallmisaligned': False}
+
 
         # check if mis-alinged
         for mod in object_mirror_mods:
@@ -755,6 +795,10 @@ class Mirror(bpy.types.Operator):
                     misaligned['object_mods'][mirror_obj] = [mod]
                     misaligned['matrices'][mirror_obj] = mirror_obj.matrix_world
 
+            # if the object is aligned, add it to the aligned list, which also contains mods without any object
+            else:
+                aligned.append(mod)
+
         # determine if all the mirror mods are misaligned, in that case the self.use_misalign will be enabled by default
         if len(self.mirror_mods) == len(misaligned['sorted_mods']):
             misaligned['isallmisaligned'] = True
@@ -762,9 +806,12 @@ class Mirror(bpy.types.Operator):
         if debug:
             printd(misaligned)
 
-        # only returned if the dict was actually populated
+        # only return mislained as as dict, if it was actually populated
         if misaligned['sorted_mods']:
-            return misaligned
+            return aligned, misaligned
+
+        else:
+            return aligned, False
 
 
 class Unmirror(bpy.types.Operator):
