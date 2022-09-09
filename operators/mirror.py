@@ -250,7 +250,6 @@ class Mirror(bpy.types.Operator):
         if self.sel_mirror_mods:
             events.append('A')
 
-
         if event.type in events:
             if self.passthrough:
                 self.passthrough = False
@@ -258,7 +257,7 @@ class Mirror(bpy.types.Operator):
                 self.init_mouse_3d = region_2d_to_location_3d(context.region, context.region_data, self.init_mouse, self.origin)
                 self.zoom = get_zoom_factor(context, depth_location=self.origin, scale=self.flick_distance, ignore_obj_scale=True)
 
-                if self.mirror_obj.type == 'EMPTY':
+                if self.mirror_obj and self.mirror_obj.type == 'EMPTY':
                     loc = self.mirror_obj.matrix_world.to_translation()
                     self.mirror_obj_2d = get_loc_2d(context, loc)
 
@@ -428,6 +427,7 @@ class Mirror(bpy.types.Operator):
             self.scale = context.preferences.view.ui_scale * get_prefs().HUD_scale
             self.flick_distance = get_prefs().mirror_flick_distance * self.scale
 
+            self.mirror_obj = None
             self.mirror_mods = self.get_mirror_mods([self.active])
             self.sel_mirror_mods = self.get_mirror_mods(self.sel)
             self.cursor_empty = self.get_matching_cursor_empty(context)
