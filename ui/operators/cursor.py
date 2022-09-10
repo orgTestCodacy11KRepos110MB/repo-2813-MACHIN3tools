@@ -6,7 +6,6 @@ from ... utils.math import get_loc_matrix, get_rot_matrix, get_sca_matrix
 from ... utils.scene import set_cursor
 from ... utils.ui import popup_message
 from ... utils.registration import get_prefs, get_addon
-from ... utils.draw import add_object_axes_drawing_handler, remove_object_axes_drawing_handler
 from ... utils.tools import get_active_tool
 from ... utils.object import compensate_children
 
@@ -40,13 +39,6 @@ class CursorToOrigin(bpy.types.Operator):
                 bpy.ops.machin3.set_transform_preset(pivot=cursor[0], orientation=cursor[1])
                 cursor = None
 
-        if get_prefs().cursor_toggle_axes_drawing:
-            dns = bpy.app.driver_namespace
-            handler = dns.get('draw_object_axes')
-
-            if handler:
-                remove_object_axes_drawing_handler(handler)
-
         return {'FINISHED'}
 
 
@@ -76,8 +68,8 @@ class CursorToSelected(bpy.types.Operator):
         if not context.space_data.overlay.show_cursor:
             context.space_data.overlay.show_cursor = True
 
-        # only actually set the presets and draw the axes if hyper cursor tools are not active
-        set_transform_preset_and_draw_cursor_axes = 'machin3.tool_hyper_cursor' not in get_active_tool(context).idname
+        # only actually set the presets if hyper cursor tools are not active
+        set_transform_preset = 'machin3.tool_hyper_cursor' not in get_active_tool(context).idname
 
         active = context.active_object
         sel = [obj for obj in context.selected_objects if obj != active]
@@ -97,43 +89,25 @@ class CursorToSelected(bpy.types.Operator):
         if context.mode == 'OBJECT' and active and (not sel or active.M3.is_group_empty):
             self.cursor_to_active_object(active, cmx, only_location=event.alt, only_rotation=event.ctrl)
 
-            if set_transform_preset_and_draw_cursor_axes:
+            if set_transform_preset:
                 if get_prefs().activate_transform_pie and get_prefs().cursor_set_transform_preset:
                     self.set_cursor_transform_preset(context)
-
-                if get_prefs().activate_shading_pie and get_prefs().cursor_toggle_axes_drawing:
-                    self.enable_cursor_axes_drawing(context)
 
             return {'FINISHED'}
 
         elif context.mode == 'EDIT_MESH':
             self.cursor_to_editmesh(context, active, cmx, only_location=event.alt, only_rotation=event.ctrl)
 
-            if set_transform_preset_and_draw_cursor_axes:
+            if set_transform_preset:
                 if get_prefs().activate_transform_pie and get_prefs().cursor_set_transform_preset:
                     self.set_cursor_transform_preset(context)
-
-                if get_prefs().activate_shading_pie and get_prefs().cursor_toggle_axes_drawing:
-                    self.enable_cursor_axes_drawing(context)
 
             return {'FINISHED'}
 
         # fall back for cases not covered above
         bpy.ops.view3d.snap_cursor_to_selected()
 
-
         return {'FINISHED'}
-
-    def enable_cursor_axes_drawing(self, context):
-        dns = bpy.app.driver_namespace
-        handler = dns.get('draw_object_axes')
-
-        if handler:
-            remove_object_axes_drawing_handler(handler)
-
-        add_object_axes_drawing_handler(dns, context, [], True)
-
-        context.area.tag_redraw()
 
     def set_cursor_transform_preset(self, context):
         global cursor

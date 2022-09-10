@@ -77,7 +77,7 @@ from . properties import M3SceneProperties, M3ObjectProperties
 from . utils.registration import get_core, get_tools, get_pie_menus
 from . utils.registration import register_classes, unregister_classes, register_keymaps, unregister_keymaps, register_icons, unregister_icons, register_msgbus, unregister_msgbus
 from . ui.menus import object_context_menu, mesh_context_menu, add_object_buttons, material_pick_button, outliner_group_toggles, extrude_menu, group_origin_adjustment_toggle, render_menu, render_buttons
-from . handlers import update_object_axes_drawing, focus_HUD, surface_slide_HUD, update_group, update_asset, update_msgbus, screencast_HUD, increase_lights_on_render_end, decrease_lights_on_render_start
+from . handlers import focus_HUD, surface_slide_HUD, update_group, update_asset, update_msgbus, screencast_HUD, increase_lights_on_render_end, decrease_lights_on_render_start, axes_HUD
 
 
 def register():
@@ -134,10 +134,7 @@ def register():
 
     bpy.app.handlers.load_post.append(update_msgbus)
 
-    bpy.app.handlers.undo_pre.append(update_object_axes_drawing)
-    bpy.app.handlers.redo_pre.append(update_object_axes_drawing)
-    bpy.app.handlers.load_pre.append(update_object_axes_drawing)
-
+    bpy.app.handlers.depsgraph_update_post.append(axes_HUD)
     bpy.app.handlers.depsgraph_update_post.append(focus_HUD)
     bpy.app.handlers.depsgraph_update_post.append(surface_slide_HUD)
     bpy.app.handlers.depsgraph_update_post.append(update_group)
@@ -161,11 +158,10 @@ def unregister():
 
     bpy.app.handlers.load_post.remove(update_msgbus)
 
-    bpy.app.handlers.undo_pre.remove(update_object_axes_drawing)
-    bpy.app.handlers.redo_pre.remove(update_object_axes_drawing)
-    bpy.app.handlers.load_pre.remove(update_object_axes_drawing)
-
     from . handlers import focusHUD, surfaceslideHUD, screencastHUD
+
+    if axes_HUD and "RNA_HANDLE_REMOVED" not in str(focusHUD):
+        bpy.types.SpaceView3D.draw_handler_remove(axes_HUD, 'WINDOW')
 
     if focusHUD and "RNA_HANDLE_REMOVED" not in str(focusHUD):
         bpy.types.SpaceView3D.draw_handler_remove(focusHUD, 'WINDOW')
@@ -176,6 +172,7 @@ def unregister():
     if screencastHUD and "RNA_HANDLE_REMOVED" not in str(screencastHUD):
         bpy.types.SpaceView3D.draw_handler_remove(screencastHUD, 'WINDOW')
 
+    bpy.app.handlers.depsgraph_update_post.remove(axes_HUD)
     bpy.app.handlers.depsgraph_update_post.remove(focus_HUD)
     bpy.app.handlers.depsgraph_update_post.remove(surface_slide_HUD)
     bpy.app.handlers.depsgraph_update_post.remove(update_group)

@@ -903,6 +903,8 @@ class PieShading(Menu):
         pie.operator("machin3.switch_shading", text=text, icon=icon, depress=shading.type == 'RENDERED' and overlay.show_overlays).shading_type = 'RENDERED'
 
     def draw_overlay_box(self, context, active, view, layout):
+        m3 = context.scene.M3
+
         overlay = context.space_data.overlay
         perspective_type = view.region_3d.view_perspective
 
@@ -950,7 +952,7 @@ class PieShading(Menu):
         r.prop(view.overlay, "show_axis_z", text="Z", toggle=True)
 
         row = column.split(factor=0.4, align=True)
-        icon = 'wireframe_xray' if context.scene.M3.show_edit_mesh_wire else 'wireframe'
+        icon = 'wireframe_xray' if m3.show_edit_mesh_wire else 'wireframe'
         row.operator("machin3.toggle_wireframe", text="Wireframe", icon_value=get_icon(icon), depress=context.mode=='OBJECT' and overlay.show_wireframes)
 
         r = row.row(align=True)
@@ -960,16 +962,16 @@ class PieShading(Menu):
         elif context.mode == "EDIT_MESH":
             r.active = view.shading.show_xray
             r.prop(view.shading, "xray_alpha", text="X-Ray")
-
         # object axes
-        hasobjectaxes = True if bpy.app.driver_namespace.get('draw_object_axes') else False
+        hasobjectaxes = m3.draw_active_axes or any([obj.M3.draw_axes for obj in context.visible_objects])
 
         row = column.split(factor=0.4, align=True)
-        row.operator("machin3.toggle_object_axes", text="(E) Object Axes", depress=hasobjectaxes)
+        row.prop(m3, "draw_active_axes", text="Draw Active Axes", icon='EMPTY_AXIS')
+
         r = row.row(align=True)
         r.active = hasobjectaxes
-        r.prop(context.scene.M3, "object_axes_size", text="")
-        r.prop(context.scene.M3, "object_axes_alpha", text="")
+        r.prop(m3, "object_axes_size", text="")
+        r.prop(m3, "object_axes_alpha", text="")
 
     def draw_solid_box(self, context, view, layout):
         shading = context.space_data.shading
@@ -1023,7 +1025,8 @@ class PieShading(Menu):
             if active.type == 'ARMATURE':
                 r.prop(active.data, "show_axes", text="Axes")
             else:
-                r.prop(active, "show_axis", text="Axis")
+                # r.prop(active, "show_axis", text="Axis")
+                r.prop(active.M3, "draw_axes", text="Axes")
 
             r = row.row()
             r.prop(active, "show_in_front", text="In Front")

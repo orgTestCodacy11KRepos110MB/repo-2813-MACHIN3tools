@@ -10,39 +10,20 @@ from . ui import require_header_offset
 from .. colors import red, green, blue, black, white
 
 
-def add_object_axes_drawing_handler(dns, context, objs, draw_cursor):
-    handler = bpy.types.SpaceView3D.draw_handler_add(draw_object_axes, ([context, objs, draw_cursor],), 'WINDOW', 'POST_VIEW')
-    dns['draw_object_axes'] = handler
-
-
-def remove_object_axes_drawing_handler(handler=None):
-    # print("attempting to remove object axes drawing handler")
-
-    if not handler:
-        handler = bpy.app.driver_namespace.get('draw_object_axes')
-
-
-    if handler:
-        # print(" REMOVING object axes drawing handler")
-
-        bpy.types.SpaceView3D.draw_handler_remove(handler, 'WINDOW')
-        del bpy.app.driver_namespace['draw_object_axes']
-
-
-def draw_object_axes(args):
-    context, objs, draw_cursor = args
-
+def draw_axes_HUD(context, objects):
     if context.space_data.overlay.show_overlays:
-        axes = [(Vector((1, 0, 0)), red), (Vector((0, 1, 0)), green), (Vector((0, 0, 1)), blue)]
+        m3 = context.scene.M3
 
-        size = context.scene.M3.object_axes_size
-        alpha = context.scene.M3.object_axes_alpha
+        size = m3.object_axes_size
+        alpha = m3.object_axes_alpha
+
+        axes = [(Vector((1, 0, 0)), red), (Vector((0, 1, 0)), green), (Vector((0, 0, 1)), blue)]
 
         for axis, color in axes:
             coords = []
 
             # draw object(s)
-            for obj in objs:
+            for obj in objects:
                 mx = obj.matrix_world
                 origin = mx.decompose()[0]
 
@@ -50,31 +31,23 @@ def draw_object_axes(args):
                 coords.append(origin + mx.to_3x3() @ axis * size * 0.1)
                 coords.append(origin + mx.to_3x3() @ axis * size)
 
-            # cursor
-            if draw_cursor and context.space_data.overlay.show_cursor:
-                cmx = context.scene.cursor.matrix
-                corigin = cmx.decompose()[0]
+                """
+                # debuging stash + stashtargtmx for object origin changes
+                for stash in obj.MM.stashes:
+                    if s tash.obj:
+                        smx = sta sh.obj.MM.stashmx
+                        sorigin = smx.decompose()[0]
 
-                coords.append(corigin + cmx.to_3x3() @ axis * size * 0.1 * 0.5)
-                coords.append(corigin + cmx.to_3x3() @ axis * size * 0.5)
-
-            """
-            # debuging stash + stashtargtmx for object origin changes
-            for stash in obj.MM.stashes:
-                if s tash.obj:
-                    smx = sta sh.obj.MM.stashmx
-                    sorigin = smx.decompose()[0]
-
-                    coords.append(sorigin + smx.to_3x3() @ axis * size * 0.1)
-                    coords.append(sorigin + smx.to_3x3() @ axis * size)
+                        coords.append(sorigin + smx.to_3x3() @ axis * size * 0.1)
+                        coords.append(sorigin + smx.to_3x3() @ axis * size)
 
 
-                    stmx = stash.obj.MM.stashtargetmx
-                    storigin = stmx.decompose()[0]
+                        stmx = stash.obj.MM.stashtargetmx
+                        storigin = stmx.decompose()[0]
 
-                    coords.append(storigin + stmx.to_3x3() @ axis * size * 0.1)
-                    coords.append(storigin + stmx.to_3x3() @ axis * size)
-            """
+                        coords.append(storigin + stmx.to_3x3() @ axis * size * 0.1)
+                        coords.append(storigin + stmx.to_3x3() @ axis * size)
+                """
 
             if coords:
                 indices = [(i, i + 1) for i in range(0, len(coords), 2)]

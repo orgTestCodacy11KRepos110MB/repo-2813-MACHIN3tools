@@ -1,14 +1,16 @@
 import bpy
 from bpy.app.handlers import persistent
-from . utils.draw import remove_object_axes_drawing_handler, draw_focus_HUD, draw_surface_slide_HUD, draw_screen_cast_HUD
+from . utils.draw import draw_axes_HUD, draw_focus_HUD, draw_surface_slide_HUD, draw_screen_cast_HUD
 from . utils.registration import get_prefs, reload_msgbus, get_addon
 from . utils.group import update_group_name, select_group_children
 from . utils.light import adjust_lights_for_rendering, get_area_light_poll
 from . utils.view import sync_light_visibility
 
-import time
+# import time
 
 
+axesHUD = None
+prev_axes_objects = []
 focusHUD = None
 surfaceslideHUD = None
 screencastHUD = None
@@ -17,11 +19,6 @@ screencastHUD = None
 @persistent
 def update_msgbus(none):
     reload_msgbus()
-
-
-@persistent
-def update_object_axes_drawing(none):
-    remove_object_axes_drawing_handler()
 
 
 @persistent
@@ -105,6 +102,47 @@ def update_asset(none):
                             col.objects.unlink(obj)
 
                 # print(f" done, after {time.time() - start:.20f} seconds")
+
+
+@persistent
+def axes_HUD(scene):
+    global axesHUD, prev_axes_objects
+
+    # if you unregister the addon, the handle will somehow stay arround as a capsule object with the following name
+    # despite that, the object will return True, and so we need to check for this or no new handler will be created when re-registering
+    if axesHUD and "RNA_HANDLE_REMOVED" in str(axesHUD):
+        axesHUD = None
+
+    axes_objects = [obj for obj in bpy.context.visible_objects if obj.M3.draw_axes]
+    active = getattr(bpy.context, 'active_object', None)
+
+    if scene.M3.draw_active_axes and active and active not in axes_objects:
+        axes_objects.append(active)
+
+    # print()
+
+    if axes_objects:
+        # print("axes objects present")
+
+        if axes_objects != prev_axes_objects:
+            # print(" axes objects changed")
+            prev_axes_objects = axes_objects
+
+            # the objects have changed, remove the previous handler if one exists
+            if axesHUD:
+                # print("  removing previous draw handler")
+                bpy.types.SpaceView3D.draw_handler_remove(axesHUD, 'WINDOW')
+
+            # create a new handler
+            # print("  adding new draw handler")
+            axesHUD = bpy.types.SpaceView3D.draw_handler_add(draw_axes_HUD, (bpy.context, axes_objects), 'WINDOW', 'POST_VIEW')
+
+    # remove the handler when no axes objects are present anymore
+    elif axesHUD:
+        bpy.types.SpaceView3D.draw_handler_remove(axesHUD, 'WINDOW')
+        # print("removing old draw handler")
+        axesHUD = None
+        prev_axes_objects = []
 
 
 @persistent

@@ -242,13 +242,11 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
     obj_mode_rotate_around_active: BoolProperty(name="Rotate Around Selection, but only in Object Mode", default=False)
     custom_views_use_trackball: BoolProperty(name="Force Trackball Navigation when using Custom Views", default=True)
     custom_views_set_transform_preset: BoolProperty(name="Set Transform Preset when using Custom Views", default=True)
-    custom_views_toggle_axes_drawing: BoolProperty(name="Toggle Custom View Axes Drawing", default=True)
     show_orbit_selection: BoolProperty(name="Show Orbit around Active", default=True)
     show_orbit_method: BoolProperty(name="Show Orbit Method Selection", default=True)
 
     cursor_show_to_grid: BoolProperty(name="Show Cursor and Selected to Grid", default=False)
     cursor_set_transform_preset: BoolProperty(name="Set Transform Preset when Setting Cursor", default=True)
-    cursor_toggle_axes_drawing: BoolProperty(name="Toggle Cursor Axes Drawing", default=True)
 
     snap_show_absolute_grid: BoolProperty(name="Show Absolute Grid Snapping", default=False)
     snap_show_volume: BoolProperty(name="Show Volume Snapping", default=False)
@@ -998,9 +996,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
             if self.activate_transform_pie:
                 column.prop(self, "custom_views_set_transform_preset")
 
-            if self.activate_shading_pie:
-                column.prop(self, "custom_views_toggle_axes_drawing")
-
             column.prop(self, "show_orbit_selection")
             column.prop(self, "show_orbit_method")
 
@@ -1018,8 +1013,6 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
                     if self.activate_transform_pie:
                         column.prop(self, "cursor_set_transform_preset")
 
-                    if self.activate_shading_pie:
-                        column.prop(self, "cursor_toggle_axes_drawing")
 
         # SNAPPING PIE
 
