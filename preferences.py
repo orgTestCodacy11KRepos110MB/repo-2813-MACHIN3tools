@@ -313,7 +313,7 @@ class MACHIN3toolsPreferences(bpy.types.AddonPreferences):
 
     # workspace pie customization
     pie_workspace_left_name: StringProperty(name="Left Workspace Name", default="Layout")
-    pie_workspace_left_text: StringProperty(name="Left Workspace Custom Label", default="General")
+    pie_workspace_left_text: StringProperty(name="Left Workspace Custom Label", default="MACHIN3")
     pie_workspace_left_icon: StringProperty(name="Left Workspace Icon", default="VIEW3D")
 
     pie_workspace_top_left_name: StringProperty(name="Top-Left Workspace Name", default="UV Editing")
