@@ -966,7 +966,7 @@ class PieShading(Menu):
         hasobjectaxes = m3.draw_active_axes or any([obj.M3.draw_axes for obj in context.visible_objects])
 
         row = column.split(factor=0.4, align=True)
-        row.prop(m3, "draw_active_axes", text="Draw Active Axes", icon='EMPTY_AXIS')
+        row.prop(m3, "draw_active_axes", text="Active's Axes", icon='EMPTY_AXIS')
 
         r = row.row(align=True)
         r.active = hasobjectaxes
