@@ -158,10 +158,10 @@ def unregister():
 
     bpy.app.handlers.load_post.remove(update_msgbus)
 
-    from . handlers import focusHUD, surfaceslideHUD, screencastHUD
+    from . handlers import axesHUD, focusHUD, surfaceslideHUD, screencastHUD
 
-    if axes_HUD and "RNA_HANDLE_REMOVED" not in str(focusHUD):
-        bpy.types.SpaceView3D.draw_handler_remove(axes_HUD, 'WINDOW')
+    if axesHUD and "RNA_HANDLE_REMOVED" not in str(axesHUD):
+        bpy.types.SpaceView3D.draw_handler_remove(axesHUD, 'WINDOW')
 
     if focusHUD and "RNA_HANDLE_REMOVED" not in str(focusHUD):
         bpy.types.SpaceView3D.draw_handler_remove(focusHUD, 'WINDOW')
